@@ -1,0 +1,266 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Currency {
+  MWK
+  GBP
+}
+
+enum PropertyStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+}
+
+enum TransactionType {
+  REVENUE
+  EXPENSE
+}
+
+enum CategoryType {
+  REVENUE
+  EXPENSE
+}
+
+enum GuestSource {
+  AIRBNB
+  LOCAL
+  REFERRAL
+  REPEAT
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  name      String?
+  telegramId String?  @unique @map("telegram_id")
+  telegramUsername String? @map("telegram_username")
+  role      String    @default("OWNER")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  categories   Category[]
+  transactions Transaction[]
+  guests       Guest[]
+  bookings     Booking[]
+  checkedInBookings  Booking[] @relation("BookingCheckedInBy")
+  checkedOutBookings Booking[] @relation("BookingCheckedOutBy")
+  auditLogs    AuditLog[]
+  notificationSettings NotificationSettings?
+}
+
+model Property {
+  id          String         @id @default(uuid())
+  name        String
+  location    String?
+  bedrooms    Int
+  bathrooms   Int
+  maxGuests   Int
+  nightlyRate Int?
+  currency    Currency
+  status      PropertyStatus @default(ACTIVE)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  transactions        Transaction[]
+  transactionMappings TransactionProperty[]
+  bookings            Booking[]
+  amenities           PropertyAmenity[]
+  images              PropertyImage[]
+}
+
+model Amenity {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  properties PropertyAmenity[]
+
+  @@unique([name])
+}
+
+model PropertyAmenity {
+  id         String   @id @default(uuid())
+  propertyId String
+  amenityId  String
+  createdAt  DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amenity  Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, amenityId])
+  @@index([propertyId])
+  @@index([amenityId])
+}
+
+model PropertyImage {
+  id         String   @id @default(uuid())
+  propertyId String
+  url        String
+  alt        String?
+  sortOrder  Int      @default(0)
+  isCover    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId, sortOrder])
+  @@index([propertyId, isCover])
+}
+
+model Category {
+  id        String       @id @default(uuid())
+  name      String
+  type      CategoryType
+  isSystem  Boolean      @default(false)
+  createdBy String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  creator      User          @relation(fields: [createdBy], references: [id])
+  transactions Transaction[]
+
+  @@unique([name, type])
+}
+
+model Transaction {
+  id         String          @id @default(uuid())
+  propertyId String?
+  type       TransactionType
+  categoryId String
+  amount     Int
+  currency   Currency
+  date       DateTime
+  notes      String?
+  createdVia String          @default("DASHBOARD") @map("created_via")
+  telegramMessageId BigInt?  @map("telegram_message_id")
+  createdBy  String
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  property            Property?            @relation(fields: [propertyId], references: [id])
+  category            Category             @relation(fields: [categoryId], references: [id])
+  creator             User                 @relation(fields: [createdBy], references: [id])
+  transactionMappings TransactionProperty[]
+
+  @@index([propertyId])
+  @@index([categoryId])
+  @@index([date])
+}
+
+model TransactionProperty {
+  id            String   @id @default(uuid())
+  transactionId String
+  propertyId    String
+  amount        Int?
+  share         Float?
+  createdAt     DateTime @default(now())
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  property    Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([transactionId, propertyId])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  action       String
+  resourceType String
+  resourceId   String
+  userId       String
+  details      Json?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([resourceType, resourceId])
+  @@index([userId])
+}
+
+model NotificationSettings {
+  id String @id @default(uuid())
+  userId String @unique @map("user_id")
+  newInquiryTelegram Boolean @default(true) @map("new_inquiry_telegram")
+  newInquiryEmail Boolean @default(false) @map("new_inquiry_email")
+  bookingConfirmedTelegram Boolean @default(true) @map("booking_confirmed_telegram")
+  bookingConfirmedEmail Boolean @default(false) @map("booking_confirmed_email")
+  dailySummaryTelegram Boolean @default(false) @map("daily_summary_telegram")
+  dailySummaryEmail Boolean @default(false) @map("daily_summary_email")
+  dailySummaryTime String? @default("18:00") @map("daily_summary_time")
+  weeklySummaryTelegram Boolean @default(false) @map("weekly_summary_telegram")
+  weeklySummaryDay Int @default(1) @map("weekly_summary_day")
+  weeklySummaryHour Int @default(8) @map("weekly_summary_hour")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_settings")
+}
+
+model Guest {
+  id        String      @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  source    GuestSource
+  notes     String?
+  rating    Int?
+  createdBy String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  creator  User      @relation(fields: [createdBy], references: [id])
+  bookings Booking[]
+
+  @@index([source])
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  guestId       String
+  propertyId    String
+  status        BookingStatus @default(PENDING)
+  checkInDate   DateTime
+  checkOutDate  DateTime
+  actualCheckIn DateTime?
+  actualCheckOut DateTime?
+  checkInNotes  String?
+  checkOutNotes String?
+  checkOutIssueType String? @map("check_out_issue_type")
+  checkedInBy  String? @map("checked_in_by")
+  checkedOutBy String? @map("checked_out_by")
+  notes         String?
+  createdBy     String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  guest    Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id])
+  creator  User     @relation(fields: [createdBy], references: [id])
+  checkedInByUser User? @relation("BookingCheckedInBy", fields: [checkedInBy], references: [id])
+  checkedOutByUser User? @relation("BookingCheckedOutBy", fields: [checkedOutBy], references: [id])
+
+  @@index([guestId])
+  @@index([propertyId])
+  @@index([checkInDate])
+  @@index([checkOutDate])
+  @@index([status])
+}
+

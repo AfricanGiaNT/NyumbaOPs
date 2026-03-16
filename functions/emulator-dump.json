@@ -1,0 +1,213 @@
+{
+  "properties": {
+    "n7vOikW5ofCmu1hTXB3y": {
+      "highlights": [],
+      "name": "madikwe",
+      "location": "lilongwe",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "nightlyRate": 150000,
+      "currency": "MWK",
+      "createdAt": "2026-01-30T19:29:34.421Z",
+      "images": [
+        {
+          "url": "http://127.0.0.1:9199/v0/b/nyumbaops.appspot.com/o/properties%2Fn7vOikW5ofCmu1hTXB3y%2F1770372849140-cape-mac.jpg?alt=media",
+          "alt": "Cape Mac",
+          "sortOrder": 0,
+          "isCover": true
+        },
+        {
+          "url": "http://127.0.0.1:9199/v0/b/nyumbaops.appspot.com/o/properties%2Fn7vOikW5ofCmu1hTXB3y%2F1770374744354-bedroom-no-bed.jpeg?alt=media",
+          "alt": "bedroom no bed",
+          "sortOrder": 1,
+          "isCover": false
+        },
+        {
+          "url": "http://127.0.0.1:9199/v0/b/nyumbaops.appspot.com/o/properties%2Fn7vOikW5ofCmu1hTXB3y%2F1770374744787-laundry.jpeg?alt=media",
+          "alt": "Laundry",
+          "sortOrder": 2,
+          "isCover": false
+        },
+        {
+          "url": "http://127.0.0.1:9199/v0/b/nyumbaops.appspot.com/o/properties%2Fn7vOikW5ofCmu1hTXB3y%2F1770374744913-bathroom.jpeg?alt=media",
+          "alt": "bathroom",
+          "sortOrder": 3,
+          "isCover": false
+        },
+        {
+          "url": "http://127.0.0.1:9199/v0/b/nyumbaops.appspot.com/o/properties%2Fn7vOikW5ofCmu1hTXB3y%2F1770374745044-bedroom-wide.jpeg?alt=media",
+          "alt": "bedroom wide",
+          "sortOrder": 4,
+          "isCover": false
+        },
+        {
+          "url": "http://127.0.0.1:9199/v0/b/nyumbaops.appspot.com/o/properties%2Fn7vOikW5ofCmu1hTXB3y%2F1770374745172-bedroom-angle.jpeg?alt=media",
+          "alt": "bedroom angle",
+          "sortOrder": 5,
+          "isCover": false
+        },
+        {
+          "url": "http://127.0.0.1:9199/v0/b/nyumbaops.appspot.com/o/properties%2Fn7vOikW5ofCmu1hTXB3y%2F1770374745291-living-room.jpeg?alt=media",
+          "alt": "Living room",
+          "sortOrder": 6,
+          "isCover": false
+        },
+        {
+          "url": "http://127.0.0.1:9199/v0/b/nyumbaops.appspot.com/o/properties%2Fn7vOikW5ofCmu1hTXB3y%2F1770374745417-kitchen-and-sofa.jpeg?alt=media",
+          "alt": "kitchen and sofa",
+          "sortOrder": 7,
+          "isCover": false
+        },
+        {
+          "url": "http://127.0.0.1:9199/v0/b/nyumbaops.appspot.com/o/properties%2Fn7vOikW5ofCmu1hTXB3y%2F1770374745525-kitchen.jpeg?alt=media",
+          "alt": "Kitchen",
+          "sortOrder": 8,
+          "isCover": false
+        }
+      ],
+      "amenities": [
+        "wifi",
+        "kitchen",
+        "parking",
+        "air_conditioning",
+        "tv",
+        "workspace",
+        "washer",
+        "iron",
+        "fire_extinguisher",
+        "patio"
+      ],
+      "eventsAllowed": false,
+      "petsAllowed": false,
+      "checkInTime": "15:00",
+      "smokingAllowed": false,
+      "checkOutTime": "11:00",
+      "propertyType": "apartment",
+      "beds": 1,
+      "bedTypes": [
+        "king"
+      ],
+      "cancellationPolicy": "moderate",
+      "minimumStay": 1,
+      "description": "Enjoy a stylish experience at this centrally-located space fitted fully fitted with all amenities, air conditioning, and WIFI.",
+      "updatedAt": "2026-02-06T16:48:01.344Z",
+      "status": "ACTIVE"
+    }
+  },
+  "bookings": {
+    "K9F4vqHKcOgiWqhtFZbq": {
+      "guestId": "Wq1cIoBlJk6MsHN4Xq5S",
+      "propertyId": "n7vOikW5ofCmu1hTXB3y",
+      "status": "CONFIRMED",
+      "checkInDate": "2026-02-23T00:00:00.000Z",
+      "checkOutDate": "2026-02-28T00:00:00.000Z",
+      "source": "AIRBNB",
+      "externalId": "7f662ec65913-18e712237adb575fcb9a4c8246c92b41@airbnb.com",
+      "isSyncedBooking": true,
+      "notes": "Synced from AIRBNB. ",
+      "createdBy": "system",
+      "createdAt": "2026-02-23T10:26:42.542Z",
+      "updatedAt": "2026-02-23T10:26:42.542Z"
+    },
+    "tFUQGkYsoAZXr3ZWpzNy": {
+      "guestId": "Wq1cIoBlJk6MsHN4Xq5S",
+      "propertyId": "n7vOikW5ofCmu1hTXB3y",
+      "status": "CONFIRMED",
+      "checkInDate": "2027-02-23T00:00:00.000Z",
+      "checkOutDate": "2027-02-24T00:00:00.000Z",
+      "source": "AIRBNB",
+      "externalId": "7f662ec65913-57b41a849d3059e6f57ac31392cc6a17@airbnb.com",
+      "isSyncedBooking": true,
+      "notes": "Synced from AIRBNB. ",
+      "createdBy": "system",
+      "createdAt": "2026-02-23T10:26:42.699Z",
+      "updatedAt": "2026-02-23T10:26:42.699Z"
+    }
+  },
+  "guests": {
+    "Wq1cIoBlJk6MsHN4Xq5S": {
+      "name": "Airbnb Guest - AirbnbNota",
+      "source": "AIRBNB",
+      "notes": "Synced from AIRBNB. Confirmation: AirbnbNota",
+      "createdBy": "system",
+      "createdAt": "2026-02-07T12:00:04.438Z",
+      "updatedAt": "2026-02-07T12:00:04.438Z"
+    },
+    "Y2ZKW6e6XI1MiiK99Fzf": {
+      "email": "remotesjohn@gmail.com",
+      "phone": "0990845264",
+      "source": "WEBSITE",
+      "createdAt": "2026-02-09T12:25:12.919Z",
+      "name": "Johnny banda",
+      "updatedAt": "2026-02-12T10:48:33.154Z"
+    },
+    "fwFrKCVmiin85QUt4ax4": {
+      "name": "john doe",
+      "email": "trevstrevor@gmail.com",
+      "phone": "0990845264",
+      "source": "WEBSITE",
+      "createdAt": "2026-02-09T10:28:19.182Z",
+      "updatedAt": "2026-02-09T10:28:19.182Z"
+    }
+  },
+  "users": {
+    "ZlTiFaeE1cUn4qyP50kcjn6T8trf": {
+      "email": "remotesjohn@gmail.com",
+      "displayName": "Nthambizo",
+      "createdAt": {
+        "_seconds": 1769790456,
+        "_nanoseconds": 877000000
+      },
+      "role": "OWNER"
+    }
+  },
+  "calendar_syncs": {
+    "n7vOikW5ofCmu1hTXB3y": {
+      "propertyId": "n7vOikW5ofCmu1hTXB3y",
+      "platform": "AIRBNB",
+      "icalUrl": "https://www.airbnb.com/calendar/ical/1302977127776391705.ics?t=8995afbaaa4d47a88983f1366ff8abfe",
+      "isEnabled": true,
+      "syncFrequency": 30,
+      "lastSyncError": null,
+      "createdAt": "2026-02-07T12:24:49.703Z",
+      "lastSyncAt": "2026-02-23T10:26:42.712Z",
+      "lastSyncStatus": "SUCCESS",
+      "updatedAt": "2026-02-23T10:26:42.712Z"
+    },
+    "test-property-airbnb": {
+      "propertyId": "test-property-airbnb",
+      "platform": "AIRBNB",
+      "icalUrl": "https://www.airbnb.com/calendar/ical/1302977127776391705.ics?t=8995afbaaa4d47a88983f1366ff8abfe",
+      "isEnabled": true,
+      "syncFrequency": 30,
+      "lastSyncError": null,
+      "createdAt": "2026-02-07T12:00:02.902Z",
+      "lastSyncAt": "2026-02-07T12:00:04.529Z",
+      "lastSyncStatus": "SUCCESS",
+      "updatedAt": "2026-02-07T12:00:04.529Z"
+    }
+  },
+  "calendar_sync_logs": {
+    "nCRHreg2PPlNN58KGNMc": {
+      "propertyId": "test-property-airbnb",
+      "status": "SUCCESS",
+      "eventsImported": 2,
+      "eventsSkipped": 0,
+      "errorMessage": null,
+      "syncDuration": 883,
+      "createdAt": "2026-02-07T12:00:02.902Z"
+    },
+    "y6nbaqbjDuzxAoti4rjr": {
+      "propertyId": "n7vOikW5ofCmu1hTXB3y",
+      "status": "SUCCESS",
+      "eventsImported": 2,
+      "eventsSkipped": 0,
+      "errorMessage": null,
+      "syncDuration": 1001,
+      "createdAt": "2026-02-23T10:26:42.732Z"
+    }
+  },
+  "categories": {},
+  "payment_intents": {}
+}

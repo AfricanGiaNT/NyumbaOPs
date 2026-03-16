@@ -16,7 +16,7 @@ async function seed() {
             amenities: ["WiFi", "Parking", "Backup Power", "Kitchen"],
             images: [
                 {
-                    url: "https://images.example.com/area-43-house-a/cover.webp",
+                    url: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=600&fit=crop",
                     alt: "Area 43 house A exterior",
                     sortOrder: 1,
                     isCover: true,
@@ -35,7 +35,7 @@ async function seed() {
             amenities: ["WiFi", "Hot Water"],
             images: [
                 {
-                    url: "https://images.example.com/city-center-flat-2b/cover.webp",
+                    url: "https://images.unsplash.com/photo-1502672260066-6bc35f0bbe86?w=800&h=600&fit=crop",
                     alt: "City Center flat 2B exterior",
                     sortOrder: 1,
                     isCover: true,

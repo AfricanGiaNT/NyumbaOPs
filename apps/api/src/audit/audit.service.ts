@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
-export type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE';
+export type AuditAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'SYNC';
 
 @Injectable()
 export class AuditService {

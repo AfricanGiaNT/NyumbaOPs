@@ -180,8 +180,8 @@ export default function PropertyDetailPage() {
       
       // Step 2: Build final images array
       // Map form images to PropertyImage format, using uploaded URLs for new images
-      const finalImages: PropertyImage[] = formImages
-        .map((img, index) => {
+      const finalImages = formImages
+        .map<PropertyImage | null>((img, index) => {
           // If it's a new upload, use the URL from upload response
           if (img.file && !img.url) {
             const uploadedUrl = uploadedImageUrls.shift();
@@ -508,7 +508,7 @@ export default function PropertyDetailPage() {
             <ImageUpload
               images={propertyForm.images}
               onChange={(images) => setPropertyForm((prev) => ({ ...prev, images }))}
-              maxImages={6}
+              maxImages={12}
             />
           </div>
 

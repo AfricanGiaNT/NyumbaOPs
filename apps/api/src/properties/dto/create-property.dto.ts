@@ -4,8 +4,10 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
   Max,
   Min,
 } from 'class-validator';
@@ -46,6 +48,21 @@ export class CreatePropertyDto {
   @ApiProperty({ enum: Currency })
   @IsEnum(Currency)
   currency: Currency;
+
+  @ApiProperty({ example: -13.9626, required: false })
+  @IsNumber()
+  @IsOptional()
+  latitude?: number;
+
+  @ApiProperty({ example: 33.7741, required: false })
+  @IsNumber()
+  @IsOptional()
+  longitude?: number;
+
+  @ApiProperty({ example: 'https://maps.google.com/?q=-13.9626,33.7741', required: false })
+  @IsString()
+  @IsOptional()
+  googleMapsUrl?: string;
 
   @ApiProperty({ enum: PropertyStatus, required: false, default: PropertyStatus.ACTIVE })
   @IsEnum(PropertyStatus)

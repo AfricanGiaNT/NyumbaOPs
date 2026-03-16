@@ -16,11 +16,20 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/97d11b96-e9f2-4d25-8c35-1cf76da3d5e9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:19',message:'Login form submitted',data:{email:email,passwordLength:password?.length,emailValid:email.includes('@')},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
 
     try {
       await signIn(email, password);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/97d11b96-e9f2-4d25-8c35-1cf76da3d5e9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:26',message:'Login successful, redirecting',data:{email:email},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       router.push("/");
     } catch (err) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/97d11b96-e9f2-4d25-8c35-1cf76da3d5e9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:31',message:'Login failed in handler',data:{email:email,errorType:err?.constructor?.name,errorMessage:err instanceof Error ? err.message : String(err)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B,C,D'})}).catch(()=>{});
+      // #endregion
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
@@ -31,7 +40,10 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md space-y-6 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
         <div className="text-center">
-          <h1 className="text-2xl font-semibold">NyumbaOps</h1>
+          <h1 className="text-2xl font-semibold">
+            <span className="text-gray-600">Nyumba</span>
+            <span className="text-black">Ops</span>
+          </h1>
           <p className="mt-2 text-sm text-gray-600">Sign in to continue</p>
         </div>
 

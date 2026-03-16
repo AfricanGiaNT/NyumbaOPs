@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { AuditModule } from './audit/audit.module';
 import { BookingsModule } from './bookings/bookings.module';
+import { CalendarSyncModule } from './calendar-sync/calendar-sync.module';
 import { CategoriesModule } from './categories/categories.module';
 import { GuestsModule } from './guests/guests.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -26,6 +27,7 @@ import { TransactionsModule } from './transactions/transactions.module';
     AnalyticsModule,
     GuestsModule,
     BookingsModule,
+    CalendarSyncModule,
     PublicModule,
     TelegramModule,
   ],

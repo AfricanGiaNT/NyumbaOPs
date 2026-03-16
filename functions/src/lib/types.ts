@@ -3,7 +3,8 @@ export type PropertyStatus = "ACTIVE" | "INACTIVE" | "MAINTENANCE";
 export type TransactionType = "REVENUE" | "EXPENSE";
 export type CategoryType = "REVENUE" | "EXPENSE";
 export type BookingStatus = "PENDING" | "CONFIRMED" | "CHECKED_IN" | "COMPLETED" | "CANCELLED";
-export type GuestSource = "AIRBNB" | "LOCAL" | "REFERRAL" | "REPEAT";
+export type GuestSource = "AIRBNB" | "LOCAL" | "REFERRAL" | "REPEAT" | "WEBSITE";
+export type PaymentIntentStatus = "PENDING" | "COMPLETED" | "EXPIRED" | "FAILED";
 
 export type PropertyImage = {
   url: string;

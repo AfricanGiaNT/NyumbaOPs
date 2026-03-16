@@ -4,6 +4,8 @@ import { PropertyCard } from "@/components/PropertyCard";
 import { TrustSection } from "@/components/TrustSection";
 import { Footer } from "@/components/Footer";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const featured = await fetchPublicProperties({ featured: true });
 

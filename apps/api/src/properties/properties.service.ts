@@ -22,6 +22,9 @@ export class PropertiesService {
         maxGuests: dto.maxGuests,
         nightlyRate: dto.nightlyRate,
         currency: dto.currency,
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+        googleMapsUrl: dto.googleMapsUrl,
         status: dto.status ?? PropertyStatus.ACTIVE,
       },
     });
@@ -62,6 +65,9 @@ export class PropertiesService {
         maxGuests: dto.maxGuests,
         nightlyRate: dto.nightlyRate,
         currency: dto.currency,
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+        googleMapsUrl: dto.googleMapsUrl,
         status: dto.status,
       },
     });

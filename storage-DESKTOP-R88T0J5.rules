@@ -1,0 +1,17 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Properties images - authenticated OWNER/STAFF can upload, public can read
+    match /properties/{propertyId}/{allPaths=**} {
+      allow write: if request.auth != null 
+        && request.auth.token.role in ['OWNER', 'STAFF'];
+      allow read: if true;
+    }
+    
+    // Default deny all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

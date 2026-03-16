@@ -2,6 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Property } from "../lib/types";
 
+const PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001";
+
 const statusStyles: Record<Property["status"], string> = {
   ACTIVE: "bg-emerald-100 text-emerald-800",
   INACTIVE: "bg-zinc-200 text-zinc-700",
@@ -71,6 +73,14 @@ export function PropertyCard({ property, onEdit }: PropertyCardProps) {
               Edit →
             </button>
           )}
+          <a
+            href={`${PUBLIC_SITE_URL}/properties/${property.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium text-emerald-600 hover:text-emerald-500"
+          >
+            Preview →
+          </a>
           <Link
             href={`/properties/${property.id}`}
             className="text-sm font-medium text-indigo-600 hover:text-indigo-500"

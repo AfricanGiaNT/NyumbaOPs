@@ -9,6 +9,7 @@ import {
 import { PublicUploadDto } from './dto/public-upload.dto';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import * as admin from 'firebase-admin';
 
 @Injectable()
 export class PublicService {
@@ -129,16 +130,7 @@ export class PublicService {
   }
 
   async createUploadUrl(payload: PublicUploadDto) {
-    if (!this.s3Client) {
-      throw new BadRequestException('R2 storage is not configured');
-    }
-
-    const bucket = process.env.R2_BUCKET;
-    const publicBaseUrl = process.env.R2_PUBLIC_BASE_URL;
-    if (!bucket || !publicBaseUrl) {
-      throw new BadRequestException('R2 bucket configuration is missing');
-    }
-
+    // Check if property exists
     const property = await this.prisma.property.findUnique({
       where: { id: payload.propertyId },
       select: { id: true },
@@ -149,6 +141,18 @@ export class PublicService {
 
     const safeFilename = this.sanitizeFilename(payload.filename);
     const key = `properties/${payload.propertyId}/${Date.now()}-${safeFilename}`;
+
+    // Use Firebase Storage for emulator or when R2 is not configured
+    if (!this.s3Client) {
+      return this.createFirebaseUploadUrl(payload, key);
+    }
+
+    // Use R2 for production
+    const bucket = process.env.R2_BUCKET;
+    const publicBaseUrl = process.env.R2_PUBLIC_BASE_URL;
+    if (!bucket || !publicBaseUrl) {
+      throw new BadRequestException('R2 bucket configuration is missing');
+    }
 
     const command = new PutObjectCommand({
       Bucket: bucket,
@@ -163,6 +167,53 @@ export class PublicService {
 
     const publicUrl = `${publicBaseUrl.replace(/\/$/, '')}/${key}`;
 
+    const image = await this.prisma.propertyImage.create({
+      data: {
+        propertyId: payload.propertyId,
+        url: publicUrl,
+        alt: payload.alt,
+        sortOrder: payload.sortOrder ?? 0,
+        isCover: payload.isCover ?? false,
+      },
+    });
+
+    return {
+      success: true,
+      data: {
+        uploadUrl,
+        publicUrl,
+        imageId: image.id,
+      },
+    };
+  }
+
+  private async createFirebaseUploadUrl(payload: PublicUploadDto, key: string) {
+    // Get Firebase Storage bucket
+    const bucket = admin.storage().bucket();
+    const bucketName = bucket.name;
+    const storageEmulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+
+    let uploadUrl: string;
+    let publicUrl: string;
+    
+    if (storageEmulatorHost) {
+      // Emulator doesn't support signed URLs - use direct upload endpoint
+      uploadUrl = `http://${storageEmulatorHost}/upload/storage/v1/b/${bucketName}/o?name=${encodeURIComponent(key)}`;
+      publicUrl = `http://${storageEmulatorHost}/v0/b/${bucketName}/o/${encodeURIComponent(key)}`;
+    } else {
+      // Production: Generate signed URL for upload (valid for 15 minutes)
+      const file = bucket.file(key);
+      const [signedUrl] = await file.getSignedUrl({
+        version: 'v4',
+        action: 'write',
+        expires: Date.now() + 15 * 60 * 1000,
+        contentType: payload.contentType,
+      });
+      uploadUrl = signedUrl;
+      publicUrl = `https://storage.googleapis.com/${bucketName}/${key}`;
+    }
+
+    // Save image metadata to database
     const image = await this.prisma.propertyImage.create({
       data: {
         propertyId: payload.propertyId,

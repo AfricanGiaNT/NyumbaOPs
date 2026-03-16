@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createRateLimiter = createRateLimiter;
-const buckets = new Map();
 function createRateLimiter({ windowMs, max, message }) {
+    const buckets = new Map();
     return (req, res, next) => {
         const now = Date.now();
         const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ?? req.ip;

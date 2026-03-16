@@ -72,6 +72,9 @@ model Property {
   maxGuests   Int
   nightlyRate Int?
   currency    Currency
+  latitude      Float?
+  longitude     Float?
+  googleMapsUrl String?        @map("google_maps_url")
   status      PropertyStatus @default(ACTIVE)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
@@ -81,6 +84,7 @@ model Property {
   bookings            Booking[]
   amenities           PropertyAmenity[]
   images              PropertyImage[]
+  calendarSync        CalendarSync?
 }
 
 model Amenity {
@@ -247,6 +251,9 @@ model Booking {
   checkedInBy  String? @map("checked_in_by")
   checkedOutBy String? @map("checked_out_by")
   notes         String?
+  source        String        @default("MANUAL")
+  externalId    String?       @map("external_id")
+  isSyncedBooking Boolean     @default(false) @map("is_synced_booking")
   createdBy     String
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -262,5 +269,45 @@ model Booking {
   @@index([checkInDate])
   @@index([checkOutDate])
   @@index([status])
+  @@index([source])
+  @@index([externalId])
+}
+
+model CalendarSync {
+  id              String    @id @default(uuid())
+  propertyId      String    @unique @map("property_id")
+  platform        String
+  icalUrl         String    @map("ical_url")
+  isEnabled       Boolean   @default(true) @map("is_enabled")
+  lastSyncAt      DateTime? @map("last_sync_at")
+  lastSyncStatus  String?   @map("last_sync_status")
+  lastSyncError   String?   @map("last_sync_error")
+  syncFrequency   Int       @default(30) @map("sync_frequency")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  property        Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  syncLogs        CalendarSyncLog[]
+
+  @@index([propertyId])
+  @@index([isEnabled])
+  @@map("calendar_syncs")
+}
+
+model CalendarSyncLog {
+  id              String        @id @default(uuid())
+  calendarSyncId  String        @map("calendar_sync_id")
+  status          String
+  eventsImported  Int           @default(0) @map("events_imported")
+  eventsSkipped   Int           @default(0) @map("events_skipped")
+  errorMessage    String?       @map("error_message")
+  syncDuration    Int?          @map("sync_duration")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  calendarSync    CalendarSync  @relation(fields: [calendarSyncId], references: [id], onDelete: Cascade)
+
+  @@index([calendarSyncId])
+  @@index([createdAt])
+  @@map("calendar_sync_logs")
 }
 

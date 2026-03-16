@@ -5,18 +5,23 @@ import cors from "cors";
 import { verifyFirebaseToken, requireRole } from "./lib/auth";
 import { db, storage } from "./lib/firebase";
 import { isValidStatusTransition } from "./lib/booking-utils";
-import { createCheckout, verifyWebhookSignature } from "./lib/paychangu";
+import { createCheckout, verifyWebhookSignature, initiateRefund } from "./lib/paychangu";
 import { createRateLimiter } from "./lib/rate-limiter";
 import {
   BookingStatus,
   CategoryType,
   Currency,
   TransactionType,
+  PaymentIntentStatus,
 } from "./lib/types";
 import { logAudit } from "./lib/audit";
 import { errorHandler, AppError, asyncHandler } from "./lib/errors";
 import type { AuthContext } from "./lib/auth";
 import type { Query } from "firebase-admin/firestore";
+import { syncCalendar } from "./calendar-sync/sync-engine";
+import { validateICalUrl } from "./calendar-sync/ical-parser";
+import { generateICalFeed } from "./calendar-sync/ical-generator";
+import { sendBookingConfirmation, sendPaymentSuccess, sendCancellationConfirmation } from "./lib/email";
 
 const inquiryRateLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
@@ -28,6 +33,12 @@ const publicApiRateLimiter = createRateLimiter({
   windowMs: 60 * 1000,
   max: 60,
   message: "Too many requests. Please try again later.",
+});
+
+const bookingRateLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: "Too many booking attempts. Please try again in an hour.",
 });
 
 const app = express();
@@ -61,6 +72,14 @@ const apiRouter = express.Router();
 const publicRouter = express.Router();
 const protectedRouter = express.Router();
 
+const normalizePropertyStatus = (status: unknown) => {
+  const normalized = typeof status === "string" ? status.toUpperCase() : "";
+  if (normalized === "ACTIVE" || normalized === "INACTIVE" || normalized === "MAINTENANCE") {
+    return normalized;
+  }
+  return "ACTIVE";
+};
+
 protectedRouter.use(verifyFirebaseToken);
 
 // ---- Public endpoints ----
@@ -71,13 +90,17 @@ publicRouter.get("/properties", publicApiRateLimiter, asyncHandler(async (req, r
 
   const snapshot = await db
     .collection("properties")
-    .where("status", "==", "ACTIVE")
     .orderBy("createdAt", "desc")
-    .offset(offset)
-    .limit(limit)
     .get();
 
-  const data = snapshot.docs.map((doc) => {
+  const allDocs = snapshot.docs.filter((doc) => {
+    const status = String(doc.data()?.status ?? "").toUpperCase();
+    return status === "ACTIVE";
+  });
+
+  const paginatedDocs = allDocs.slice(offset, offset + limit);
+
+  const data = paginatedDocs.map((doc) => {
     const payload = doc.data();
     const images = (payload.images ?? []) as { url: string; alt?: string | null; isCover?: boolean }[];
     const cover = images.find((image) => image.isCover) ?? images[0];
@@ -101,7 +124,7 @@ publicRouter.get("/properties", publicApiRateLimiter, asyncHandler(async (req, r
     success: true,
     data,
     meta: {
-      total: snapshot.size,
+      total: allDocs.length,
       limit,
       offset,
     },
@@ -114,7 +137,7 @@ publicRouter.get("/properties/:id", publicApiRateLimiter, asyncHandler(async (re
     return res.status(404).json({ message: "Property not found" });
   }
   const payload = doc.data();
-  if (payload?.status !== "ACTIVE") {
+  if (String(payload?.status ?? "").toUpperCase() !== "ACTIVE") {
     return res.status(404).json({ message: "Property not found" });
   }
 
@@ -193,6 +216,624 @@ publicRouter.post("/inquiries", inquiryRateLimiter, async (req, res) => {
     data: { id: docRef.id, ...created.data() },
   });
 });
+
+// ---- Public Booking Flow ----
+
+publicRouter.get("/properties/:propertyId/availability", publicApiRateLimiter, asyncHandler(async (req, res) => {
+  const { propertyId } = req.params;
+  const checkInDate = req.query.checkInDate as string | undefined;
+  const checkOutDate = req.query.checkOutDate as string | undefined;
+
+  if (!checkInDate || !checkOutDate) {
+    throw new AppError("VALIDATION_ERROR", "checkInDate and checkOutDate are required", 400);
+  }
+
+  const checkIn = new Date(checkInDate);
+  const checkOut = new Date(checkOutDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+    throw new AppError("VALIDATION_ERROR", "Invalid date format", 400);
+  }
+  if (checkIn < today) {
+    throw new AppError("VALIDATION_ERROR", "Check-in date cannot be in the past", 400);
+  }
+  if (checkOut <= checkIn) {
+    throw new AppError("VALIDATION_ERROR", "Check-out must be after check-in", 400);
+  }
+
+  const propertyDoc = await db.collection("properties").doc(propertyId).get();
+  if (!propertyDoc.exists || propertyDoc.data()?.status !== "ACTIVE") {
+    throw new AppError("PROPERTY_NOT_FOUND", "Property not found", 404);
+  }
+
+  const property = propertyDoc.data()!;
+  const nightlyRate = typeof property.nightlyRate === "number" ? property.nightlyRate : 0;
+  const currency = (property.currency ?? "MWK") as string;
+  const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (nights < 1) {
+    throw new AppError("VALIDATION_ERROR", "Minimum booking is 1 night", 400);
+  }
+
+  const snapshot = await db.collection("bookings")
+    .where("propertyId", "==", propertyId)
+    .where("status", "in", ["PENDING", "CONFIRMED", "CHECKED_IN"])
+    .get();
+
+  const now = Date.now();
+  const STALE_PENDING_MS = 30 * 60 * 1000; // 30 minutes
+
+  const overlaps = snapshot.docs.filter((doc) => {
+    const d = doc.data();
+    
+    // Skip stale PENDING bookings (unpaid after 30 min)
+    if (d.status === "PENDING" && d.paymentStatus === "UNPAID") {
+      const createdAt = d.createdAt ? new Date(d.createdAt).getTime() : 0;
+      if (now - createdAt > STALE_PENDING_MS) {
+        return false;
+      }
+    }
+    
+    return new Date(d.checkInDate) < checkOut && new Date(d.checkOutDate) > checkIn;
+  });
+
+  return res.json({
+    success: true,
+    data: {
+      available: overlaps.length === 0,
+      propertyId,
+      propertyName: property.name,
+      checkInDate,
+      checkOutDate,
+      nights,
+      nightlyRate,
+      currency,
+      totalAmount: nights * nightlyRate,
+      maxGuests: property.maxGuests ?? 1,
+    },
+  });
+}));
+
+// Blocked dates endpoint - returns booked date ranges for calendar UI
+publicRouter.get("/properties/:propertyId/blocked-dates", publicApiRateLimiter, asyncHandler(async (req, res) => {
+  const { propertyId } = req.params;
+
+  const propertyDoc = await db.collection("properties").doc(propertyId).get();
+  if (!propertyDoc.exists || propertyDoc.data()?.status !== "ACTIVE") {
+    throw new AppError("PROPERTY_NOT_FOUND", "Property not found", 404);
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Get confirmed/checked-in bookings for this property
+  const snapshot = await db.collection("bookings")
+    .where("propertyId", "==", propertyId)
+    .where("status", "in", ["CONFIRMED", "CHECKED_IN"])
+    .get();
+
+  const blockedRanges = snapshot.docs
+    .map((doc) => {
+      const d = doc.data();
+      return {
+        checkInDate: d.checkInDate,
+        checkOutDate: d.checkOutDate,
+      };
+    })
+    .filter((range) => new Date(range.checkOutDate) >= today);
+
+  // Also include active (non-expired) payment intents that hold dates
+  const intentSnapshot = await db.collection("payment_intents")
+    .where("propertyId", "==", propertyId)
+    .where("status", "==", "PENDING")
+    .get();
+
+  const now = new Date();
+  for (const doc of intentSnapshot.docs) {
+    const intent = doc.data();
+    if (new Date(intent.expiresAt) > now && new Date(intent.checkOutDate) >= today) {
+      blockedRanges.push({
+        checkInDate: intent.checkInDate,
+        checkOutDate: intent.checkOutDate,
+      });
+    }
+  }
+
+  return res.json({
+    success: true,
+    data: { propertyId, blockedRanges },
+  });
+}));
+
+// New reserve-on-payment endpoint - creates payment intent instead of booking
+publicRouter.post("/bookings/initiate", bookingRateLimiter, asyncHandler(async (req, res) => {
+  const payload = req.body ?? {};
+
+  // Validate required fields
+  if (!payload.propertyId || !payload.checkInDate || !payload.checkOutDate ||
+      !payload.guestName || !payload.guestEmail || !payload.guestPhone) {
+    throw new AppError("VALIDATION_ERROR",
+      "Missing required fields: propertyId, checkInDate, checkOutDate, guestName, guestEmail, guestPhone", 400);
+  }
+
+  // Validate dates
+  const checkIn = new Date(payload.checkInDate);
+  const checkOut = new Date(payload.checkOutDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+    throw new AppError("VALIDATION_ERROR", "Invalid date format", 400);
+  }
+  if (checkIn < today) {
+    throw new AppError("VALIDATION_ERROR", "Check-in date cannot be in the past", 400);
+  }
+  if (checkOut <= checkIn) {
+    throw new AppError("VALIDATION_ERROR", "Check-out must be after check-in", 400);
+  }
+
+  const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+  if (nights < 1) {
+    throw new AppError("VALIDATION_ERROR", "Minimum booking is 1 night", 400);
+  }
+
+  // Get property details
+  const propertyDoc = await db.collection("properties").doc(payload.propertyId).get();
+  if (!propertyDoc.exists || propertyDoc.data()?.status !== "ACTIVE") {
+    throw new AppError("PROPERTY_NOT_FOUND", "Property not found", 404);
+  }
+
+  const property = propertyDoc.data()!;
+  const nightlyRate = typeof property.nightlyRate === "number" ? property.nightlyRate : 0;
+  const currency = (property.currency ?? "MWK") as Currency;
+  const totalAmount = nights * nightlyRate;
+
+  if (totalAmount <= 0) {
+    throw new AppError("VALIDATION_ERROR", "Property pricing not configured", 400);
+  }
+
+  // Check availability (including active payment intents)
+  try {
+    await ensurePropertyAvailableWithIntents(payload.propertyId, payload.checkInDate, payload.checkOutDate);
+  } catch (error) {
+    throw new AppError("NOT_AVAILABLE", (error as Error).message, 409);
+  }
+
+  const numberOfGuests = Number(payload.numberOfGuests ?? 1);
+  if (property.maxGuests && numberOfGuests > property.maxGuests) {
+    throw new AppError("VALIDATION_ERROR", `Maximum ${property.maxGuests} guests allowed`, 400);
+  }
+
+  const now = new Date().toISOString();
+
+  // Generate PayChangu checkout
+  const nameParts = String(payload.guestName).trim().split(" ");
+  const firstName = nameParts[0] ?? "Guest";
+  const lastName = nameParts.slice(1).join(" ") || firstName;
+
+  const publicUrl = process.env.PUBLIC_URL ?? "http://localhost:3000";
+
+  // Create payment intent FIRST so we have a real ID for the redirect URLs
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min expiry
+  const intentRef = await db.collection("payment_intents").add({
+    propertyId: payload.propertyId,
+    checkInDate: payload.checkInDate,
+    checkOutDate: payload.checkOutDate,
+    guestName: payload.guestName,
+    guestEmail: payload.guestEmail,
+    guestPhone: payload.guestPhone,
+    numberOfGuests,
+    notes: payload.notes ?? null,
+    totalAmount,
+    currency,
+    paychanguCheckoutId: null,
+    status: "PENDING" as PaymentIntentStatus,
+    expiresAt,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  const confirmationUrl = `${publicUrl}/booking-confirmation?intentId=${intentRef.id}`;
+
+  const checkoutData = await createCheckout({
+    amount: totalAmount,
+    currency,
+    email: payload.guestEmail,
+    firstName,
+    lastName,
+    callbackUrl: confirmationUrl,
+    returnUrl: `${confirmationUrl}&status=failed`,
+    customization: {
+      title: `Payment for ${property.name ?? "Booking"}`,
+      description: `${nights} night${nights > 1 ? "s" : ""} – ${payload.checkInDate} to ${payload.checkOutDate}`,
+      logo: property.images?.[0]?.url,
+    },
+  });
+
+  // Store the PayChangu checkout ID on the intent
+  await intentRef.update({ paychanguCheckoutId: checkoutData.checkoutId });
+  
+  await logAudit("CREATE", "PaymentIntent", intentRef.id, "GUEST", {
+    propertyId: payload.propertyId,
+    guestEmail: payload.guestEmail,
+    checkoutId: checkoutData.checkoutId,
+  });
+
+  return res.json({
+    success: true,
+    data: {
+      intentId: intentRef.id,
+      checkoutUrl: checkoutData.checkoutUrl,
+      totalAmount,
+      currency,
+      expiresAt,
+    },
+  });
+}));
+
+// @deprecated Use POST /bookings/initiate for new public bookings
+publicRouter.post("/bookings", bookingRateLimiter, asyncHandler(async (req, res) => {
+  const payload = req.body ?? {};
+
+  if (!payload.propertyId || !payload.checkInDate || !payload.checkOutDate ||
+      !payload.guestName || !payload.guestEmail || !payload.guestPhone) {
+    throw new AppError("VALIDATION_ERROR",
+      "Missing required fields: propertyId, checkInDate, checkOutDate, guestName, guestEmail, guestPhone", 400);
+  }
+
+  const checkIn = new Date(payload.checkInDate);
+  const checkOut = new Date(payload.checkOutDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+    throw new AppError("VALIDATION_ERROR", "Invalid date format", 400);
+  }
+  if (checkIn < today) {
+    throw new AppError("VALIDATION_ERROR", "Check-in date cannot be in the past", 400);
+  }
+  if (checkOut <= checkIn) {
+    throw new AppError("VALIDATION_ERROR", "Check-out must be after check-in", 400);
+  }
+
+  const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+  if (nights < 1) {
+    throw new AppError("VALIDATION_ERROR", "Minimum booking is 1 night", 400);
+  }
+
+  const propertyDoc = await db.collection("properties").doc(payload.propertyId).get();
+  if (!propertyDoc.exists || propertyDoc.data()?.status !== "ACTIVE") {
+    throw new AppError("PROPERTY_NOT_FOUND", "Property not found", 404);
+  }
+
+  const property = propertyDoc.data()!;
+  const nightlyRate = typeof property.nightlyRate === "number" ? property.nightlyRate : 0;
+  const currency = (property.currency ?? "MWK") as Currency;
+  const totalAmount = nights * nightlyRate;
+
+  if (totalAmount <= 0) {
+    throw new AppError("VALIDATION_ERROR", "Property pricing not configured", 400);
+  }
+
+  // Auto-expire stale PENDING+UNPAID bookings for this property to free blocked dates
+  const staleSnapshot = await db.collection("bookings")
+    .where("propertyId", "==", payload.propertyId)
+    .where("status", "==", "PENDING")
+    .get();
+  const TWO_MIN = 2 * 60 * 1000;
+  const staleNow = Date.now();
+  for (const doc of staleSnapshot.docs) {
+    const d = doc.data();
+    if (d.paymentStatus === "UNPAID") {
+      const created = d.createdAt ? new Date(d.createdAt).getTime() : 0;
+      if (staleNow - created > TWO_MIN) {
+        await doc.ref.update({ status: "CANCELLED", notes: "Auto-expired: unpaid", updatedAt: new Date().toISOString() });
+      }
+    }
+  }
+
+  try {
+    await ensurePropertyAvailable(payload.propertyId, payload.checkInDate, payload.checkOutDate);
+  } catch (error) {
+    throw new AppError("NOT_AVAILABLE", (error as Error).message, 409);
+  }
+
+  const numberOfGuests = Number(payload.numberOfGuests ?? 1);
+  if (property.maxGuests && numberOfGuests > property.maxGuests) {
+    throw new AppError("VALIDATION_ERROR", `Maximum ${property.maxGuests} guests allowed`, 400);
+  }
+
+  const now = new Date().toISOString();
+
+  // Find or create guest by email
+  let guestId: string;
+  const existingGuests = await db.collection("guests")
+    .where("email", "==", payload.guestEmail)
+    .limit(1)
+    .get();
+
+  if (!existingGuests.empty) {
+    guestId = existingGuests.docs[0].id;
+    await existingGuests.docs[0].ref.update({
+      name: payload.guestName,
+      phone: payload.guestPhone,
+      updatedAt: now,
+    });
+  } else {
+    const guestRef = await db.collection("guests").add({
+      name: payload.guestName,
+      email: payload.guestEmail,
+      phone: payload.guestPhone,
+      source: "WEBSITE",
+      createdAt: now,
+      updatedAt: now,
+    });
+    guestId = guestRef.id;
+  }
+
+  // Create booking
+  const bookingRef = await db.collection("bookings").add({
+    guestId,
+    propertyId: payload.propertyId,
+    status: "PENDING",
+    checkInDate: payload.checkInDate,
+    checkOutDate: payload.checkOutDate,
+    numberOfGuests,
+    nights,
+    totalAmount,
+    amountPaid: 0,
+    paymentStatus: "UNPAID",
+    currency,
+    notes: payload.notes ?? null,
+    source: "WEBSITE",
+    createdBy: "GUEST",
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  await logAudit("CREATE", "Booking", bookingRef.id, "GUEST", {
+    source: "WEBSITE",
+    guestEmail: payload.guestEmail,
+  });
+
+  // Generate PayChangu payment link
+  const nameParts = String(payload.guestName).trim().split(" ");
+  const firstName = nameParts[0] ?? "Guest";
+  const lastName = nameParts.slice(1).join(" ") || firstName;
+
+  const publicUrl = process.env.PUBLIC_URL ?? "http://localhost:3000";
+  const confirmationUrl = `${publicUrl}/booking-confirmation?bookingId=${bookingRef.id}`;
+
+  const checkoutData = await createCheckout({
+    amount: totalAmount,
+    currency,
+    email: payload.guestEmail,
+    firstName,
+    lastName,
+    callbackUrl: confirmationUrl,
+    returnUrl: `${confirmationUrl}&status=failed`,
+    customization: {
+      title: `Payment for ${property.name ?? "Booking"}`,
+      description: `${nights} night${nights > 1 ? "s" : ""} – ${payload.checkInDate} to ${payload.checkOutDate}`,
+      logo: property.images?.[0]?.url,
+    },
+  });
+
+  // Create payment record
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  const paymentRef = await db.collection("payments").add({
+    bookingId: bookingRef.id,
+    amount: totalAmount,
+    currency,
+    method: "MOBILE_MONEY",
+    status: "PENDING",
+    reference: null,
+    paychanguReference: null,
+    paychanguCheckoutId: checkoutData.checkoutId,
+    paymentLink: checkoutData.checkoutUrl,
+    paymentLinkExpiresAt: expiresAt,
+    notes: "Public website booking",
+    createdBy: "GUEST",
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  await logAudit("CREATE", "Payment", paymentRef.id, "GUEST", {
+    bookingId: bookingRef.id,
+    checkoutId: checkoutData.checkoutId,
+  });
+
+  // Send booking confirmation email (fire-and-forget)
+  sendBookingConfirmation({
+    guestEmail: payload.guestEmail,
+    guestName: payload.guestName,
+    bookingId: bookingRef.id,
+    propertyName: property.name ?? "Property",
+    checkInDate: payload.checkInDate,
+    checkOutDate: payload.checkOutDate,
+    nights,
+    totalAmount,
+    currency,
+    paymentLink: checkoutData.checkoutUrl,
+  }).catch((err) => console.error("Failed to send booking email:", err));
+
+  return res.json({
+    success: true,
+    data: {
+      bookingId: bookingRef.id,
+      guestId,
+      paymentId: paymentRef.id,
+      checkoutUrl: checkoutData.checkoutUrl,
+      totalAmount,
+      currency,
+      expiresAt,
+    },
+  });
+}));
+
+publicRouter.get("/bookings/:bookingId", publicApiRateLimiter, asyncHandler(async (req, res) => {
+  const bookingDoc = await db.collection("bookings").doc(req.params.bookingId).get();
+  if (!bookingDoc.exists) {
+    throw new AppError("BOOKING_NOT_FOUND", "Booking not found", 404);
+  }
+
+  const booking = bookingDoc.data()!;
+
+  // Fetch property name and image
+  let propertyName = "Property";
+  let propertyImage: string | null = null;
+  if (booking.propertyId) {
+    const propDoc = await db.collection("properties").doc(booking.propertyId).get();
+    if (propDoc.exists) {
+      const propData = propDoc.data()!;
+      propertyName = propData.name ?? "Property";
+      const images = (propData.images ?? []) as { url: string; isCover?: boolean }[];
+      const cover = images.find((img) => img.isCover) ?? images[0];
+      propertyImage = cover?.url ?? null;
+    }
+  }
+
+  // Fetch guest name
+  let guestName = "Guest";
+  if (booking.guestId) {
+    const guestDoc = await db.collection("guests").doc(booking.guestId).get();
+    if (guestDoc.exists) {
+      guestName = guestDoc.data()?.name ?? "Guest";
+    }
+  }
+
+  // Fetch latest payment status
+  const paymentsSnap = await db.collection("payments")
+    .where("bookingId", "==", req.params.bookingId)
+    .orderBy("createdAt", "desc")
+    .limit(1)
+    .get();
+
+  const latestPayment = paymentsSnap.empty ? null : paymentsSnap.docs[0].data();
+
+  return res.json({
+    success: true,
+    data: {
+      id: bookingDoc.id,
+      propertyName,
+      propertyImage,
+      guestName,
+      checkInDate: booking.checkInDate,
+      checkOutDate: booking.checkOutDate,
+      numberOfGuests: booking.numberOfGuests ?? 1,
+      nights: booking.nights ?? null,
+      totalAmount: booking.totalAmount ?? 0,
+      amountPaid: booking.amountPaid ?? 0,
+      currency: booking.currency ?? "MWK",
+      paymentStatus: booking.paymentStatus ?? "UNPAID",
+      status: booking.status,
+      paymentLink: latestPayment?.paymentLink ?? null,
+      paymentLinkExpiresAt: latestPayment?.paymentLinkExpiresAt ?? null,
+      createdAt: booking.createdAt,
+    },
+  });
+}));
+
+publicRouter.post("/bookings/:bookingId/cancel", publicApiRateLimiter, asyncHandler(async (req, res) => {
+  const { guestEmail, reason } = req.body ?? {};
+
+  if (!guestEmail) {
+    throw new AppError("VALIDATION_ERROR", "guestEmail is required for verification", 400);
+  }
+
+  const bookingDoc = await db.collection("bookings").doc(req.params.bookingId).get();
+  if (!bookingDoc.exists) {
+    throw new AppError("BOOKING_NOT_FOUND", "Booking not found", 404);
+  }
+
+  const booking = bookingDoc.data()!;
+
+  // Verify email matches
+  let guestEmailOnFile: string | null = null;
+  if (booking.guestId) {
+    const guestDoc = await db.collection("guests").doc(booking.guestId).get();
+    guestEmailOnFile = guestDoc.exists ? guestDoc.data()?.email ?? null : null;
+  }
+
+  if (!guestEmailOnFile || guestEmailOnFile.toLowerCase() !== guestEmail.toLowerCase()) {
+    throw new AppError("UNAUTHORIZED", "Email does not match booking", 403);
+  }
+
+  if (!["PENDING", "CONFIRMED"].includes(booking.status)) {
+    throw new AppError("INVALID_STATUS",
+      `Cannot cancel a booking with status ${booking.status}`, 400);
+  }
+
+  // Cancellation policy: calculate refund
+  const checkInDate = new Date(booking.checkInDate);
+  const now = new Date();
+  const hoursUntilCheckIn = (checkInDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+  const amountPaid = typeof booking.amountPaid === "number" ? booking.amountPaid : 0;
+
+  let refundAmount = 0;
+  let refundNote = "";
+  if (hoursUntilCheckIn >= 48) {
+    refundAmount = amountPaid;
+    refundNote = "Full refund – cancelled 48+ hours before check-in";
+  } else if (hoursUntilCheckIn >= 24) {
+    refundAmount = Math.floor(amountPaid * 0.5);
+    refundNote = "50% refund – cancelled 24-48 hours before check-in";
+  } else {
+    refundAmount = 0;
+    refundNote = "No refund – cancelled less than 24 hours before check-in";
+  }
+
+  const nowStr = now.toISOString();
+
+  await bookingDoc.ref.update({
+    status: "CANCELLED",
+    cancellationReason: reason ?? null,
+    cancellationRefundAmount: refundAmount,
+    cancellationRefundNote: refundNote,
+    cancelledAt: nowStr,
+    updatedAt: nowStr,
+  });
+
+  await logAudit("UPDATE", "Booking", bookingDoc.id, "GUEST", {
+    action: "CANCEL",
+    refundAmount,
+    reason: reason ?? null,
+  });
+
+  // Fetch property name for email
+  let propertyName = "Property";
+  if (booking.propertyId) {
+    const propDoc = await db.collection("properties").doc(booking.propertyId).get();
+    if (propDoc.exists) {
+      propertyName = propDoc.data()?.name ?? "Property";
+    }
+  }
+
+  // Send cancellation email (fire-and-forget)
+  sendCancellationConfirmation({
+    guestEmail,
+    guestName: guestEmailOnFile ? (await db.collection("guests").doc(booking.guestId).get()).data()?.name ?? "Guest" : "Guest",
+    bookingId: bookingDoc.id,
+    propertyName,
+    checkInDate: booking.checkInDate,
+    checkOutDate: booking.checkOutDate,
+    refundAmount,
+    currency: booking.currency ?? "MWK",
+  }).catch((err) => console.error("Failed to send cancellation email:", err));
+
+  return res.json({
+    success: true,
+    data: {
+      bookingId: bookingDoc.id,
+      status: "CANCELLED",
+      refundAmount,
+      refundNote,
+      currency: booking.currency ?? "MWK",
+    },
+  });
+}));
 
 publicRouter.post("/uploads", asyncHandler(async (req, res) => {
   // #region agent log
@@ -293,7 +934,7 @@ publicRouter.post("/uploads", asyncHandler(async (req, res) => {
 
   // For emulator, use localhost URL; for production, use Google Cloud Storage URL  
   const publicUrl = isEmulator
-    ? `http://${process.env.FIREBASE_STORAGE_EMULATOR_HOST || '127.0.0.1:9199'}/v0/b/${bucket.name}/o/${encodeURIComponent(key)}`
+    ? `http://${process.env.FIREBASE_STORAGE_EMULATOR_HOST || '127.0.0.1:9199'}/v0/b/${bucket.name}/o/${encodeURIComponent(key)}?alt=media`
     : `https://storage.googleapis.com/${bucket.name}/${key}`;
   
   // #region agent log
@@ -318,6 +959,37 @@ publicRouter.post("/uploads", asyncHandler(async (req, res) => {
 
   return res.json({ success: true, data: { uploadUrl: uploadUrl, publicUrl: image.url } });
 }));
+
+// Public endpoint: fetch payment intent status (used by booking-confirmation polling)
+publicRouter.get("/payment-intents/:intentId", async (req, res) => {
+  const doc = await db.collection("payment_intents").doc(req.params.intentId).get();
+
+  if (!doc.exists) {
+    return res.status(404).json({ error: "Payment intent not found" });
+  }
+
+  const data = doc.data()!;
+
+  // Find associated booking if intent is completed
+  let bookingId: string | null = null;
+  if (data.status === "COMPLETED") {
+    const bookingsSnap = await db
+      .collection("bookings")
+      .where("propertyId", "==", data.propertyId)
+      .where("checkInDate", "==", data.checkInDate)
+      .where("checkOutDate", "==", data.checkOutDate)
+      .limit(1)
+      .get();
+    if (!bookingsSnap.empty) {
+      bookingId = bookingsSnap.docs[0].id;
+    }
+  }
+
+  return res.json({
+    status: data.status,
+    bookingId,
+  });
+});
 
 publicRouter.post("/webhooks/paychangu", async (req, res) => {
   const signature = req.headers["x-paychangu-signature"] as string | undefined;
@@ -358,7 +1030,7 @@ protectedRouter.post("/properties", requireRole(["OWNER", "STAFF"]), async (req,
     maxGuests: payload.maxGuests,
     nightlyRate: payload.nightlyRate ?? null,
     currency: payload.currency as Currency,
-    status: payload.status ?? "ACTIVE",
+    status: normalizePropertyStatus(payload.status),
     amenities: payload.amenities ?? [],
     images: payload.images ?? [],
     createdAt: now,
@@ -390,7 +1062,11 @@ protectedRouter.patch("/properties/:id", requireRole(["OWNER", "STAFF"]), async 
   if (!doc.exists) {
     return res.status(404).json({ message: "Property not found" });
   }
-  await docRef.update({ ...req.body, updatedAt: new Date().toISOString() });
+  const body = { ...(req.body ?? {}) };
+  if (Object.prototype.hasOwnProperty.call(body, "status")) {
+    body.status = normalizePropertyStatus(body.status);
+  }
+  await docRef.update({ ...body, updatedAt: new Date().toISOString() });
   await logAudit("UPDATE", "Property", docRef.id, req.auth!.uid, { name: req.body?.name });
   const updated = await docRef.get();
   return res.json({ id: updated.id, ...updated.data() });
@@ -768,9 +1444,8 @@ protectedRouter.post("/bookings/:bookingId/payment-link", requireRole(["OWNER", 
   const lastName = nameParts.slice(1).join(" ") || firstName;
   const currency = (booking.currency ?? property.currency ?? "MWK") as Currency;
 
-  const webhookUrl =
-    process.env.PAYCHANGU_WEBHOOK_URL ??
-    `${process.env.PUBLIC_URL}/api/v1/public/webhooks/paychangu`;
+  const publicUrl = process.env.PUBLIC_URL ?? "http://localhost:3000";
+  const confirmationUrl = `${publicUrl}/booking-confirmation?bookingId=${req.params.bookingId}`;
 
   const checkoutData = await createCheckout({
     amount: remainingAmount,
@@ -778,8 +1453,8 @@ protectedRouter.post("/bookings/:bookingId/payment-link", requireRole(["OWNER", 
     email: guest.email ?? undefined,
     firstName,
     lastName,
-    callbackUrl: webhookUrl,
-    returnUrl: `${process.env.PUBLIC_URL}/booking-confirmation?bookingId=${req.params.bookingId}`,
+    callbackUrl: confirmationUrl,
+    returnUrl: `${confirmationUrl}&status=failed`,
     customization: {
       title: `Payment for ${property.name ?? "Booking"}`,
       description: `Booking from ${booking.checkInDate} to ${booking.checkOutDate}`,
@@ -929,6 +1604,72 @@ protectedRouter.get("/bookings/:bookingId/payments", async (req, res) => {
     .orderBy("createdAt", "desc")
     .get();
   return res.json({ success: true, data: snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) });
+});
+
+protectedRouter.get("/payment-intents", async (req, res) => {
+  const limit = Number(req.query.limit ?? 50);
+  const status = req.query.status as string | undefined;
+  
+  let query = db.collection("payment_intents")
+    .orderBy("createdAt", "desc")
+    .limit(limit);
+  
+  if (status) {
+    query = query.where("status", "==", status) as any;
+  }
+  
+  const snapshot = await query.get();
+  
+  const intents = await Promise.all(
+    snapshot.docs.map(async (doc) => {
+      const data = doc.data();
+      
+      // Fetch property name
+      let propertyName = "Unknown Property";
+      if (data.propertyId) {
+        const propDoc = await db.collection("properties").doc(data.propertyId).get();
+        if (propDoc.exists) {
+          propertyName = propDoc.data()?.name ?? "Unknown Property";
+        }
+      }
+      
+      return {
+        id: doc.id,
+        ...data,
+        propertyName,
+      };
+    })
+  );
+  
+  return res.json({ success: true, data: intents });
+});
+
+protectedRouter.get("/payment-intents/:intentId", async (req, res) => {
+  const doc = await db.collection("payment_intents").doc(req.params.intentId).get();
+  
+  if (!doc.exists) {
+    throw new AppError("NOT_FOUND", "Payment intent not found", 404);
+  }
+  
+  const data = doc.data()!;
+  
+  // Fetch property details
+  let propertyName = "Unknown Property";
+  if (data.propertyId) {
+    const propDoc = await db.collection("properties").doc(data.propertyId).get();
+    if (propDoc.exists) {
+      propertyName = propDoc.data()?.name ?? "Unknown Property";
+    }
+  }
+  
+  return res.json({
+    success: true,
+    data: {
+      id: doc.id,
+      ...data,
+      propertyName,
+    },
+  });
 });
 
 protectedRouter.get("/bookings/:id", async (req, res) => {
@@ -1164,17 +1905,70 @@ async function ensurePropertyAvailable(
     .where("propertyId", "==", propertyId)
     .where("status", "in", ["PENDING", "CONFIRMED", "CHECKED_IN"])
     .get();
+  const now = Date.now();
+  const STALE_PENDING_MS = 30 * 60 * 1000; // 30 minutes
   const overlaps = snapshot.docs.filter((doc) => {
     if (excludeBookingId && doc.id === excludeBookingId) {
       return false;
     }
     const data = doc.data();
+    // Skip stale PENDING bookings (unpaid after 30 min) — they are abandoned
+    if (data.status === "PENDING" && data.paymentStatus === "UNPAID") {
+      const createdAt = data.createdAt ? new Date(data.createdAt).getTime() : 0;
+      if (now - createdAt > STALE_PENDING_MS) {
+        return false;
+      }
+    }
     const bookingCheckIn = new Date(data.checkInDate);
     const bookingCheckOut = new Date(data.checkOutDate);
     return bookingCheckIn < checkOut && bookingCheckOut > checkIn;
   });
   if (overlaps.length > 0) {
     throw new Error("Property is not available for these dates");
+  }
+}
+
+async function ensurePropertyAvailableWithIntents(
+  propertyId: string,
+  checkInDate: string,
+  checkOutDate: string,
+  excludeIntentId?: string,
+) {
+  // First check regular bookings
+  await ensurePropertyAvailable(propertyId, checkInDate, checkOutDate);
+  
+  // Then check active payment intents
+  const checkIn = new Date(checkInDate);
+  const checkOut = new Date(checkOutDate);
+  const now = new Date();
+  
+  const intentsSnapshot = await db
+    .collection("payment_intents")
+    .where("propertyId", "==", propertyId)
+    .where("status", "==", "PENDING")
+    .get();
+  
+  const overlappingIntents = intentsSnapshot.docs.filter((doc) => {
+    if (excludeIntentId && doc.id === excludeIntentId) {
+      return false;
+    }
+    
+    const data = doc.data();
+    const expiresAt = new Date(data.expiresAt);
+    
+    // Skip expired intents
+    if (expiresAt < now) {
+      return false;
+    }
+    
+    const intentCheckIn = new Date(data.checkInDate);
+    const intentCheckOut = new Date(data.checkOutDate);
+    
+    return intentCheckIn < checkOut && intentCheckOut > checkIn;
+  });
+  
+  if (overlappingIntents.length > 0) {
+    throw new Error("Property is being reserved by another customer. Please try again in a few minutes.");
   }
 }
 
@@ -1223,6 +2017,169 @@ async function handlePaymentSuccess(data: any) {
     return;
   }
 
+  const now = new Date().toISOString();
+
+  // First, check if this is a payment intent (new flow)
+  const intentsSnapshot = await db
+    .collection("payment_intents")
+    .where("paychanguCheckoutId", "==", checkoutId)
+    .limit(1)
+    .get();
+
+  if (!intentsSnapshot.empty) {
+    // NEW FLOW: Create booking from payment intent
+    const intentDoc = intentsSnapshot.docs[0];
+    const intent = intentDoc.data();
+
+    // Double-check availability before creating booking
+    try {
+      await ensurePropertyAvailable(intent.propertyId, intent.checkInDate, intent.checkOutDate);
+    } catch (error) {
+      // Dates no longer available - initiate automatic refund
+      await intentDoc.ref.update({
+        status: "FAILED" as PaymentIntentStatus,
+        updatedAt: now,
+      });
+      
+      try {
+        const refundResult = await initiateRefund({
+          checkoutId: intent.paychanguCheckoutId,
+          amount: intent.totalAmount,
+          reason: "Property no longer available for selected dates",
+        });
+        
+        await logAudit("REFUND", "PaymentIntent", intentDoc.id, "SYSTEM", {
+          reason: "Dates no longer available after payment",
+          refundId: refundResult.refundId,
+          error: (error as Error).message,
+        });
+      } catch (refundError) {
+        // Log refund failure for manual processing
+        await logAudit("ERROR", "PaymentIntent", intentDoc.id, "SYSTEM", {
+          reason: "Automatic refund failed - requires manual processing",
+          originalError: (error as Error).message,
+          refundError: (refundError as Error).message,
+        });
+      }
+      
+      return;
+    }
+
+    // Find or create guest
+    let guestId: string;
+    const existingGuests = await db.collection("guests")
+      .where("email", "==", intent.guestEmail)
+      .limit(1)
+      .get();
+
+    if (!existingGuests.empty) {
+      guestId = existingGuests.docs[0].id;
+      await existingGuests.docs[0].ref.update({
+        name: intent.guestName,
+        phone: intent.guestPhone,
+        updatedAt: now,
+      });
+    } else {
+      const guestRef = await db.collection("guests").add({
+        name: intent.guestName,
+        email: intent.guestEmail,
+        phone: intent.guestPhone,
+        source: "WEBSITE",
+        createdAt: now,
+        updatedAt: now,
+      });
+      guestId = guestRef.id;
+    }
+
+    // Calculate nights
+    const checkIn = new Date(intent.checkInDate);
+    const checkOut = new Date(intent.checkOutDate);
+    const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Create CONFIRMED booking (payment already succeeded)
+    const bookingRef = await db.collection("bookings").add({
+      guestId,
+      propertyId: intent.propertyId,
+      status: "CONFIRMED",
+      checkInDate: intent.checkInDate,
+      checkOutDate: intent.checkOutDate,
+      numberOfGuests: intent.numberOfGuests,
+      nights,
+      totalAmount: intent.totalAmount,
+      amountPaid: intent.totalAmount,
+      paymentStatus: "PAID",
+      currency: intent.currency,
+      notes: intent.notes ?? null,
+      source: "WEBSITE",
+      createdBy: "GUEST",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Create payment record
+    await db.collection("payments").add({
+      bookingId: bookingRef.id,
+      amount: intent.totalAmount,
+      currency: intent.currency,
+      method: "MOBILE_MONEY",
+      status: "COMPLETED",
+      reference: data.mobile_number ?? data.card_last4 ?? null,
+      paychanguReference: data.tx_ref ?? data.txRef ?? null,
+      paychanguCheckoutId: checkoutId,
+      paymentLink: null,
+      paymentLinkExpiresAt: null,
+      notes: "Public website booking - paid on checkout",
+      createdBy: "GUEST",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Create revenue transaction
+    const categoryId = await getOrCreateRevenueCategory();
+    await db.collection("transactions").add({
+      propertyId: intent.propertyId,
+      type: "REVENUE",
+      categoryId,
+      amount: intent.totalAmount,
+      currency: intent.currency,
+      date: now,
+      notes: `PayChangu payment for booking ${bookingRef.id}`,
+      createdBy: "SYSTEM",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // Mark intent as completed
+    await intentDoc.ref.update({
+      status: "COMPLETED" as PaymentIntentStatus,
+      updatedAt: now,
+    });
+
+    await logAudit("CREATE", "Booking", bookingRef.id, "GUEST", {
+      source: "WEBSITE",
+      fromIntent: intentDoc.id,
+      guestEmail: intent.guestEmail,
+    });
+
+    // Send confirmation email
+    const propertyDoc = await db.collection("properties").doc(intent.propertyId).get();
+    const propertyName = propertyDoc.exists ? propertyDoc.data()?.name ?? "Property" : "Property";
+
+    sendPaymentSuccess({
+      guestEmail: intent.guestEmail,
+      guestName: intent.guestName,
+      bookingId: bookingRef.id,
+      propertyName,
+      checkInDate: intent.checkInDate,
+      checkOutDate: intent.checkOutDate,
+      amountPaid: intent.totalAmount,
+      currency: intent.currency,
+    }).catch((err) => console.error("Failed to send confirmation email:", err));
+
+    return;
+  }
+
+  // OLD FLOW: Handle existing payment records (for backward compatibility)
   const paymentsSnapshot = await db
     .collection("payments")
     .where("paychanguCheckoutId", "==", checkoutId)
@@ -1230,7 +2187,6 @@ async function handlePaymentSuccess(data: any) {
     .get();
 
   if (paymentsSnapshot.empty) {
-    // Payment not found - log to audit for tracking
     await logAudit('WARNING', 'PaymentWebhook', checkoutId, 'SYSTEM', {
       reason: 'Payment not found for checkout',
       checkoutId,
@@ -1240,7 +2196,6 @@ async function handlePaymentSuccess(data: any) {
 
   const paymentDoc = paymentsSnapshot.docs[0];
   const payment = paymentDoc.data();
-  const now = new Date().toISOString();
 
   await paymentDoc.ref.update({
     status: "COMPLETED",
@@ -1267,11 +2222,18 @@ async function handlePaymentSuccess(data: any) {
           ? "PARTIAL"
           : "UNPAID";
 
-  await bookingDoc.ref.update({
+  const bookingUpdate: Record<string, any> = {
     amountPaid: newAmountPaid,
     paymentStatus,
     updatedAt: now,
-  });
+  };
+
+  // Auto-confirm PENDING bookings when fully paid
+  if (paymentStatus === "PAID" && booking.status === "PENDING") {
+    bookingUpdate.status = "CONFIRMED";
+  }
+
+  await bookingDoc.ref.update(bookingUpdate);
 
   const categoryId = await getOrCreateRevenueCategory();
   await db.collection("transactions").add({
@@ -1291,6 +2253,29 @@ async function handlePaymentSuccess(data: any) {
     status: "COMPLETED",
     txRef: data.tx_ref ?? data.txRef ?? null,
   });
+
+  // Send payment success email to guest
+  if (booking.guestId) {
+    const guestDoc = await db.collection("guests").doc(booking.guestId).get();
+    const guest = guestDoc.exists ? guestDoc.data() : null;
+    if (guest?.email) {
+      let propertyName = "Property";
+      if (booking.propertyId) {
+        const propDoc = await db.collection("properties").doc(booking.propertyId).get();
+        if (propDoc.exists) propertyName = propDoc.data()?.name ?? "Property";
+      }
+      sendPaymentSuccess({
+        guestEmail: guest.email,
+        guestName: guest.name ?? "Guest",
+        bookingId: payment.bookingId,
+        propertyName,
+        checkInDate: booking.checkInDate,
+        checkOutDate: booking.checkOutDate,
+        amountPaid: newAmountPaid,
+        currency: payment.currency ?? "MWK",
+      }).catch((err) => console.error("Failed to send payment success email:", err));
+    }
+  }
 }
 
 async function handlePaymentFailed(data: any) {
@@ -1342,9 +2327,277 @@ export const expireInquiries = onSchedule("every 6 hours", async () => {
   await batch.commit();
 });
 
-apiRouter.use("/v1/public", publicRouter);
+// Cleanup expired payment intents every 5 minutes
+export const cleanupExpiredIntents = onSchedule("*/5 * * * *", async () => {
+  const now = new Date();
+  const snapshot = await db
+    .collection("payment_intents")
+    .where("status", "==", "PENDING")
+    .where("expiresAt", "<", now.toISOString())
+    .get();
+
+  console.log(`Cleaning up ${snapshot.size} expired payment intents`);
+
+  const batch = db.batch();
+  snapshot.docs.forEach((doc) => {
+    batch.update(doc.ref, {
+      status: "EXPIRED" as PaymentIntentStatus,
+      updatedAt: now.toISOString(),
+    });
+  });
+
+  await batch.commit();
+});
+
+// iCal Export Endpoint (Public - for Airbnb to import our calendar)
+// Route with .ics extension (required by Airbnb)
+publicRouter.get("/ical/:propertyId.ics", asyncHandler(async (req, res) => {
+  const { propertyId } = req.params;
+  
+  try {
+    const icalContent = await generateICalFeed(propertyId);
+    
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${propertyId}.ics"`);
+    res.send(icalContent);
+  } catch (error: any) {
+    throw new AppError("EXPORT_FAILED", error.message || "Failed to generate iCal feed", 500);
+  }
+}));
+
+// Route without .ics extension (backward compatibility)
+publicRouter.get("/ical/:propertyId", asyncHandler(async (req, res) => {
+  const { propertyId } = req.params;
+  
+  try {
+    const icalContent = await generateICalFeed(propertyId);
+    
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${propertyId}.ics"`);
+    res.send(icalContent);
+  } catch (error: any) {
+    throw new AppError("EXPORT_FAILED", error.message || "Failed to generate iCal feed", 500);
+  }
+}));
+
+// Calendar Sync Routes (Public test endpoint for local development)
+publicRouter.post("/test/calendar-sync", asyncHandler(async (req, res) => {
+  const { propertyId, icalUrl } = req.body;
+
+  if (!propertyId || !icalUrl) {
+    throw new AppError("VALIDATION_ERROR", "Missing propertyId or icalUrl", 400);
+  }
+
+  // Create sync config
+  const now = new Date().toISOString();
+  await db.collection("calendar_syncs").doc(propertyId).set({
+    propertyId,
+    platform: "AIRBNB",
+    icalUrl,
+    isEnabled: true,
+    syncFrequency: 30,
+    lastSyncAt: null,
+    lastSyncStatus: null,
+    lastSyncError: null,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  // Trigger sync
+  const result = await syncCalendar(propertyId);
+
+  // Log result
+  await db.collection("calendar_sync_logs").add({
+    propertyId,
+    status: result.success ? "SUCCESS" : "FAILED",
+    eventsImported: result.eventsImported,
+    eventsSkipped: result.eventsSkipped,
+    errorMessage: result.error || null,
+    syncDuration: result.duration,
+    createdAt: now,
+  });
+
+  res.json({ success: true, data: result });
+}));
+
+// Calendar Sync Routes
+protectedRouter.post("/v1/calendar-syncs", requireRole(["OWNER"]), asyncHandler(async (req, res) => {
+  const { propertyId, platform, icalUrl, isEnabled = true, syncFrequency = 30 } = req.body;
+
+  if (!propertyId || !platform || !icalUrl) {
+    throw new AppError("VALIDATION_ERROR", "Missing required fields", 400);
+  }
+
+  if (!validateICalUrl(icalUrl)) {
+    throw new AppError("INVALID_ICAL_URL", "Invalid iCal URL. Must be HTTPS and end with .ics", 400);
+  }
+
+  const propertyDoc = await db.collection("properties").doc(propertyId).get();
+  if (!propertyDoc.exists) {
+    throw new AppError("PROPERTY_NOT_FOUND", "Property not found", 404);
+  }
+
+  const existingSync = await db.collection("calendar_syncs").doc(propertyId).get();
+  if (existingSync.exists) {
+    throw new AppError("SYNC_EXISTS", "Calendar sync already exists for this property", 409);
+  }
+
+  const now = new Date().toISOString();
+  await db.collection("calendar_syncs").doc(propertyId).set({
+    propertyId,
+    platform,
+    icalUrl,
+    isEnabled,
+    syncFrequency,
+    lastSyncAt: null,
+    lastSyncStatus: null,
+    lastSyncError: null,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  const created = await db.collection("calendar_syncs").doc(propertyId).get();
+  res.json({ success: true, data: { id: created.id, ...created.data() } });
+}));
+
+protectedRouter.get("/v1/calendar-syncs", requireRole(["OWNER", "STAFF"]), asyncHandler(async (req, res) => {
+  const snapshot = await db.collection("calendar_syncs").orderBy("createdAt", "desc").get();
+  const syncs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  res.json({ success: true, data: syncs });
+}));
+
+protectedRouter.get("/v1/calendar-syncs/:propertyId", requireRole(["OWNER", "STAFF"]), asyncHandler(async (req, res) => {
+  const doc = await db.collection("calendar_syncs").doc(req.params.propertyId).get();
+  if (!doc.exists) {
+    throw new AppError("SYNC_NOT_FOUND", "Calendar sync not found", 404);
+  }
+
+  const logsSnapshot = await db.collection("calendar_sync_logs")
+    .where("propertyId", "==", req.params.propertyId)
+    .orderBy("createdAt", "desc")
+    .limit(10)
+    .get();
+
+  const logs = logsSnapshot.docs.map(log => ({ id: log.id, ...log.data() }));
+
+  res.json({ 
+    success: true, 
+    data: { 
+      id: doc.id, 
+      ...doc.data(),
+      syncLogs: logs,
+    } 
+  });
+}));
+
+protectedRouter.patch("/v1/calendar-syncs/:propertyId", requireRole(["OWNER"]), asyncHandler(async (req, res) => {
+  const { platform, icalUrl, isEnabled, syncFrequency } = req.body;
+
+  if (icalUrl && !validateICalUrl(icalUrl)) {
+    throw new AppError("INVALID_ICAL_URL", "Invalid iCal URL. Must be HTTPS and end with .ics", 400);
+  }
+
+  const updateData: any = { updatedAt: new Date().toISOString() };
+  if (platform !== undefined) updateData.platform = platform;
+  if (icalUrl !== undefined) updateData.icalUrl = icalUrl;
+  if (isEnabled !== undefined) updateData.isEnabled = isEnabled;
+  if (syncFrequency !== undefined) updateData.syncFrequency = syncFrequency;
+
+  await db.collection("calendar_syncs").doc(req.params.propertyId).update(updateData);
+
+  const updated = await db.collection("calendar_syncs").doc(req.params.propertyId).get();
+  res.json({ success: true, data: { id: updated.id, ...updated.data() } });
+}));
+
+protectedRouter.delete("/v1/calendar-syncs/:propertyId", requireRole(["OWNER"]), asyncHandler(async (req, res) => {
+  await db.collection("calendar_syncs").doc(req.params.propertyId).delete();
+  res.json({ success: true, message: "Calendar sync deleted" });
+}));
+
+protectedRouter.post("/v1/calendar-syncs/:propertyId/sync", requireRole(["OWNER", "STAFF"]), asyncHandler(async (req, res) => {
+  const result = await syncCalendar(req.params.propertyId);
+
+  const now = new Date().toISOString();
+  await db.collection("calendar_sync_logs").add({
+    propertyId: req.params.propertyId,
+    status: result.success ? "SUCCESS" : "FAILED",
+    eventsImported: result.eventsImported,
+    eventsSkipped: result.eventsSkipped,
+    errorMessage: result.error || null,
+    syncDuration: result.duration,
+    createdAt: now,
+  });
+
+  res.json({ success: true, data: result });
+}));
+
+// Mount public routes first (no auth required)
+app.use("/v1/public", publicRouter);
+
+// Mount protected routes with auth middleware
 apiRouter.use("/", protectedRouter);
 app.use("/", apiRouter);
 app.use(errorHandler);
 
 export const api = onRequest({ region: "us-central1" }, app);
+
+// Scheduled Calendar Sync - runs every 2 minutes
+export const scheduledCalendarSync = onSchedule("*/2 * * * *", async () => {
+  console.log("Starting scheduled calendar sync...");
+
+  try {
+    const snapshot = await db.collection("calendar_syncs")
+      .where("isEnabled", "==", true)
+      .get();
+
+    if (snapshot.empty) {
+      console.log("No enabled calendar syncs found");
+      return;
+    }
+
+    console.log(`Found ${snapshot.size} calendar syncs to process`);
+
+    const batchSize = 5;
+    const syncs = snapshot.docs;
+    let totalImported = 0;
+    let totalFailed = 0;
+
+    for (let i = 0; i < syncs.length; i += batchSize) {
+      const batch = syncs.slice(i, i + batchSize);
+      
+      const results = await Promise.allSettled(
+        batch.map(async (doc) => {
+          const propertyId = doc.id;
+          console.log(`Syncing property: ${propertyId}`);
+          
+          const result = await syncCalendar(propertyId);
+
+          const now = new Date().toISOString();
+          await db.collection("calendar_sync_logs").add({
+            propertyId,
+            status: result.success ? "SUCCESS" : "FAILED",
+            eventsImported: result.eventsImported,
+            eventsSkipped: result.eventsSkipped,
+            errorMessage: result.error || null,
+            syncDuration: result.duration,
+            createdAt: now,
+          });
+
+          return result;
+        }),
+      );
+
+      results.forEach((result) => {
+        if (result.status === "fulfilled" && result.value.success) {
+          totalImported += result.value.eventsImported;
+        } else {
+          totalFailed++;
+        }
+      });
+    }
+
+    console.log(`Scheduled sync completed: ${totalImported} events imported, ${totalFailed} failed`);
+  } catch (error: any) {
+    console.error("Scheduled sync failed", error);
+  }
+});

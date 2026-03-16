@@ -11,9 +11,9 @@ type RateLimitEntry = {
   resetAt: number;
 };
 
-const buckets = new Map<string, RateLimitEntry>();
-
 export function createRateLimiter({ windowMs, max, message }: RateLimitOptions) {
+  const buckets = new Map<string, RateLimitEntry>();
+
   return (req: Request, res: Response, next: NextFunction) => {
     const now = Date.now();
     const ip = (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim() ?? req.ip;

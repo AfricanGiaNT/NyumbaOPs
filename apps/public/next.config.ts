@@ -2,12 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    unoptimized: true,
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "storage.googleapis.com",
-      },
       {
         protocol: "https",
         hostname: "images.example.com",
@@ -15,6 +10,11 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/**",
       },
       {
         protocol: "http",
@@ -26,11 +26,19 @@ const nextConfig: NextConfig = {
         hostname: "localhost",
         port: "9199",
       },
+      {
+        protocol: "https",
+        hostname: "*.ngrok-free.app",
+      },
+      {
+        protocol: "https",
+        hostname: "*.ngrok.io",
+      },
     ],
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 60,
+    minimumCacheTTL: 3600,
   },
   async rewrites() {
     // Storage proxy only needed for local emulator development

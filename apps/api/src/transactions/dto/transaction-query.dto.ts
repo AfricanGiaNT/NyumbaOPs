@@ -22,5 +22,20 @@ export class TransactionQueryDto {
   @IsString()
   @IsOptional()
   year?: string;
+
+  @ApiPropertyOptional({ example: '2025-01-01' })
+  @IsString()
+  @IsOptional()
+  from?: string;
+
+  @ApiPropertyOptional({ example: '2025-12-31' })
+  @IsString()
+  @IsOptional()
+  to?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  categoryId?: string;
 }
 

@@ -60,7 +60,7 @@ async function main() {
         bathrooms: 3,
         maxGuests: 8,
         nightlyRate: 120,
-        currency: Currency.GBP,
+        currency: Currency.MWK,
         status: PropertyStatus.MAINTENANCE,
       },
     }),

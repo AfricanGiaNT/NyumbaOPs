@@ -12,7 +12,7 @@ type AvailabilityModalProps = {
 };
 
 export function AvailabilityModal(props: AvailabilityModalProps) {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(true);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);

@@ -199,23 +199,17 @@ function CheckoutContent() {
   }
 
   return (
-    <main className="min-h-screen bg-white pb-28 sm:bg-zinc-50 sm:pb-8">
-      {/* Mobile header */}
-      <header className="sticky top-0 z-10 border-b border-zinc-100 bg-white">
-        <div className="flex items-center gap-3 px-4 py-3 sm:mx-auto sm:max-w-lg sm:px-0">
-          <Link
-            href={`/properties/${propertyId}`}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-100 active:bg-zinc-200"
-          >
-            <svg className="h-4 w-4 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </Link>
-          <h1 className="text-base font-bold text-zinc-900">Confirm and pay</h1>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-lg">
+    <main className="min-h-screen bg-zinc-50">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+        <Link
+          href={`/properties/${propertyId}`}
+          className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900 hover:text-zinc-600 mb-6"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to property
+        </Link>
         {/* Booking summary strip — always visible at top */}
         <div className="flex items-center gap-3 border-b border-zinc-100 bg-white px-4 py-3 sm:mt-6 sm:rounded-xl sm:border sm:border-zinc-200">
           {property?.coverImageUrl && (

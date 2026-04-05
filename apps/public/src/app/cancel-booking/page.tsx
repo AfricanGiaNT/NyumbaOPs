@@ -119,13 +119,8 @@ function CancelContent() {
   if (cancelled) {
     return (
       <main className="min-h-screen bg-zinc-50">
-        <header className="border-b border-zinc-200 bg-white">
-          <div className="mx-auto flex max-w-2xl items-center gap-4 px-4 py-4 sm:px-6">
-            <h1 className="text-lg font-bold text-zinc-900">Booking cancelled</h1>
-          </div>
-        </header>
-
         <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+
           <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center shadow-sm">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100">
               <svg className="h-8 w-8 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -160,24 +155,18 @@ function CancelContent() {
 
   return (
     <main className="min-h-screen bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-2xl items-center gap-4 px-4 py-4 sm:px-6">
-          {bookingId && (
-            <Link
-              href={`/booking-confirmation?bookingId=${bookingId}`}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900 hover:text-zinc-600"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back
-            </Link>
-          )}
-          <h1 className="text-lg font-bold text-zinc-900">Cancel booking</h1>
-        </div>
-      </header>
-
       <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+        {bookingId && (
+          <Link
+            href={`/booking-confirmation?bookingId=${bookingId}`}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900 hover:text-zinc-600 mb-6"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to booking
+          </Link>
+        )}
         {/* Booking summary */}
         {booking && (
           <div className="mb-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">

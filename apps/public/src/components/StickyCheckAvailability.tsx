@@ -14,24 +14,27 @@ export function StickyCheckAvailability({
   const [bottomOffset, setBottomOffset] = useState(0);
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+
     const handleResize = () => {
-      if (window.visualViewport) {
-        const offsetTop = window.visualViewport.offsetTop;
-        const layoutHeight = window.innerHeight;
-        const visualHeight = window.visualViewport.height;
-        
-        // Calculate how much the viewport has been pushed up by browser chrome
-        const offset = Math.max(0, layoutHeight - visualHeight - offsetTop);
-        setBottomOffset(offset);
-      }
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (window.visualViewport) {
+          const offsetTop = window.visualViewport.offsetTop;
+          const layoutHeight = window.innerHeight;
+          const visualHeight = window.visualViewport.height;
+          setBottomOffset(Math.max(0, layoutHeight - visualHeight - offsetTop));
+        }
+      }, 50);
     };
 
     handleResize();
-    
+
     window.visualViewport?.addEventListener("resize", handleResize);
     window.visualViewport?.addEventListener("scroll", handleResize);
-    
+
     return () => {
+      clearTimeout(timer);
       window.visualViewport?.removeEventListener("resize", handleResize);
       window.visualViewport?.removeEventListener("scroll", handleResize);
     };
@@ -39,7 +42,7 @@ export function StickyCheckAvailability({
 
   return (
     <div 
-      className="fixed left-0 right-0 z-50 bg-white border-t border-zinc-200 shadow-[0_-2px_8px_rgba(0,0,0,0.1)] px-4 py-4 flex items-center justify-between gap-4"
+      className="fixed left-0 right-0 z-50 bg-white border-t border-zinc-200 shadow-[0_-2px_8px_rgba(0,0,0,0.1)] px-4 py-4 flex items-center justify-between gap-4 lg:hidden"
       style={{ 
         bottom: `${bottomOffset}px`,
         paddingBottom: "calc(1rem + env(safe-area-inset-bottom))",

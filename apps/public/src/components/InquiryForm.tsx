@@ -18,7 +18,7 @@ type InquiryFormState = {
 };
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001/nyumbaops/us-central1/api";
+  (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001") + "/api";
 
 export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
   const [formData, setFormData] = useState<InquiryFormState>({

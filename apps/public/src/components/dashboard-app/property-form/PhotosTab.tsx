@@ -23,7 +23,7 @@ export function PhotosTab({ data, onChange, errors }: TabProps) {
         <ImageUpload
           images={data.images}
           onChange={(images) => onChange({ images })}
-          maxImages={10}
+          maxImages={14}
           maxSizeMB={5}
         />
         {errors.images && (

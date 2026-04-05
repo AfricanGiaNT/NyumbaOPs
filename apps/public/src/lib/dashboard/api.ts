@@ -1,17 +1,17 @@
-import { auth } from "./firebase";
 import { PropertyImage } from "./types";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001/nyumbaops/us-central1/api";
+  (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001") + "/api";
+
+const TOKEN_KEY = "nyumbaops_token";
 
 type ApiError = {
   message?: string;
 };
 
-async function getAuthToken(): Promise<string | null> {
-  const user = auth.currentUser;
-  if (!user) return null;
-  return user.getIdToken();
+function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(TOKEN_KEY);
 }
 
 async function handleResponse(response: Response) {
@@ -31,7 +31,7 @@ async function handleResponse(response: Response) {
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
-  const token = await getAuthToken();
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     cache: "no-store",
@@ -40,7 +40,7 @@ export async function apiGet<T>(path: string): Promise<T> {
 }
 
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const token = await getAuthToken();
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "POST",
     headers: {
@@ -53,7 +53,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
 }
 
 export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
-  const token = await getAuthToken();
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "PATCH",
     headers: {
@@ -66,7 +66,7 @@ export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
 }
 
 export async function apiDelete<T>(path: string): Promise<T> {
-  const token = await getAuthToken();
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "DELETE",
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -102,14 +102,8 @@ export async function uploadFileToSignedUrl(
 ): Promise<void> {
   console.log('[DEBUG] uploadFileToSignedUrl called:', { signedUrl, fileName: file.name, fileType: file.type, fileSize: file.size });
   
-  // Firebase Storage emulator uses POST, production uses PUT
-  const isEmulatorUrl = signedUrl.includes('127.0.0.1') || signedUrl.includes('localhost');
-  const method = isEmulatorUrl ? "POST" : "PUT";
-  
-  console.log('[DEBUG] Using method:', method, 'for URL:', signedUrl.substring(0, 80) + '...');
-  
   const response = await fetch(signedUrl, {
-    method,
+    method: "PUT",
     headers: {
       "Content-Type": file.type,
     },

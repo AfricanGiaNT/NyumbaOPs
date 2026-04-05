@@ -177,22 +177,17 @@ function ConfirmationContent() {
 
   return (
     <main className="min-h-screen bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-3xl items-center gap-4 px-4 py-4 sm:px-6">
-          <Link
-            href="/properties"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900 hover:text-zinc-600"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Properties
-          </Link>
-          <h1 className="text-lg font-bold text-zinc-900">Booking confirmation</h1>
-        </div>
-      </header>
-
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+        <Link
+          href="/properties"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900 hover:text-zinc-600 mb-6"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to properties
+        </Link>
+
         {/* Status Banner */}
         {isPaid && (
           <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center">

@@ -35,11 +35,8 @@ interface SyncLog {
   createdAt: string;
 }
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001/nyumbaops/us-central1/api";
-
 const ICAL_EXPORT_BASE =
-  process.env.NEXT_PUBLIC_PRODUCTION_API_URL ?? "https://api-tz2cgdzudq-uc.a.run.app";
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
 
 export default function CalendarSyncPage() {
   const [properties, setProperties] = useState<Property[]>([]);

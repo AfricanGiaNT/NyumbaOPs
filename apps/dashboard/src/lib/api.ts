@@ -1,17 +1,15 @@
-import { auth } from "./firebase";
+import { getStoredToken } from "./AuthContext";
 import { PropertyImage } from "./types";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001/nyumbaops/us-central1/api";
+  (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001") + "/api";
 
 type ApiError = {
   message?: string;
 };
 
-async function getAuthToken(): Promise<string | null> {
-  const user = auth.currentUser;
-  if (!user) return null;
-  return user.getIdToken();
+function getAuthToken(): string | null {
+  return getStoredToken();
 }
 
 async function handleResponse(response: Response) {
@@ -31,7 +29,7 @@ async function handleResponse(response: Response) {
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
-  const token = await getAuthToken();
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     cache: "no-store",
@@ -40,7 +38,7 @@ export async function apiGet<T>(path: string): Promise<T> {
 }
 
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const token = await getAuthToken();
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "POST",
     headers: {
@@ -53,7 +51,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
 }
 
 export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
-  const token = await getAuthToken();
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "PATCH",
     headers: {
@@ -66,7 +64,7 @@ export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
 }
 
 export async function apiDelete<T>(path: string): Promise<T> {
-  const token = await getAuthToken();
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "DELETE",
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -76,60 +74,34 @@ export async function apiDelete<T>(path: string): Promise<T> {
 
 // Image upload functions
 
-export async function requestImageUpload(data: {
+export async function uploadPropertyImage(data: {
   propertyId: string;
-  filename: string;
-  contentType: string;
+  file: File;
   alt?: string;
   isCover?: boolean;
   sortOrder?: number;
-}): Promise<{ uploadUrl: string; publicUrl: string }> {
-  console.log('[DEBUG] requestImageUpload called:', data);
-  
-  const response = await apiPost<{ success: boolean; data: { uploadUrl: string; publicUrl: string } }>(
-    "/v1/public/uploads",
-    data
-  );
-  
-  console.log('[DEBUG] requestImageUpload response:', response.data);
-  
-  return response.data;
-}
+}): Promise<{ publicUrl: string; imageId: string }> {
+  const token = getAuthToken();
+  const form = new FormData();
+  form.append("file", data.file);
+  form.append("propertyId", data.propertyId);
+  if (data.alt) form.append("alt", data.alt);
+  form.append("isCover", String(data.isCover ?? false));
+  form.append("sortOrder", String(data.sortOrder ?? 0));
 
-export async function uploadFileToSignedUrl(
-  signedUrl: string,
-  file: File
-): Promise<void> {
-  console.log('[DEBUG] uploadFileToSignedUrl called:', { signedUrl, fileName: file.name, fileType: file.type, fileSize: file.size });
-  
-  // Firebase Storage emulator uses POST, production uses PUT
-  const isEmulatorUrl = signedUrl.includes('127.0.0.1') || signedUrl.includes('localhost');
-  const method = isEmulatorUrl ? "POST" : "PUT";
-  
-  console.log('[DEBUG] Using method:', method, 'for URL:', signedUrl.substring(0, 80) + '...');
-  
-  const response = await fetch(signedUrl, {
-    method,
-    headers: {
-      "Content-Type": file.type,
-    },
-    body: file,
-  });
-
-  console.log('[DEBUG] Upload response:', { 
-    ok: response.ok, 
-    status: response.status, 
-    statusText: response.statusText,
-    url: signedUrl.substring(0, 80) + '...'
+  const response = await fetch(`${API_BASE_URL}/v1/public/uploads`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: form,
   });
 
   if (!response.ok) {
-    const responseText = await response.text().catch(() => 'Unable to read response');
-    console.error('[DEBUG] Upload failed, response body:', responseText);
-    throw new Error(`Upload failed: ${response.statusText}`);
+    const err = await response.text().catch(() => "Upload failed");
+    throw new Error(err);
   }
-  
-  console.log('[DEBUG] Upload successful');
+
+  const json = await response.json() as { success: boolean; data: { publicUrl: string; imageId: string } };
+  return json.data;
 }
 
 export async function updatePropertyImages<T>(

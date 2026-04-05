@@ -33,9 +33,5 @@ export const BED_TYPES = [
 
 export const CURRENCIES = [
   { code: "USD", symbol: "$", label: "US Dollar" },
-  { code: "EUR", symbol: "€", label: "Euro" },
-  { code: "GBP", symbol: "£", label: "British Pound" },
-  { code: "KES", symbol: "KSh", label: "Kenyan Shilling" },
-  { code: "TZS", symbol: "TSh", label: "Tanzanian Shilling" },
-  { code: "UGX", symbol: "USh", label: "Ugandan Shilling" },
+  { code: "MWK", symbol: "MK", label: "Malawi Kwacha" },
 ];

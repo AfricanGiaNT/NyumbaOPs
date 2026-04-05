@@ -16,20 +16,10 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/97d11b96-e9f2-4d25-8c35-1cf76da3d5e9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:19',message:'Login form submitted',data:{email:email,passwordLength:password?.length,emailValid:email.includes('@')},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
-
     try {
       await signIn(email, password);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/97d11b96-e9f2-4d25-8c35-1cf76da3d5e9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:26',message:'Login successful, redirecting',data:{email:email},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
       router.push("/");
     } catch (err) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/97d11b96-e9f2-4d25-8c35-1cf76da3d5e9',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:31',message:'Login failed in handler',data:{email:email,errorType:err?.constructor?.name,errorMessage:err instanceof Error ? err.message : String(err)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B,C,D'})}).catch(()=>{});
-      // #endregion
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);

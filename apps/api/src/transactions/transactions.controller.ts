@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { TransactionType } from '@prisma/client';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionQueryDto } from './dto/transaction-query.dto';
 import { TransactionsService } from './transactions.service';
@@ -11,6 +12,7 @@ export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 
   @Post('revenue')
+  @UseGuards(JwtAuthGuard)
   createRevenue(
     @Body() dto: CreateTransactionDto,
     @Req() req: { user?: { id?: string } },
@@ -20,6 +22,7 @@ export class TransactionsController {
   }
 
   @Post('expense')
+  @UseGuards(JwtAuthGuard)
   createExpense(
     @Body() dto: CreateTransactionDto,
     @Req() req: { user?: { id?: string } },
@@ -31,6 +34,13 @@ export class TransactionsController {
   @Get()
   findAll(@Query() query: TransactionQueryDto) {
     return this.transactionsService.findAll(query);
+  }
+
+  @Get('latest')
+  @UseGuards(JwtAuthGuard)
+  getLatest(@Req() req: { user?: { id?: string } }) {
+    const userId = req.user?.id ?? 'system';
+    return this.transactionsService.findLatestByUser(userId);
   }
 
   @Delete(':id')

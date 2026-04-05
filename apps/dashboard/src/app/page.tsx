@@ -144,6 +144,12 @@ export default function Home() {
                 Home
               </Link>
               <Link
+                href="/finance"
+                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition"
+              >
+                💰 Finance
+              </Link>
+              <Link
                 href="/properties"
                 className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition"
               >

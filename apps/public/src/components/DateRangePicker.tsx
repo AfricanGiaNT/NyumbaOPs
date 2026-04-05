@@ -215,7 +215,7 @@ export function DateRangePicker({
                 type="button"
                 disabled={disabled}
                 onClick={() => !disabled && handleDateSelect(date)}
-                className="aspect-square flex items-center justify-center rounded-lg text-sm font-semibold transition-all active:scale-95 disabled:cursor-not-allowed"
+                className="h-10 w-10 flex items-center justify-center rounded-lg text-sm font-semibold transition-all active:scale-95 disabled:cursor-not-allowed"
                 style={{
                   backgroundColor,
                   color,

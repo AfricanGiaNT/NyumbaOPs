@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { apiGet, apiPost, apiPatch, requestImageUpload, uploadFileToSignedUrl, deletePropertyImage } from "../../../lib/api";
+import { apiGet, apiPost, apiPatch, uploadPropertyImage, deletePropertyImage } from "../../../lib/api";
 import {
   AnalyticsSummary,
   Category,
@@ -44,7 +44,7 @@ type PropertyFormState = {
   bathrooms: string;
   maxGuests: string;
   nightlyRate: string;
-  currency: "MWK" | "GBP";
+  currency: "MWK" | "GBP" | "USD";
   images: ImageFile[];
 };
 
@@ -161,16 +161,13 @@ export default function PropertyDetailPage() {
         if (!img.file) continue;
         
         try {
-          const { uploadUrl, publicUrl } = await requestImageUpload({
+          const { publicUrl } = await uploadPropertyImage({
             propertyId: property.id,
-            filename: img.file.name,
-            contentType: img.file.type,
+            file: img.file,
             alt: img.alt,
             isCover: img.isCover,
             sortOrder: existingImages.length + index,
           });
-          
-          await uploadFileToSignedUrl(uploadUrl, img.file);
           uploadedImageUrls.push(publicUrl);
         } catch (err) {
           console.error(`Failed to upload image ${img.file.name}:`, err);

@@ -1,0 +1,97 @@
+# Render Blueprint — NyumbaOps
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Deploy steps:
+#   1. Push this file to your repo root
+#   2. In Render dashboard → New → Blueprint → connect your repo
+#   3. Fill in the required environment variables marked with sync: false
+#   4. In Render → nyumbaops-dashboard settings → Custom Domains → add madikweapartments.com
+#
+# ⚠️  IMPORTANT FOR CALENDAR SYNC:
+#   The API service MUST use a paid Render plan (Starter $7/mo or higher).
+#   Free-tier services sleep after 15 minutes of inactivity.
+#   Airbnb fetches your iCal URL every few hours — a sleeping service will
+#   timeout and fail to sync, causing potential double bookings.
+
+services:
+  # ─────────────────────────────────────────────
+  # 1. NestJS API  (hosts the iCal export + all backend routes)
+  # ─────────────────────────────────────────────
+  - type: web
+    name: nyumbaops-api
+    runtime: node
+    rootDir: apps/api
+    buildCommand: npm ci && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && node dist/main
+    healthCheckPath: /api
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # ── Database (Supabase) ──────────────────
+      - key: DATABASE_URL
+        sync: false   # postgresql://... (session pooler URL from Supabase)
+      - key: DIRECT_URL
+        sync: false   # Same as DATABASE_URL for Supabase session pooler
+
+      # ── Auth ────────────────────────────────
+      - key: JWT_SECRET
+        sync: false   # Use a long random string in production — never commit this
+
+      # ── Supabase Storage ────────────────────
+      - key: SUPABASE_PROJECT_REF
+        sync: false   # e.g. xtfpppcqscwsnpdfrzmw
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false   # From Supabase → Settings → API → service_role key
+      - key: SUPABASE_STORAGE_BUCKET
+        value: property-images
+
+      # ── CORS ────────────────────────────────
+      # Set DASHBOARD_URL to wherever your admin dashboard is hosted
+      # (e.g. https://admin.madikweapartments.com or the Render URL)
+      - key: DASHBOARD_URL
+        sync: false   # e.g. https://nyumbaops-dashboard.onrender.com
+      # Set PUBLIC_URL to the public-facing site
+      - key: PUBLIC_URL
+        sync: false   # e.g. https://madikweapartments.com
+      # Extra CORS origins — comma-separated (covers www. variants, etc.)
+      - key: EXTRA_ALLOWED_ORIGINS
+        sync: false   # e.g. https://www.madikweapartments.com,https://madikweapartments.com
+
+      # ── Telegram (optional) ─────────────────
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false
+
+  # ─────────────────────────────────────────────
+  # 2. Next.js Admin Dashboard
+  # ─────────────────────────────────────────────
+  - type: web
+    name: nyumbaops-dashboard
+    runtime: node
+    rootDir: apps/dashboard
+    buildCommand: pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm start
+    envVars:
+      # Point this at the nyumbaops-api service URL above
+      # After first deploy, copy the API's onrender.com URL here
+      - key: NEXT_PUBLIC_API_BASE_URL
+        sync: false   # e.g. https://nyumbaops-api.onrender.com
+      - key: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+        sync: false
+
+  # ─────────────────────────────────────────────
+  # 3. Next.js Public Site  (madikweapartments.com)
+  # ─────────────────────────────────────────────
+  - type: web
+    name: nyumbaops-public
+    runtime: node
+    rootDir: apps/public
+    buildCommand: pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm start
+    envVars:
+      - key: NEXT_PUBLIC_API_BASE_URL
+        sync: false   # Same API URL as above
+      - key: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+        sync: false

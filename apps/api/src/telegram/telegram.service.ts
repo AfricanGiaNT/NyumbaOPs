@@ -1126,8 +1126,8 @@ export class TelegramService implements OnModuleInit {
   }
 
   private formatAmount(currency: Currency, amount: number) {
-    if (currency === Currency.GBP) {
-      return `£${amount.toLocaleString('en-GB')}`;
+    if (currency === Currency.USD) {
+      return `$${amount.toLocaleString('en-US')}`;
     }
     return `MWK ${amount.toLocaleString('en-US')}`;
   }

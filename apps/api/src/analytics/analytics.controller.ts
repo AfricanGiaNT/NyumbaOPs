@@ -8,8 +8,13 @@ export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Get('summary')
-  getSummary(@Query('month') month?: string) {
-    return this.analyticsService.getSummary(month);
+  getSummary(
+    @Query('month') month?: string,
+    @Query('year') year?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.analyticsService.getSummary(month, year, from, to);
   }
 
   @Get('property/:id/summary')

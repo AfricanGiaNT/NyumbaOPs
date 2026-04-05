@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { apiGet, apiPost, apiPatch, requestImageUpload, uploadFileToSignedUrl } from "../../lib/api";
+import { apiGet, apiPost, apiPatch, apiDelete, uploadPropertyImage } from "../../lib/api";
 import { Property } from "../../lib/types";
 import { EmptyState } from "../../components/EmptyState";
 import { LoadingSkeleton } from "../../components/LoadingSkeleton";
@@ -12,9 +12,11 @@ import { PropertyFormDialog } from "../../components/property-form/PropertyFormD
 import { PropertyFormData } from "../../types/property-form";
 import { ImageFile } from "../../components/ImageUpload";
 import { ProtectedRoute } from "../../components/ProtectedRoute";
+import { useAuth } from "../../lib/AuthContext";
 
 
 export default function PropertiesPage() {
+  const { signOut } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,8 +77,7 @@ export default function PropertiesPage() {
           latitude: formData.latitude,
           longitude: formData.longitude,
           googleMapsUrl: formData.googleMapsUrl,
-          status: formData.status,
-          images: [],
+          status: formData.status.toUpperCase() as "ACTIVE" | "INACTIVE" | "MAINTENANCE",
         };
         
         const created = await apiPost<Property>("/properties", payload);
@@ -142,8 +143,7 @@ export default function PropertiesPage() {
           latitude: formData.latitude,
           longitude: formData.longitude,
           googleMapsUrl: formData.googleMapsUrl,
-          status: formData.status,
-          images: existingImageData,
+          status: formData.status.toUpperCase() as "ACTIVE" | "INACTIVE" | "MAINTENANCE",
         });
         
         // Step 2: Upload new images if any
@@ -152,24 +152,20 @@ export default function PropertiesPage() {
         );
         
         if (imagesToUpload.length > 0) {
-          for (const [index, img] of imagesToUpload.entries()) {
-            if (!img.file) continue;
-            
-            try {
-              const { uploadUrl } = await requestImageUpload({
+          await Promise.allSettled(
+            imagesToUpload.map((img, index) => {
+              if (!img.file) return Promise.resolve();
+              return uploadPropertyImage({
                 propertyId,
-                filename: img.file.name,
-                contentType: img.file.type,
+                file: img.file,
                 alt: img.alt,
                 isCover: img.isCover,
                 sortOrder: existingImageData.length + index,
+              }).catch((err) => {
+                console.error(`Failed to upload image ${img.file!.name}:`, err);
               });
-              
-              await uploadFileToSignedUrl(uploadUrl, img.file);
-            } catch (err) {
-              console.error(`Failed to upload image ${img.file.name}:`, err);
-            }
-          }
+            })
+          );
         }
         
         // Step 3: Reload property
@@ -188,28 +184,31 @@ export default function PropertiesPage() {
     propertyId: string,
     images: ImageFile[]
   ) {
-    for (const [index, img] of images.entries()) {
-      if (!img.file) continue;
-      
-      try {
-        // Request signed URL
-        const { uploadUrl } = await requestImageUpload({
+    await Promise.allSettled(
+      images.map((img, index) => {
+        if (!img.file) return Promise.resolve();
+        return uploadPropertyImage({
           propertyId,
-          filename: img.file.name,
-          contentType: img.file.type,
+          file: img.file,
           alt: img.alt,
           isCover: img.isCover,
           sortOrder: index,
+        }).catch((err) => {
+          console.error(`Failed to upload image ${img.file!.name}:`, err);
         });
-        
-        // Upload file to signed URL
-        await uploadFileToSignedUrl(uploadUrl, img.file);
-      } catch (err) {
-        console.error(`Failed to upload image ${img.file.name}:`, err);
-        // Continue with other images even if one fails
-      }
-    }
+      })
+    );
   }
+
+  const handleDelete = async (property: Property) => {
+    if (!confirm(`Delete "${property.name}"? This cannot be undone.`)) return;
+    try {
+      await apiDelete(`/properties/${property.id}`);
+      setProperties((prev: Property[]) => prev.filter((p: Property) => p.id !== property.id));
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
 
   const handleEdit = (property: Property) => {
     setEditingProperty({
@@ -270,14 +269,21 @@ export default function PropertiesPage() {
     <ProtectedRoute>
       <div className="min-h-screen bg-zinc-50 px-8 py-10 text-zinc-900">
         <div className="mx-auto flex max-w-6xl flex-col gap-8">
-          <header className="flex items-center justify-between">
+          <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-3xl font-semibold">Properties</h1>
-              <p className="text-sm text-zinc-600">
+              <h1 className="text-3xl font-bold text-zinc-900">Properties</h1>
+              <p className="mt-1 text-sm text-zinc-600">
                 Manage your properties and log revenue or expenses.
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <Link href="/" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Home</Link>
+              <Link href="/finance" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">💰 Finance</Link>
+              <Link href="/properties" className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition">Properties</Link>
+              <Link href="/guests" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Guests</Link>
+              <Link href="/bookings" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Bookings</Link>
+              <Link href="/calendar-sync" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">� Calendar Sync</Link>
+              <button onClick={() => signOut()} className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Sign out</button>
               <ActionButton
                 variant="primary"
                 onClick={() => {
@@ -288,12 +294,6 @@ export default function PropertiesPage() {
               >
                 + Add Property
               </ActionButton>
-              <Link
-                href="/"
-                className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
-              >
-                Back to Overview
-              </Link>
             </div>
           </header>
 
@@ -311,6 +311,7 @@ export default function PropertiesPage() {
                   key={property.id} 
                   property={property}
                   onEdit={handleEdit}
+                  onDelete={handleDelete}
                 />
               ))}
           </section>

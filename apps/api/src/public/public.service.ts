@@ -1,38 +1,42 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PropertyStatus } from '@prisma/client';
+import { BookingStatus, PropertyStatus } from '@prisma/client';
 import { PublicPropertiesQueryDto } from './dto/public-properties-query.dto';
 import {
   PublicPropertyDetailDto,
   PublicPropertyListItemDto,
 } from './dto/public-property.dto';
-import { PublicUploadDto } from './dto/public-upload.dto';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import * as admin from 'firebase-admin';
 
 @Injectable()
 export class PublicService {
-  private readonly s3Client: S3Client | null;
+  private readonly storageUrl: string;
+  private readonly storageBucket: string;
+  private readonly serviceRoleKey: string;
+
+  private readonly canonicalStorageUrl: string;
 
   constructor(private readonly prisma: PrismaService) {
-    const endpoint = process.env.R2_ENDPOINT;
-    const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-    const region = process.env.R2_REGION ?? 'auto';
+    const projectRef = process.env.SUPABASE_PROJECT_REF ?? 'xtfpppcqscwsnpdfrzmw';
+    this.serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+    this.storageBucket = process.env.SUPABASE_STORAGE_BUCKET ?? 'property-images';
+    this.storageUrl = `https://${projectRef}.supabase.co/storage/v1`;
+    this.canonicalStorageUrl = `https://${projectRef}.supabase.co/storage/v1`;
+  }
 
-    if (!endpoint || !accessKeyId || !secretAccessKey) {
-      this.s3Client = null;
-    } else {
-      this.s3Client = new S3Client({
-        region,
-        endpoint,
-        credentials: {
-          accessKeyId,
-          secretAccessKey,
-        },
-      });
+  private normalizeImageUrl(url: string): string {
+    if (!url) return url;
+    if (url.startsWith(this.canonicalStorageUrl)) {
+      console.log('[ImageURL] Already canonical:', url);
+      return url;
     }
+    const match = url.match(/\/storage\/v1\/object\/public\/(.+)$/);
+    if (match) {
+      const normalized = `${this.canonicalStorageUrl}/object/public/${match[1]}`;
+      console.log('[ImageURL] Normalized:', url, '->', normalized);
+      return normalized;
+    }
+    console.warn('[ImageURL] Could not normalize (no /storage/v1/object/public/ pattern):', url);
+    return url;
   }
 
   async getPublicProperties(query: PublicPropertiesQueryDto) {
@@ -72,7 +76,7 @@ export class PublicService {
         nightlyRate: property.nightlyRate,
         currency: property.currency,
         status: property.status,
-        coverImageUrl: coverImage?.url ?? null,
+        coverImageUrl: coverImage?.url ? this.normalizeImageUrl(coverImage.url) : null,
         coverImageAlt: coverImage?.alt ?? null,
         amenities: property.amenities.map((amenity) => amenity.amenity.name),
       };
@@ -98,7 +102,7 @@ export class PublicService {
           orderBy: { sortOrder: 'asc' },
         },
         amenities: {
-          include: { amenity: { select: { name: true } } },
+          include: { amenity: { select: { name: true, description: true } } },
         },
       },
     });
@@ -110,128 +114,163 @@ export class PublicService {
     const data: PublicPropertyDetailDto = {
       id: property.id,
       name: property.name,
+      propertyType: property.propertyType,
       location: property.location,
+      address: property.address,
+      description: property.description,
+      spaceDescription: property.spaceDescription,
+      guestAccess: property.guestAccess,
+      otherDetails: property.otherDetails,
+      highlights: property.highlights,
       bedrooms: property.bedrooms,
+      beds: property.beds,
       bathrooms: property.bathrooms,
       maxGuests: property.maxGuests,
+      propertySize: property.propertySize,
+      bedTypes: property.bedTypes,
       nightlyRate: property.nightlyRate,
       currency: property.currency,
+      weekendRate: property.weekendRate,
+      cleaningFee: property.cleaningFee,
+      minimumStay: property.minimumStay,
+      maximumStay: property.maximumStay,
+      checkInTime: property.checkInTime,
+      checkOutTime: property.checkOutTime,
+      smokingAllowed: property.smokingAllowed,
+      petsAllowed: property.petsAllowed,
+      eventsAllowed: property.eventsAllowed,
+      quietHours: property.quietHours,
+      additionalRules: property.additionalRules,
+      cancellationPolicy: property.cancellationPolicy,
+      latitude: property.latitude,
+      longitude: property.longitude,
+      googleMapsUrl: property.googleMapsUrl,
       status: property.status,
       images: property.images.map((image) => ({
-        url: image.url,
+        url: this.normalizeImageUrl(image.url),
         alt: image.alt,
         sortOrder: image.sortOrder,
         isCover: image.isCover,
       })),
-      amenities: property.amenities.map((amenity) => amenity.amenity.name),
+      amenities: property.amenities.map((amenity) => ({
+        name: amenity.amenity.name,
+        description: amenity.amenity.description ?? null,
+      })),
     };
 
     return { success: true, data };
   }
 
-  async createUploadUrl(payload: PublicUploadDto) {
-    // Check if property exists
+  async uploadImage(
+    file: { buffer: Buffer; mimetype: string; originalname: string },
+    propertyId: string,
+    alt?: string,
+    isCover?: boolean,
+    sortOrder?: number,
+  ) {
     const property = await this.prisma.property.findUnique({
-      where: { id: payload.propertyId },
+      where: { id: propertyId },
       select: { id: true },
     });
     if (!property) {
       throw new NotFoundException('Property not found');
     }
 
-    const safeFilename = this.sanitizeFilename(payload.filename);
-    const key = `properties/${payload.propertyId}/${Date.now()}-${safeFilename}`;
-
-    // Use Firebase Storage for emulator or when R2 is not configured
-    if (!this.s3Client) {
-      return this.createFirebaseUploadUrl(payload, key);
+    if (!this.serviceRoleKey) {
+      throw new BadRequestException('Storage is not configured (missing SUPABASE_SERVICE_ROLE_KEY)');
     }
 
-    // Use R2 for production
-    const bucket = process.env.R2_BUCKET;
-    const publicBaseUrl = process.env.R2_PUBLIC_BASE_URL;
-    if (!bucket || !publicBaseUrl) {
-      throw new BadRequestException('R2 bucket configuration is missing');
+    const safeFilename = this.sanitizeFilename(file.originalname);
+    const key = `properties/${propertyId}/${Date.now()}-${safeFilename}`;
+
+    const uploadRes = await fetch(
+      `${this.storageUrl}/object/${this.storageBucket}/${key}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.serviceRoleKey}`,
+          'Content-Type': file.mimetype,
+          'x-upsert': 'true',
+        },
+        body: new Uint8Array(file.buffer),
+      },
+    );
+
+    if (!uploadRes.ok) {
+      const err = await uploadRes.text();
+      throw new BadRequestException(`Storage upload failed: ${err}`);
     }
 
-    const command = new PutObjectCommand({
-      Bucket: bucket,
-      Key: key,
-      ContentType: payload.contentType,
-    });
-
-    const expiresIn = Number(process.env.R2_UPLOAD_URL_TTL_SECONDS ?? 900);
-    const uploadUrl = await getSignedUrl(this.s3Client, command, {
-      expiresIn,
-    });
-
-    const publicUrl = `${publicBaseUrl.replace(/\/$/, '')}/${key}`;
+    const publicUrl = `${this.storageUrl}/object/public/${this.storageBucket}/${key}`;
 
     const image = await this.prisma.propertyImage.create({
       data: {
-        propertyId: payload.propertyId,
+        propertyId,
         url: publicUrl,
-        alt: payload.alt,
-        sortOrder: payload.sortOrder ?? 0,
-        isCover: payload.isCover ?? false,
+        alt: alt ?? null,
+        sortOrder: sortOrder ?? 0,
+        isCover: isCover ?? false,
       },
     });
 
     return {
       success: true,
       data: {
-        uploadUrl,
         publicUrl,
         imageId: image.id,
       },
     };
   }
 
-  private async createFirebaseUploadUrl(payload: PublicUploadDto, key: string) {
-    // Get Firebase Storage bucket
-    const bucket = admin.storage().bucket();
-    const bucketName = bucket.name;
-    const storageEmulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
-
-    let uploadUrl: string;
-    let publicUrl: string;
-    
-    if (storageEmulatorHost) {
-      // Emulator doesn't support signed URLs - use direct upload endpoint
-      uploadUrl = `http://${storageEmulatorHost}/upload/storage/v1/b/${bucketName}/o?name=${encodeURIComponent(key)}`;
-      publicUrl = `http://${storageEmulatorHost}/v0/b/${bucketName}/o/${encodeURIComponent(key)}`;
-    } else {
-      // Production: Generate signed URL for upload (valid for 15 minutes)
-      const file = bucket.file(key);
-      const [signedUrl] = await file.getSignedUrl({
-        version: 'v4',
-        action: 'write',
-        expires: Date.now() + 15 * 60 * 1000,
-        contentType: payload.contentType,
-      });
-      uploadUrl = signedUrl;
-      publicUrl = `https://storage.googleapis.com/${bucketName}/${key}`;
+  async getICalFeed(propertyId: string): Promise<string> {
+    const property = await this.prisma.property.findUnique({
+      where: { id: propertyId },
+      select: { id: true, name: true },
+    });
+    if (!property) {
+      throw new NotFoundException('Property not found');
     }
 
-    // Save image metadata to database
-    const image = await this.prisma.propertyImage.create({
-      data: {
-        propertyId: payload.propertyId,
-        url: publicUrl,
-        alt: payload.alt,
-        sortOrder: payload.sortOrder ?? 0,
-        isCover: payload.isCover ?? false,
+    const bookings = await this.prisma.booking.findMany({
+      where: {
+        propertyId,
+        status: { not: BookingStatus.CANCELLED },
       },
+      orderBy: { checkInDate: 'asc' },
+      select: { id: true, checkInDate: true, checkOutDate: true },
     });
 
-    return {
-      success: true,
-      data: {
-        uploadUrl,
-        publicUrl,
-        imageId: image.id,
-      },
-    };
+    const toDateStr = (d: Date): string =>
+      d.toISOString().slice(0, 10).replace(/-/g, '');
+
+    const now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+
+    const vevents = bookings
+      .map((b) =>
+        [
+          'BEGIN:VEVENT',
+          `UID:booking-${b.id}@nyumbaops`,
+          `DTSTAMP:${now}Z`,
+          `DTSTART;VALUE=DATE:${toDateStr(b.checkInDate)}`,
+          `DTEND;VALUE=DATE:${toDateStr(b.checkOutDate)}`,
+          'SUMMARY:Reserved',
+          'STATUS:CONFIRMED',
+          'END:VEVENT',
+        ].join('\r\n')
+      )
+      .join('\r\n');
+
+    const parts = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//NyumbaOps//NyumbaOps Property Management//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+    ];
+    if (vevents) parts.push(vevents);
+    parts.push('END:VCALENDAR');
+
+    return parts.join('\r\n') + '\r\n';
   }
 
   private sanitizeFilename(filename: string) {

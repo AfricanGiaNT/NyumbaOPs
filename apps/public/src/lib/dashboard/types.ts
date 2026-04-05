@@ -136,3 +136,25 @@ export type AnalyticsSummary = {
   totals: CurrencySummary[];
 };
 
+export type LoanStatus = "ACTIVE" | "SETTLED";
+
+export type Loan = {
+  id: string;
+  lenderName: string;
+  amount: number;
+  amountRepaid: number;
+  status: LoanStatus;
+  dateTaken: string;
+  dueDate?: string | null;
+  notes?: string | null;
+  repayments?: LoanRepayment[];
+};
+
+export type LoanRepayment = {
+  id: string;
+  loanId: string;
+  amount: number;
+  date: string;
+  notes?: string | null;
+};
+

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import Image from "next/image";
 
 export type ImageFile = {
   file?: File;
@@ -21,7 +20,7 @@ type ImageUploadProps = {
 };
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const DEFAULT_MAX_SIZE_MB = 5;
+const DEFAULT_MAX_SIZE_MB = 20;
 
 export function ImageUpload({
   images,
@@ -204,16 +203,11 @@ export function ImageUpload({
                   }`}
                 >
                   {/* Image Preview */}
-                  <div className="relative h-full w-full">
-                    <Image
-                      src={imageUrl}
-                      alt={img.alt || `Image ${index + 1}`}
-                      fill
-                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-                      className="object-cover"
-                      unoptimized={!!img.preview}
-                    />
-                  </div>
+                  <img
+                    src={imageUrl}
+                    alt={img.alt || `Image ${index + 1}`}
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
 
                   {/* Drag Handle Indicator */}
                   <div className="absolute top-2 left-2 bg-black/50 rounded px-2 py-1 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">

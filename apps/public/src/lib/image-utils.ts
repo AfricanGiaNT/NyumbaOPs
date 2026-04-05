@@ -1,18 +1,23 @@
+const CANONICAL_SUPABASE_STORAGE = 'https://xtfpppcqscwsnpdfrzmw.supabase.co/storage/v1';
+
+// 1×1 gray PNG — used as blur placeholder while remote images load
+export const BLUR_DATA_URL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+
 /**
- * Transform Firebase Storage emulator URLs to use Next.js proxy
- * This avoids CORS issues when loading images from the emulator
+ * Transform image URLs to their canonical form:
+ * - Stale localhost / ngrok URLs → Supabase CDN
  */
 export function transformImageUrl(url: string): string {
   if (!url) return url;
-  
-  // Check if it's an emulator URL
-  if (url.includes('127.0.0.1:9199') || url.includes('localhost:9199')) {
-    // Extract the path after the emulator host
-    const match = url.match(/(?:127\.0\.0\.1|localhost):9199(.+)/);
+
+  // Stale localhost or ngrok URL → canonical Supabase CDN
+  if (!url.startsWith('https://xtfpppcqscwsnpdfrzmw.supabase.co')) {
+    const match = url.match(/\/storage\/v1\/object\/public\/(.+)$/);
     if (match) {
-      return `/storage-proxy${match[1]}`;
+      return `${CANONICAL_SUPABASE_STORAGE}/object/public/${match[1]}`;
     }
   }
-  
+
   return url;
 }

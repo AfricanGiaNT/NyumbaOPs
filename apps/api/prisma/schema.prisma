@@ -3,13 +3,14 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Currency {
   MWK
-  GBP
+  USD
 }
 
 enum PropertyStatus {
@@ -43,15 +44,21 @@ enum BookingStatus {
   CANCELLED
 }
 
+enum LoanStatus {
+  ACTIVE
+  SETTLED
+}
+
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  name      String?
-  telegramId String?  @unique @map("telegram_id")
+  id           String    @id @default(uuid())
+  email        String    @unique
+  name         String?
+  passwordHash String?   @map("password_hash")
+  telegramId   String?   @unique @map("telegram_id")
   telegramUsername String? @map("telegram_username")
-  role      String    @default("OWNER")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  role         String    @default("OWNER")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   categories   Category[]
   transactions Transaction[]
@@ -61,23 +68,51 @@ model User {
   checkedOutBookings Booking[] @relation("BookingCheckedOutBy")
   auditLogs    AuditLog[]
   notificationSettings NotificationSettings?
+  loans          Loan[]
+  loanRepayments LoanRepayment[]
 }
 
 model Property {
-  id          String         @id @default(uuid())
-  name        String
-  location    String?
-  bedrooms    Int
-  bathrooms   Int
-  maxGuests   Int
-  nightlyRate Int?
-  currency    Currency
-  latitude      Float?
-  longitude     Float?
-  googleMapsUrl String?        @map("google_maps_url")
-  status      PropertyStatus @default(ACTIVE)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id                 String         @id @default(uuid())
+  name               String
+  propertyType       String?        @map("property_type")
+  location           String?
+  address            String?
+  description        String?
+  spaceDescription   String?        @map("space_description")
+  guestAccess        String?        @map("guest_access")
+  otherDetails       String?        @map("other_details")
+  highlights         String[]       @default([])
+  bedrooms           Int
+  beds               Int?
+  bathrooms          Int
+  maxGuests          Int
+  propertySize       Float?         @map("property_size")
+  bedTypes           String[]       @default([])
+  nightlyRate        Int?
+  currency           Currency
+  weekendRate        Int?           @map("weekend_rate")
+  weeklyDiscount     Int?           @map("weekly_discount")
+  monthlyDiscount    Int?           @map("monthly_discount")
+  cleaningFee        Int?           @map("cleaning_fee")
+  securityDeposit    Int?           @map("security_deposit")
+  extraGuestFee      Int?           @map("extra_guest_fee")
+  minimumStay        Int?           @map("minimum_stay")
+  maximumStay        Int?           @map("maximum_stay")
+  checkInTime        String?        @map("check_in_time")
+  checkOutTime       String?        @map("check_out_time")
+  smokingAllowed     Boolean        @default(false) @map("smoking_allowed")
+  petsAllowed        Boolean        @default(false) @map("pets_allowed")
+  eventsAllowed      Boolean        @default(false) @map("events_allowed")
+  quietHours         String?        @map("quiet_hours")
+  additionalRules    String?        @map("additional_rules")
+  cancellationPolicy String?        @map("cancellation_policy")
+  latitude           Float?
+  longitude          Float?
+  googleMapsUrl      String?        @map("google_maps_url")
+  status             PropertyStatus @default(ACTIVE)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 
   transactions        Transaction[]
   transactionMappings TransactionProperty[]
@@ -146,6 +181,7 @@ model Category {
 model Transaction {
   id         String          @id @default(uuid())
   propertyId String?
+  bookingId  String?         @map("booking_id")
   type       TransactionType
   categoryId String
   amount     Int
@@ -159,11 +195,13 @@ model Transaction {
   updatedAt  DateTime        @updatedAt
 
   property            Property?            @relation(fields: [propertyId], references: [id])
+  booking             Booking?             @relation(fields: [bookingId], references: [id])
   category            Category             @relation(fields: [categoryId], references: [id])
   creator             User                 @relation(fields: [createdBy], references: [id])
   transactionMappings TransactionProperty[]
 
   @@index([propertyId])
+  @@index([bookingId])
   @@index([categoryId])
   @@index([date])
 }
@@ -263,6 +301,7 @@ model Booking {
   creator  User     @relation(fields: [createdBy], references: [id])
   checkedInByUser User? @relation("BookingCheckedInBy", fields: [checkedInBy], references: [id])
   checkedOutByUser User? @relation("BookingCheckedOutBy", fields: [checkedOutBy], references: [id])
+  transactions Transaction[]
 
   @@index([guestId])
   @@index([propertyId])
@@ -309,5 +348,42 @@ model CalendarSyncLog {
   @@index([calendarSyncId])
   @@index([createdAt])
   @@map("calendar_sync_logs")
+}
+
+model Loan {
+  id            String     @id @default(uuid())
+  lenderName    String     @map("lender_name")
+  amount        Int
+  amountRepaid  Int        @default(0) @map("amount_repaid")
+  status        LoanStatus @default(ACTIVE)
+  dateTaken     DateTime   @map("date_taken")
+  dueDate       DateTime?  @map("due_date")
+  notes         String?
+  createdBy     String     @map("created_by")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  creator       User       @relation(fields: [createdBy], references: [id])
+  repayments    LoanRepayment[]
+
+  @@index([status])
+  @@index([createdBy])
+  @@map("loans")
+}
+
+model LoanRepayment {
+  id        String   @id @default(uuid())
+  loanId    String   @map("loan_id")
+  amount    Int
+  date      DateTime
+  notes     String?
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  loan      Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  creator   User     @relation(fields: [createdBy], references: [id])
+
+  @@index([loanId])
+  @@map("loan_repayments")
 }
 

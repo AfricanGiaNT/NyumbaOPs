@@ -24,8 +24,12 @@ export function PricingTab({ data, onChange, errors }: TabProps) {
             type="number"
             min="0"
             step="0.01"
-            value={data.nightlyRate}
-            onChange={(e) => onChange({ nightlyRate: parseFloat(e.target.value) || 0 })}
+            value={data.nightlyRate === 0 ? "" : data.nightlyRate}
+            onChange={(e) => {
+              const val = e.target.value;
+              onChange({ nightlyRate: val === "" ? 0 : parseFloat(val) || 0 });
+            }}
+            placeholder="e.g., 200000"
             className="mt-1.5"
           />
           {errors.nightlyRate && (

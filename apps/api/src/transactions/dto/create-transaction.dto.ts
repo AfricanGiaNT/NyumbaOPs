@@ -4,17 +4,16 @@ import {
   IsDateString,
   IsEnum,
   IsInt,
-  IsNotEmpty,
   IsOptional,
   IsString,
   Min,
 } from 'class-validator';
 
 export class CreateTransactionDto {
-  @ApiProperty({ example: 'category-id' })
+  @ApiProperty({ example: 'category-id', required: false })
   @IsString()
-  @IsNotEmpty()
-  categoryId: string;
+  @IsOptional()
+  categoryId?: string;
 
   @ApiProperty({ example: 150000 })
   @IsInt()
@@ -38,5 +37,10 @@ export class CreateTransactionDto {
   @IsString()
   @IsOptional()
   propertyId?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  bookingId?: string;
 }
 

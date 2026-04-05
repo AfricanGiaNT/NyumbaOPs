@@ -8,7 +8,7 @@ import type {
   CancelBookingResponse,
 } from "./types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001/nyumbaops/us-central1/api";
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001") + "/api";
 
 export async function fetchPublicProperties(params?: {
   limit?: number;
@@ -22,7 +22,7 @@ export async function fetchPublicProperties(params?: {
 
   const response = await fetch(
     `${API_BASE_URL}/v1/public/properties?${searchParams.toString()}`,
-    { next: { revalidate: 60 } },
+    { next: { revalidate: 300 } },
   );
 
   if (!response.ok) {
@@ -34,7 +34,7 @@ export async function fetchPublicProperties(params?: {
 
 export async function fetchPublicProperty(id: string): Promise<PublicPropertyDetail> {
   const response = await fetch(`${API_BASE_URL}/v1/public/properties/${id}`, {
-    next: { revalidate: 60 },
+    next: { revalidate: 300 },
   });
 
   if (!response.ok) {

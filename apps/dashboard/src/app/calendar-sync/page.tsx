@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api";
 import { ActionButton } from "@/components/ActionButton";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useAuth } from "@/lib/AuthContext";
 
 interface Property {
   id: string;
@@ -35,15 +36,21 @@ interface SyncLog {
   createdAt: string;
 }
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5001/nyumbaops/us-central1/api";
+interface SyncResult {
+  success: boolean;
+  eventsImported: number;
+  eventsSkipped: number;
+  conflictsResolved: number;
+  error?: string;
+}
 
 const ICAL_EXPORT_BASE =
-  process.env.NEXT_PUBLIC_PRODUCTION_API_URL ?? "https://api-tz2cgdzudq-uc.a.run.app";
+  (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001") + "/api";
 
 export default function CalendarSyncPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState("");
+  const { signOut } = useAuth();
   const [syncConfig, setSyncConfig] = useState<SyncConfig | null>(null);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [loading, setLoading] = useState(false);
@@ -75,17 +82,24 @@ export default function CalendarSyncPage() {
   const loadSyncConfig = async (propertyId: string) => {
     setLoading(true);
     try {
-      const resp = await apiGet<{ success: boolean; data: SyncConfig & { syncLogs?: SyncLog[] } }>(
-        `/v1/calendar-syncs/${propertyId}`
+      const cfg = await apiGet<(SyncConfig & { syncLogs?: SyncLog[] }) | null>(
+        `/calendar-syncs/property/${propertyId}`
       );
-      const cfg = resp.data;
-      setSyncConfig(cfg);
-      setSyncLogs(cfg.syncLogs || []);
-      // Populate form
-      setPlatform(cfg.platform || "AIRBNB");
-      setIcalUrl(cfg.icalUrl || "");
-      setIsEnabled(cfg.isEnabled ?? true);
-      setSyncFrequency(cfg.syncFrequency || 30);
+      if (cfg) {
+        setSyncConfig(cfg);
+        setSyncLogs(cfg.syncLogs || []);
+        setPlatform(cfg.platform || "AIRBNB");
+        setIcalUrl(cfg.icalUrl || "");
+        setIsEnabled(cfg.isEnabled ?? true);
+        setSyncFrequency(cfg.syncFrequency || 30);
+      } else {
+        setSyncConfig(null);
+        setSyncLogs([]);
+        setPlatform("AIRBNB");
+        setIcalUrl("");
+        setIsEnabled(true);
+        setSyncFrequency(30);
+      }
     } catch {
       // No sync config yet for this property
       setSyncConfig(null);
@@ -106,9 +120,9 @@ export default function CalendarSyncPage() {
     try {
       const body = { platform, icalUrl, isEnabled, syncFrequency, propertyId: selectedProperty };
       if (syncConfig) {
-        await apiPatch(`/v1/calendar-syncs/${selectedProperty}`, body);
+        await apiPatch(`/calendar-syncs/${syncConfig.id}`, body);
       } else {
-        await apiPost("/v1/calendar-syncs", body);
+        await apiPost("/calendar-syncs", body);
       }
       await loadSyncConfig(selectedProperty);
       alert("Calendar sync saved!");
@@ -120,15 +134,18 @@ export default function CalendarSyncPage() {
   };
 
   const handleSync = async () => {
-    if (!selectedProperty) return;
+    if (!syncConfig) return;
     setSyncing(true);
     try {
-      const resp = await apiPost<{ success: boolean; data: { eventsImported: number; eventsSkipped: number; conflictsResolved?: number } }>(
-        `/v1/calendar-syncs/${selectedProperty}/sync`,
+      const result = await apiPost<SyncResult>(
+        `/calendar-syncs/${syncConfig.id}/sync`,
         {}
       );
-      const r = resp.data;
-      alert(`Sync complete!\nImported: ${r.eventsImported}\nSkipped: ${r.eventsSkipped}\nConflicts: ${r.conflictsResolved || 0}`);
+      if (!result.success) {
+        alert(`Sync failed: ${result.error || 'Unknown error'}`);
+      } else {
+        alert(`Sync complete!\nImported: ${result.eventsImported}\nSkipped: ${result.eventsSkipped}\nConflicts: ${result.conflictsResolved || 0}`);
+      }
       await loadSyncConfig(selectedProperty);
     } catch (err: any) {
       alert("Sync failed: " + (err.message || "Unknown error"));
@@ -141,7 +158,7 @@ export default function CalendarSyncPage() {
     if (!selectedProperty || !syncConfig) return;
     if (!confirm("Delete this calendar sync configuration?")) return;
     try {
-      await apiDelete(`/v1/calendar-syncs/${selectedProperty}`);
+      await apiDelete(`/calendar-syncs/${syncConfig.id}`);
       setSyncConfig(null);
       setSyncLogs([]);
       setIcalUrl("");
@@ -160,20 +177,23 @@ export default function CalendarSyncPage() {
       <div className="min-h-screen bg-zinc-50 p-6">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="mb-6 flex items-center justify-between">
+          <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-zinc-900">Calendar Sync</h1>
-              <p className="text-sm text-zinc-500 mt-1">
+              <h1 className="text-3xl font-bold text-zinc-900">Calendar Sync</h1>
+              <p className="mt-1 text-sm text-zinc-500">
                 Sync your Airbnb calendar to prevent double bookings
               </p>
             </div>
-            <Link
-              href="/"
-              className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition"
-            >
-              Back to Overview
-            </Link>
-          </div>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Home</Link>
+              <Link href="/finance" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">💰 Finance</Link>
+              <Link href="/properties" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Properties</Link>
+              <Link href="/guests" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Guests</Link>
+              <Link href="/bookings" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Bookings</Link>
+              <Link href="/calendar-sync" className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition">📅 Calendar Sync</Link>
+              <button onClick={() => signOut()} className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Sign out</button>
+            </div>
+          </header>
 
           {/* Property Selector */}
           <div className="bg-white rounded-lg shadow-sm p-5 mb-5">

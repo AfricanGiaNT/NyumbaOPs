@@ -12,20 +12,38 @@ export class TransactionsService {
     private readonly audit: AuditService,
   ) {}
 
+  private async getOrCreateDefaultCategory(type: TransactionType, userId: string) {
+    const name = type === 'REVENUE' ? 'Rental Income' : 'General Expense';
+    const existing = await this.prisma.category.findFirst({
+      where: { name, type },
+    });
+    if (existing) return existing;
+    return this.prisma.category.create({
+      data: { name, type, isSystem: true, createdBy: userId },
+    });
+  }
+
   async create(
     type: TransactionType,
     dto: CreateTransactionDto,
     userId: string,
     metadata?: { createdVia?: string; telegramMessageId?: number },
   ) {
-    const category = await this.prisma.category.findUnique({
-      where: { id: dto.categoryId },
-    });
-    if (!category) {
-      throw new NotFoundException('Category not found');
-    }
-    if (category.type !== type) {
-      throw new BadRequestException('Category type does not match transaction type');
+    let categoryId = dto.categoryId;
+
+    if (categoryId) {
+      const category = await this.prisma.category.findUnique({
+        where: { id: categoryId },
+      });
+      if (!category) {
+        throw new NotFoundException('Category not found');
+      }
+      if (category.type !== type) {
+        throw new BadRequestException('Category type does not match transaction type');
+      }
+    } else {
+      const defaultCategory = await this.getOrCreateDefaultCategory(type, userId);
+      categoryId = defaultCategory.id;
     }
 
     if (dto.propertyId) {
@@ -43,8 +61,9 @@ export class TransactionsService {
     const transaction = await this.prisma.transaction.create({
       data: {
         propertyId: dto.propertyId,
+        bookingId: dto.bookingId,
         type,
-        categoryId: dto.categoryId,
+        categoryId,
         amount: dto.amount,
         currency: dto.currency,
         date: new Date(dto.date),
@@ -79,7 +98,11 @@ export class TransactionsService {
       where.type = query.type;
     }
 
-    const dateRange = this.getDateRange(query.month, query.year);
+    if (query.categoryId) {
+      where.categoryId = query.categoryId;
+    }
+
+    const dateRange = this.getDateRange(query.month, query.year, query.from, query.to);
     if (dateRange) {
       where.date = dateRange;
     }
@@ -87,6 +110,10 @@ export class TransactionsService {
     return this.prisma.transaction.findMany({
       where,
       orderBy: { date: 'desc' },
+      include: {
+        category: { select: { id: true, name: true, type: true } },
+        property: { select: { id: true, name: true } },
+      },
     });
   }
 
@@ -106,7 +133,24 @@ export class TransactionsService {
     return transaction;
   }
 
-  private getDateRange(month?: string, year?: string) {
+  findLatestByUser(userId: string) {
+    return this.prisma.transaction.findFirst({
+      where: { createdBy: userId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        category: true,
+        property: true,
+      },
+    });
+  }
+
+  private getDateRange(month?: string, year?: string, from?: string, to?: string) {
+    if (from || to) {
+      const gte = from ? new Date(from) : undefined;
+      const lte = to ? new Date(to + 'T23:59:59.999Z') : undefined;
+      return { ...(gte ? { gte } : {}), ...(lte ? { lte } : {}) };
+    }
+
     if (month) {
       const [yearPart, monthPart] = month.split('-').map((value) => Number(value));
       if (!yearPart || !monthPart || monthPart < 1 || monthPart > 12) {

@@ -9,6 +9,7 @@ import { BookingsModule } from './bookings/bookings.module';
 import { CalendarSyncModule } from './calendar-sync/calendar-sync.module';
 import { CategoriesModule } from './categories/categories.module';
 import { GuestsModule } from './guests/guests.module';
+import { LoansModule } from './loans/loans.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PropertiesModule } from './properties/properties.module';
 import { PublicModule } from './public/public.module';
@@ -28,6 +29,7 @@ import { TransactionsModule } from './transactions/transactions.module';
     GuestsModule,
     BookingsModule,
     CalendarSyncModule,
+    LoansModule,
     PublicModule,
     TelegramModule,
   ],

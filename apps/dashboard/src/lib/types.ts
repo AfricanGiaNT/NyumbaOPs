@@ -1,4 +1,4 @@
-export type Currency = "MWK" | "GBP";
+export type Currency = "MWK" | "USD";
 export type PropertyStatus = "ACTIVE" | "INACTIVE" | "MAINTENANCE";
 export type TransactionType = "REVENUE" | "EXPENSE";
 export type CategoryType = "REVENUE" | "EXPENSE";
@@ -30,12 +30,38 @@ export type PropertyImage = {
 export type Property = {
   id: string;
   name: string;
+  propertyType?: string | null;
   location?: string | null;
+  address?: string | null;
+  description?: string | null;
+  spaceDescription?: string | null;
+  guestAccess?: string | null;
+  otherDetails?: string | null;
+  highlights?: string[];
   bedrooms: number;
+  beds?: number | null;
   bathrooms: number;
   maxGuests: number;
+  propertySize?: number | null;
+  bedTypes?: string[];
   nightlyRate?: number | null;
   currency: Currency;
+  weekendRate?: number | null;
+  weeklyDiscount?: number | null;
+  monthlyDiscount?: number | null;
+  cleaningFee?: number | null;
+  securityDeposit?: number | null;
+  extraGuestFee?: number | null;
+  minimumStay?: number | null;
+  maximumStay?: number | null;
+  checkInTime?: string | null;
+  checkOutTime?: string | null;
+  smokingAllowed?: boolean;
+  petsAllowed?: boolean;
+  eventsAllowed?: boolean;
+  quietHours?: string | null;
+  additionalRules?: string | null;
+  cancellationPolicy?: string | null;
   latitude?: number | null;
   longitude?: number | null;
   googleMapsUrl?: string | null;
@@ -54,12 +80,15 @@ export type Category = {
 export type Transaction = {
   id: string;
   propertyId?: string | null;
+  bookingId?: string | null;
   type: TransactionType;
   categoryId: string;
   amount: number;
   currency: Currency;
   date: string;
   notes?: string | null;
+  category?: { id: string; name: string; type: CategoryType } | null;
+  property?: { id: string; name: string } | null;
 };
 
 export type Guest = {
@@ -134,5 +163,29 @@ export type CurrencySummary = {
 export type AnalyticsSummary = {
   month: string | null;
   totals: CurrencySummary[];
+};
+
+export type LoanStatus = "ACTIVE" | "SETTLED";
+
+export type LoanRepayment = {
+  id: string;
+  loanId: string;
+  amount: number;
+  date: string;
+  notes?: string | null;
+  createdAt: string;
+};
+
+export type Loan = {
+  id: string;
+  lenderName: string;
+  amount: number;
+  amountRepaid: number;
+  status: LoanStatus;
+  dateTaken: string;
+  dueDate?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  repayments?: LoanRepayment[];
 };
 

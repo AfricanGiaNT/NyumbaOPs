@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { transformImageUrl } from "@/lib/image-utils";
+import Image from "next/image";
+import { AnimatePresence, motion } from "framer-motion";
+import { transformImageUrl, BLUR_DATA_URL } from "@/lib/image-utils";
 
 type PropertyGalleryProps = {
   images: {
@@ -13,6 +15,7 @@ type PropertyGalleryProps = {
 
 export function PropertyGallery({ images, title }: PropertyGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [showAllPhotos, setShowAllPhotos] = useState(false);
 
   if (!images.length) {
     return (
@@ -22,130 +25,205 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
     );
   }
 
-  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
+  const handlePrev = () => {
+    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
 
   const handleNext = () => {
-    setCurrentIndex((prev: number) => (prev + 1) % images.length);
+    setCurrentIndex((prev) => (prev + 1) % images.length);
   };
 
-  const handlePrev = () => {
-    setCurrentIndex((prev: number) => (prev - 1 + images.length) % images.length);
+  const handleThumbnailClick = (index: number) => {
+    setCurrentIndex(index);
   };
 
-  const handlePointerDown = (e: React.PointerEvent) => {
-    setDragStart({ x: e.clientX, y: e.clientY });
-    setIsDragging(true);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!dragStart) return;
-    setDragOffset({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y,
-    });
-  };
-
-  const handlePointerUp = () => {
-    if (!dragStart) return;
-    
-    const swipeThreshold = 80;
-    if (Math.abs(dragOffset.x) > swipeThreshold) {
-      if (dragOffset.x > 0) {
-        handlePrev();
-      } else {
-        handleNext();
-      }
-    }
-    
-    setDragStart(null);
-    setDragOffset({ x: 0, y: 0 });
-    setIsDragging(false);
-  };
-
-  const visibleCards = 3;
-  const getCardStyle = (index: number) => {
-    const position = (index - currentIndex + images.length) % images.length;
-    
-    if (position >= visibleCards) return { display: 'none' };
-    
-    const isTopCard = position === 0;
-    const baseTransform = `translateX(${position * 12}px) translateY(${position * 12}px) rotate(${position * 2}deg)`;
-    const dragTransform = isTopCard && isDragging 
-      ? `translateX(${dragOffset.x}px) translateY(${dragOffset.y}px) rotate(${dragOffset.x * 0.05}deg)`
-      : '';
-    
-    return {
-      transform: dragTransform || baseTransform,
-      zIndex: visibleCards - position,
-      opacity: isTopCard && isDragging ? 0.9 : 1 - position * 0.15,
-      transition: isDragging && isTopCard ? 'none' : 'all 0.3s ease-out',
-    };
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft") handlePrev();
+    if (e.key === "ArrowRight") handleNext();
   };
 
   return (
-    <div className="space-y-8 max-w-full overflow-hidden">
-      {/* Stacked Cards */}
-      <div className="relative mx-auto h-[400px] w-full max-w-[500px] md:h-[480px] md:max-w-[600px]" style={{ maxWidth: "100%" }}>
-        <div className="relative h-full w-full" style={{ perspective: '1000px' }}>
-          {images.map((image, index) => {
-            const style = getCardStyle(index);
-            if (style.display === 'none') return null;
-            
-            const isTopCard = (index - currentIndex + images.length) % images.length === 0;
-            
-            return (
-              <div
-                key={image.url}
-                className="absolute inset-0 cursor-grab active:cursor-grabbing touch-none"
-                style={style}
-                onPointerDown={isTopCard ? handlePointerDown : undefined}
-                onPointerMove={isTopCard ? handlePointerMove : undefined}
-                onPointerUp={isTopCard ? handlePointerUp : undefined}
-                onPointerCancel={isTopCard ? handlePointerUp : undefined}
-              >
-                <div className="h-full w-full overflow-hidden rounded-2xl bg-white shadow-2xl">
-                  <img
-                    src={transformImageUrl(image.url)}
-                    alt={image.alt ?? `${title} photo ${index + 1}`}
-                    className="h-full w-full object-cover select-none pointer-events-none"
-                    draggable={false}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
+    <div className="space-y-8 max-w-full overflow-hidden" onKeyDown={handleKeyDown}>
+      {/* Main Carousel */}
+      <div className="relative mx-auto w-full max-w-4xl">
+        <div className="relative w-full rounded-2xl overflow-hidden bg-zinc-900" style={{ minHeight: "260px", maxHeight: "520px" }}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentIndex}
+              initial={{ opacity: 0, x: 100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -100 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="flex items-center justify-center"
+            >
+              <Image
+                src={transformImageUrl(images[currentIndex].url)}
+                alt={images[currentIndex].alt ?? `${title} photo ${currentIndex + 1}`}
+                width={1200}
+                height={800}
+                priority={currentIndex === 0}
+                sizes="(max-width: 896px) 100vw, 896px"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
+                style={{ width: "100%", height: "auto", maxHeight: "520px", objectFit: "contain" }}
+              />
+            </motion.div>
+          </AnimatePresence>
 
-        {/* Image Counter Badge */}
-        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-lg">
-          {currentIndex + 1} / {images.length}
+          {/* Arrow buttons */}
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={handlePrev}
+                className="absolute left-4 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-lg transition-all hover:bg-white hover:scale-110 active:scale-95"
+                aria-label="Previous image"
+              >
+                <svg className="h-5 w-5 text-zinc-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={handleNext}
+                className="absolute right-4 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-lg transition-all hover:bg-white hover:scale-110 active:scale-95"
+                aria-label="Next image"
+              >
+                <svg className="h-5 w-5 text-zinc-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </>
+          )}
+
+          {/* Image counter */}
+          {images.length > 1 && (
+            <div className="absolute bottom-4 right-4 z-10 rounded-full bg-black/60 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
+              {currentIndex + 1} / {images.length}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Thumbnail Grid */}
+      {/* Dots indicator */}
       {images.length > 1 && (
-        <div className="grid grid-cols-6 gap-2 md:grid-cols-8 lg:grid-cols-10">
-          {images.map((image, index) => (
+        <div className="flex justify-center gap-2">
+          {images.map((_, index) => (
             <button
-              key={image.url}
-              onClick={() => setCurrentIndex(index)}
-              className={`relative aspect-square overflow-hidden rounded-md transition-all ${
-                currentIndex === index
-                  ? "ring-2 ring-zinc-900 ring-offset-1"
-                  : "opacity-70 hover:opacity-100 active:opacity-100"
+              key={index}
+              onClick={() => handleThumbnailClick(index)}
+              className={`h-2 w-2 rounded-full transition-all ${
+                index === currentIndex
+                  ? "bg-zinc-900 w-8"
+                  : "bg-zinc-300 hover:bg-zinc-400"
               }`}
-            >
-              <img
-                src={transformImageUrl(image.url)}
-                alt={image.alt ?? `${title} thumbnail ${index + 1}`}
-                className="h-full w-full object-cover"
-              />
-            </button>
+              aria-label={`Go to image ${index + 1}`}
+            />
           ))}
         </div>
       )}
+
+      {/* Thumbnail strip */}
+      {images.length > 1 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-zinc-900">Photos</h3>
+            {images.length > 6 && (
+              <button
+                onClick={() => setShowAllPhotos(true)}
+                className="text-sm font-medium text-[var(--accent)] hover:underline"
+              >
+                Show all photos
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10">
+            {images.slice(0, 10).map((image, index) => (
+              <button
+                key={image.url}
+                onClick={() => handleThumbnailClick(index)}
+                className={`relative aspect-square overflow-hidden rounded-lg transition-all skeleton ${
+                  index === currentIndex
+                    ? "ring-2 ring-zinc-900 ring-offset-1"
+                    : "opacity-70 hover:opacity-100 active:opacity-100"
+                }`}
+              >
+                <Image
+                  fill
+                  src={transformImageUrl(image.url)}
+                  alt={image.alt ?? `${title} thumbnail ${index + 1}`}
+                  className="object-cover"
+                  sizes="80px"
+                  loading="lazy"
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Full-screen lightbox modal */}
+      <AnimatePresence>
+        {showAllPhotos && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/95"
+            onClick={() => setShowAllPhotos(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="relative mx-auto h-[90vh] w-[90vw] max-w-6xl overflow-hidden rounded-2xl bg-black"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close button */}
+              <button
+                onClick={() => setShowAllPhotos(false)}
+                className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm transition-all hover:bg-white hover:scale-110 active:scale-95"
+                aria-label="Close photos"
+              >
+                <svg className="h-5 w-5 text-zinc-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              {/* Photo grid */}
+              <div className="h-full overflow-y-auto p-8">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                  {images.map((image, index) => (
+                    <motion.div
+                      key={image.url}
+                      layoutId={`photo-${index}`}
+                      className="relative aspect-square overflow-hidden rounded-lg cursor-pointer bg-zinc-800"
+                      onClick={() => {
+                        setCurrentIndex(index);
+                        setShowAllPhotos(false);
+                      }}
+                      whileHover={{ scale: 1.05 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Image
+                        fill
+                        src={transformImageUrl(image.url)}
+                        alt={image.alt ?? `${title} photo ${index + 1}`}
+                        className="object-cover"
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                        loading="lazy"
+                        placeholder="blur"
+                        blurDataURL={BLUR_DATA_URL}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

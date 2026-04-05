@@ -23,13 +23,13 @@ describe('TelegramService', () => {
     const summary = (service as any).analyticsSummaryFromTransactions([
       { currency: Currency.MWK, type: TransactionType.REVENUE, amount: 1000 },
       { currency: Currency.MWK, type: TransactionType.EXPENSE, amount: 250 },
-      { currency: Currency.GBP, type: TransactionType.REVENUE, amount: 500 },
+      { currency: Currency.USD, type: TransactionType.REVENUE, amount: 500 },
     ]);
 
     expect(summary).toEqual(
       expect.arrayContaining([
         { currency: Currency.MWK, revenue: 1000, expense: 250, profit: 750 },
-        { currency: Currency.GBP, revenue: 500, expense: 0, profit: 500 },
+        { currency: Currency.USD, revenue: 500, expense: 0, profit: 500 },
       ]),
     );
   });

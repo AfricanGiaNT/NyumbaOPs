@@ -4,6 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
+    "startCommand": "(npx prisma migrate resolve --applied \"20260121_telegram_bot\" 2>/dev/null || true) && npx prisma migrate deploy && node dist/main",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",

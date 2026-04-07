@@ -1,11 +1,4 @@
+# Root-level nixpacks.toml — Railway uses apps/api/nixpacks.toml instead.
+# Set Railway service Root Directory to "apps/api" in the dashboard.
 [phases.setup]
 nixPkgs = ["nodejs_20"]
-
-[phases.install]
-cmds = ["cd apps/api && npm install --include=dev"]
-
-[phases.build]
-cmds = ["cd apps/api && npx prisma generate && npm run build"]
-
-[start]
-cmd = "cd apps/api && (npx prisma migrate resolve --applied 20260121_telegram_bot 2>/dev/null || true) && npx prisma migrate deploy && node dist/main"

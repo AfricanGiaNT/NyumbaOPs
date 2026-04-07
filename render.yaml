@@ -18,9 +18,8 @@ services:
     name: nyumbaops-api
     runtime: node
     plan: starter                   # $7/mo — never sleeps (required for Airbnb iCal polling)
-    rootDir: apps/api
-    buildCommand: npm ci && npx prisma generate && npm run build
-    startCommand: npx prisma migrate deploy && node dist/main
+    buildCommand: cd apps/api && npm ci && npx prisma generate && npm run build
+    startCommand: cd apps/api && npx prisma migrate deploy && node dist/main
     healthCheckPath: /api
     envVars:
       - key: NODE_ENV

@@ -10,6 +10,6 @@ RUN npm install --include=dev
 
 # Copy source and build
 COPY apps/api/ ./
-RUN npx prisma generate && npm run build
+RUN npx prisma generate && npm run build && ls dist/main.js
 
 CMD ["sh", "-c", "(npx prisma migrate resolve --applied 20260121_telegram_bot 2>/dev/null || true) && npx prisma migrate deploy && node dist/main"]

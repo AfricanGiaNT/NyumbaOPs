@@ -117,6 +117,8 @@ export type Booking = {
   totalAmount?: number | null;
   amountPaid?: number;
   paymentStatus?: PaymentStatus;
+  source?: string;
+  isSyncedBooking?: boolean;
   guest?: Guest;
   property?: Property;
 };

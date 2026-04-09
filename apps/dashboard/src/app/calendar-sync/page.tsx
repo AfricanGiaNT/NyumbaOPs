@@ -118,11 +118,10 @@ export default function CalendarSyncPage() {
     if (!selectedProperty || !icalUrl) return;
     setSaving(true);
     try {
-      const body = { platform, icalUrl, isEnabled, syncFrequency, propertyId: selectedProperty };
       if (syncConfig) {
-        await apiPatch(`/calendar-syncs/${syncConfig.id}`, body);
+        await apiPatch(`/calendar-syncs/${syncConfig.id}`, { platform, icalUrl, isEnabled, syncFrequency });
       } else {
-        await apiPost("/calendar-syncs", body);
+        await apiPost("/calendar-syncs", { platform, icalUrl, isEnabled, syncFrequency, propertyId: selectedProperty });
       }
       await loadSyncConfig(selectedProperty);
       alert("Calendar sync saved!");
@@ -216,58 +215,10 @@ export default function CalendarSyncPage() {
 
           {selectedProperty && (
             <>
-              {/* Export URL */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-sm p-5 mb-5 border border-blue-200">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h2 className="text-base font-semibold text-zinc-900">Export to Airbnb</h2>
-                    <p className="text-xs text-zinc-600 mt-1">
-                      Add this URL to Airbnb so it can import your bookings
-                    </p>
-                  </div>
-                  <ActionButton
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setShowExportUrl(!showExportUrl)}
-                  >
-                    {showExportUrl ? "Hide" : "Show"} URL
-                  </ActionButton>
-                </div>
-                {showExportUrl && (
-                  <div className="mt-3 space-y-2">
-                    <div className="bg-white rounded-md p-3 border border-zinc-200">
-                      <code className="text-xs text-zinc-700 break-all">{exportUrl}</code>
-                    </div>
-                    <div className="flex gap-2">
-                      <ActionButton
-                        variant="primary"
-                        size="sm"
-                        onClick={() => {
-                          navigator.clipboard.writeText(exportUrl);
-                          alert("Copied!");
-                        }}
-                      >
-                        Copy URL
-                      </ActionButton>
-                      <ActionButton
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => window.open(exportUrl, "_blank")}
-                      >
-                        Test in Browser
-                      </ActionButton>
-                    </div>
-                    <p className="text-xs text-blue-700">
-                      <strong>Airbnb:</strong> Calendar → Availability Settings → Calendar Sync → Import Calendar → Paste URL
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Import Config Form */}
+              {/* Import Config Form — Step 1 */}
               <div className="bg-white rounded-lg shadow-sm p-5 mb-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-base font-semibold text-zinc-900">Import from Airbnb</h2>
+                  <h2 className="text-base font-semibold text-zinc-900">Step 1 — Import from Airbnb</h2>
                   {syncConfig && (
                     <div className="flex gap-2">
                       <ActionButton
@@ -382,6 +333,54 @@ export default function CalendarSyncPage() {
                     <li>Paste it above</li>
                   </ol>
                 </div>
+              </div>
+
+              {/* Export URL — Step 2 */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-sm p-5 mb-5 border border-blue-200">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold text-zinc-900">Step 2 — Export to Airbnb</h2>
+                    <p className="text-xs text-zinc-600 mt-1">
+                      Now give Airbnb this URL so it can import your bookings back
+                    </p>
+                  </div>
+                  <ActionButton
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowExportUrl(!showExportUrl)}
+                  >
+                    {showExportUrl ? "Hide" : "Show"} URL
+                  </ActionButton>
+                </div>
+                {showExportUrl && (
+                  <div className="mt-3 space-y-2">
+                    <div className="bg-white rounded-md p-3 border border-zinc-200">
+                      <code className="text-xs text-zinc-700 break-all">{exportUrl}</code>
+                    </div>
+                    <div className="flex gap-2">
+                      <ActionButton
+                        variant="primary"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(exportUrl);
+                          alert("Copied!");
+                        }}
+                      >
+                        Copy URL
+                      </ActionButton>
+                      <ActionButton
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => window.open(exportUrl, "_blank")}
+                      >
+                        Test in Browser
+                      </ActionButton>
+                    </div>
+                    <p className="text-xs text-blue-700">
+                      <strong>Airbnb:</strong> Calendar → Availability Settings → Calendar Sync → Import Calendar → Paste URL
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Sync History */}

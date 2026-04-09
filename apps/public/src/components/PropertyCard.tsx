@@ -113,7 +113,7 @@ export function PropertyCard({ property }: { property: PublicPropertyListItem })
           </div>
 
           {/* ── CTA ─────────────────────────────────────────── */}
-          <div className="mt-1 rounded-xl bg-[var(--accent)] py-2.5 text-center text-sm font-semibold text-white transition-opacity group-hover:opacity-90">
+          <div className="mt-1 rounded-xl bg-[#FF8F35] py-2.5 text-center text-sm font-semibold text-white transition-opacity group-hover:opacity-90">
             View details →
           </div>
         </div>

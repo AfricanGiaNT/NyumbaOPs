@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { apiGet } from "../lib/api";
+import { apiGet, apiPatch } from "../lib/api";
 import {
   AnalyticsSummary,
   Booking,
@@ -18,12 +18,14 @@ import { FinancialSummaryCard } from "../components/dashboard/FinancialSummaryCa
 import { InquiriesCard } from "../components/dashboard/InquiriesCard";
 import { PropertiesOverviewCard } from "../components/dashboard/PropertiesOverviewCard";
 import { QuickActionsCard } from "../components/dashboard/QuickActionsCard";
+import { PropertyAvailabilityCard } from "../components/dashboard/PropertyAvailabilityCard";
 
 type DashboardData = {
   analytics: AnalyticsSummary | null;
   recentBookings: Booking[];
   todayCheckIns: Booking[];
   todayCheckOuts: Booking[];
+  upcomingActiveBookings: Booking[];
   properties: Property[];
   inquiries: Inquiry[];
 };
@@ -35,10 +37,13 @@ export default function Home() {
     recentBookings: [],
     todayCheckIns: [],
     todayCheckOuts: [],
+    upcomingActiveBookings: [],
     properties: [],
     inquiries: [],
   });
   const [loading, setLoading] = useState(true);
+  const [unblockingId, setUnblockingId] = useState<string | null>(null);
+  const [unblockError, setUnblockError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -77,6 +82,17 @@ export default function Home() {
           (b) => b.checkOutDate === today,
         );
 
+        // Upcoming active bookings for the availability card
+        const todayDate = new Date(today);
+        const upcomingActiveBookings = allBookings.filter((b) => {
+          const isActive =
+            b.status === "PENDING" ||
+            b.status === "CONFIRMED" ||
+            b.status === "CHECKED_IN";
+          const isNotPast = new Date(b.checkOutDate) >= todayDate;
+          return isActive && isNotPast;
+        });
+
         // Get recent bookings (sort by latest first)
         const recentBookings = [...allBookings]
           .sort((a, b) => {
@@ -92,6 +108,7 @@ export default function Home() {
           recentBookings,
           todayCheckIns,
           todayCheckOuts,
+          upcomingActiveBookings,
           properties,
           inquiries,
         });
@@ -104,6 +121,24 @@ export default function Home() {
 
     loadDashboardData();
   }, []);
+
+  const handleUnblockBooking = async (bookingId: string) => {
+    setUnblockingId(bookingId);
+    setUnblockError(null);
+    try {
+      await apiPatch(`/bookings/${bookingId}/status`, { status: "CANCELLED" });
+      setData((prev) => ({
+        ...prev,
+        upcomingActiveBookings: prev.upcomingActiveBookings.filter(
+          (b) => b.id !== bookingId,
+        ),
+      }));
+    } catch (err) {
+      setUnblockError((err as Error).message);
+    } finally {
+      setUnblockingId(null);
+    }
+  };
 
   // Calculate stats
   const totalBookings = data.recentBookings.length;
@@ -295,6 +330,18 @@ export default function Home() {
               loading={loading}
             />
             <QuickActionsCard />
+          </div>
+
+          {/* Property Availability - full width */}
+          <div className="mt-6">
+            <PropertyAvailabilityCard
+              bookings={data.upcomingActiveBookings}
+              properties={data.properties}
+              onUnblock={handleUnblockBooking}
+              unblockingId={unblockingId}
+              error={unblockError}
+              loading={loading}
+            />
           </div>
         </div>
       </div>

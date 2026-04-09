@@ -250,7 +250,7 @@ export class PublicService {
         [
           'BEGIN:VEVENT',
           `UID:booking-${b.id}@nyumbaops`,
-          `DTSTAMP:${now}Z`,
+          `DTSTAMP:${now}`,
           `DTSTART;VALUE=DATE:${toDateStr(b.checkInDate)}`,
           `DTEND;VALUE=DATE:${toDateStr(b.checkOutDate)}`,
           'SUMMARY:Reserved',
@@ -263,7 +263,7 @@ export class PublicService {
     const parts = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//NyumbaOps//NyumbaOps Property Management//EN',
+      'PRODID:-//Madikwe Apartments//Madikwe Apartments Property Management//EN',
       'CALSCALE:GREGORIAN',
       'METHOD:PUBLISH',
     ];

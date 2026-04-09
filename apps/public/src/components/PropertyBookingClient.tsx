@@ -45,7 +45,7 @@ export function PropertyBookingClient({
         <button
           onClick={() => setIsModalOpen(true)}
           className="mt-4 w-full rounded-lg px-6 py-3 text-base font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
-          style={{ backgroundColor: "#0f766e" }}
+          style={{ backgroundColor: "#FF8F35" }}
         >
           Check availability
         </button>
@@ -63,7 +63,7 @@ export function PropertyBookingClient({
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="w-full rounded-lg px-6 py-3 text-base font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
-                style={{ backgroundColor: "#0f766e" }}
+                style={{ backgroundColor: "#FF8F35" }}
               >
                 Check availability
               </button>

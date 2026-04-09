@@ -56,7 +56,7 @@ export function StickyCheckAvailability({
       
       <button
         onClick={onCheckAvailability}
-        className="bg-teal-700 text-white px-6 py-3 rounded-lg text-sm font-semibold hover:bg-teal-800 active:scale-95 transition-all whitespace-nowrap"
+        className="bg-[#FF8F35] text-white px-6 py-3 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap"
       >
         Check availability
       </button>

@@ -124,20 +124,20 @@ export function AmenitiesList({ amenities }: { amenities: AmenityItem[] }) {
         {displayed.map((amenity, index) => (
           <div
             key={`${amenity.name}-${index}`}
-            className="group flex items-center gap-3 rounded-2xl border border-zinc-200 bg-zinc-100 px-4 py-3 transition-all duration-200 hover:border-emerald-200 hover:bg-emerald-50 hover:shadow-sm"
+            className="group flex items-center gap-3 rounded-2xl border border-[#1B2E4B] bg-[#1B2E4B] px-4 py-3 transition-all duration-200 hover:bg-[#22395c]"
           >
             {/* Icon */}
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white shadow-sm ring-1 ring-zinc-200 text-zinc-500 transition-colors group-hover:text-emerald-700 group-hover:ring-emerald-200">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white/20 ring-1 ring-white/20 text-white">
               {getAmenityIcon(amenity.name)}
             </div>
 
             {/* Text */}
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-zinc-800 leading-tight">
+              <p className="text-sm font-semibold text-white leading-tight">
                 {formatName(amenity.name)}
               </p>
               {amenity.description && (
-                <p className="mt-0.5 text-xs leading-snug text-zinc-400 line-clamp-1">
+                <p className="mt-0.5 text-xs leading-snug text-white/70 line-clamp-1">
                   {amenity.description}
                 </p>
               )}

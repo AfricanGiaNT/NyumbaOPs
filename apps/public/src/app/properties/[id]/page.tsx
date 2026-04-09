@@ -86,24 +86,38 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
               </h1>
             </div>
 
-            {/* Property Type Subtitle */}
-            <p className="border-b border-zinc-200 pb-6 text-base text-zinc-700">
-              Entire rental unit in {property.location ?? "Lilongwe, Malawi"}
-            </p>
-
-            {/* Property Stats Inline */}
-            <div className="flex flex-wrap items-center gap-2 border-b border-zinc-200 pb-6 text-base text-zinc-700">
-              <span>{property.maxGuests} guests</span>
-              <span>·</span>
-              <span>{property.bedrooms} bedroom{property.bedrooms !== 1 ? "s" : ""}</span>
-              <span>·</span>
-              <span>{property.beds ?? property.bedrooms} bed{(property.beds ?? property.bedrooms) !== 1 ? "s" : ""}</span>
-              <span>·</span>
-              <span>{property.bathrooms} bath{property.bathrooms !== 1 ? "s" : ""}</span>
+            {/* Property Type + Stats */}
+            <div className="space-y-2 border-b border-zinc-200 pb-4">
+              <p className="text-base text-zinc-700">
+                Entire rental unit in {property.location ?? "Lilongwe, Malawi"}
+              </p>
+              <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-700">
+                <span className="flex items-center gap-1.5">
+                  <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  {property.maxGuests} guests
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                  {property.bedrooms} bedroom{property.bedrooms !== 1 ? "s" : ""}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  </svg>
+                  {property.beds ?? property.bedrooms} bed{(property.beds ?? property.bedrooms) !== 1 ? "s" : ""}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                  </svg>
+                  {property.bathrooms} bath{property.bathrooms !== 1 ? "s" : ""}
+                </span>
+              </div>
             </div>
-
-            {/* Host Section */}
-            <HostSection />
 
             {/* Description */}
             <div className="space-y-4 border-b border-zinc-200 py-8">
@@ -117,10 +131,18 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
             </div>
 
             {/* Amenities */}
-            <div className="space-y-6 border-b border-zinc-200 py-8">
+            <div className="space-y-4 border-b border-zinc-200 py-4">
               <h2 className="text-2xl font-bold text-zinc-900">What this place offers</h2>
               <AmenitiesList amenities={property.amenities} />
             </div>
+
+            {/* Location */}
+            <LocationSection
+              location={property.location ?? "Lilongwe, Central Region, Malawi"}
+              latitude={property.latitude}
+              longitude={property.longitude}
+              googleMapsUrl={property.googleMapsUrl}
+            />
 
             {/* House Rules */}
             {(property.checkInTime || property.checkOutTime || property.cancellationPolicy || property.additionalRules) && (
@@ -167,13 +189,8 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
               </div>
             )}
 
-            {/* Location */}
-            <LocationSection
-              location={property.location ?? "Lilongwe, Central Region, Malawi"}
-              latitude={property.latitude}
-              longitude={property.longitude}
-              googleMapsUrl={property.googleMapsUrl}
-            />
+            {/* Host Section */}
+            <HostSection />
 
             {/* Booking card (mobile + desktop) and availability modal */}
             <PropertyBookingClient

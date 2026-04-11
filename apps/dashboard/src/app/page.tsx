@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { apiGet, apiPatch } from "../lib/api";
+import { apiGet, apiPatch, apiPost } from "../lib/api";
 import {
   AnalyticsSummary,
   Booking,
@@ -23,8 +23,8 @@ import { PropertyAvailabilityCard } from "../components/dashboard/PropertyAvaila
 type DashboardData = {
   analytics: AnalyticsSummary | null;
   recentBookings: Booking[];
-  todayCheckIns: Booking[];
-  todayCheckOuts: Booking[];
+  upcomingCheckIns: Booking[];
+  upcomingCheckOuts: Booking[];
   upcomingActiveBookings: Booking[];
   properties: Property[];
   inquiries: Inquiry[];
@@ -35,8 +35,8 @@ export default function Home() {
   const [data, setData] = useState<DashboardData>({
     analytics: null,
     recentBookings: [],
-    todayCheckIns: [],
-    todayCheckOuts: [],
+    upcomingCheckIns: [],
+    upcomingCheckOuts: [],
     upcomingActiveBookings: [],
     properties: [],
     inquiries: [],
@@ -44,6 +44,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [unblockingId, setUnblockingId] = useState<string | null>(null);
   const [unblockError, setUnblockError] = useState<string | null>(null);
+  const [cancelSuccessMsg, setCancelSuccessMsg] = useState<string | null>(null);
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -74,16 +75,31 @@ export default function Home() {
               ) || []
             : [];
 
-        // Filter today's check-ins and check-outs
-        const todayCheckIns = allBookings.filter(
-          (b) => b.checkInDate === today,
-        );
-        const todayCheckOuts = allBookings.filter(
-          (b) => b.checkOutDate === today,
-        );
+        // Upcoming check-ins & check-outs within the next 30 days
+        // Use Date objects to correctly compare Prisma ISO datetime strings
+        const todayDate = new Date(today);
+        const cutoff = new Date(today);
+        cutoff.setDate(cutoff.getDate() + 30);
+
+        const upcomingCheckIns = allBookings.filter((b) => {
+          const d = new Date(b.checkInDate);
+          return (
+            d >= todayDate &&
+            d <= cutoff &&
+            (b.status === "CONFIRMED" || b.status === "PENDING")
+          );
+        });
+
+        const upcomingCheckOuts = allBookings.filter((b) => {
+          const d = new Date(b.checkOutDate);
+          return (
+            d >= todayDate &&
+            d <= cutoff &&
+            (b.status === "CONFIRMED" || b.status === "CHECKED_IN")
+          );
+        });
 
         // Upcoming active bookings for the availability card
-        const todayDate = new Date(today);
         const upcomingActiveBookings = allBookings.filter((b) => {
           const isActive =
             b.status === "PENDING" ||
@@ -96,7 +112,6 @@ export default function Home() {
         // Get recent bookings (sort by latest first)
         const recentBookings = [...allBookings]
           .sort((a, b) => {
-            // If there's a createdAt field, use it; otherwise use checkInDate
             const dateA = new Date(a.checkInDate).getTime();
             const dateB = new Date(b.checkInDate).getTime();
             return dateB - dateA;
@@ -106,8 +121,8 @@ export default function Home() {
         setData({
           analytics,
           recentBookings,
-          todayCheckIns,
-          todayCheckOuts,
+          upcomingCheckIns,
+          upcomingCheckOuts,
           upcomingActiveBookings,
           properties,
           inquiries,
@@ -125,14 +140,37 @@ export default function Home() {
   const handleUnblockBooking = async (bookingId: string) => {
     setUnblockingId(bookingId);
     setUnblockError(null);
+    setCancelSuccessMsg(null);
     try {
       await apiPatch(`/bookings/${bookingId}/status`, { status: "CANCELLED" });
+
+      // Optimistic removal from availability card
+      const cancelled = data.upcomingActiveBookings.find((b) => b.id === bookingId);
       setData((prev) => ({
         ...prev,
         upcomingActiveBookings: prev.upcomingActiveBookings.filter(
           (b) => b.id !== bookingId,
         ),
       }));
+
+      // Show success feedback
+      setCancelSuccessMsg(
+        "Booking cancelled. Your Airbnb calendar will update on its next sync (up to 30 min).",
+      );
+      setTimeout(() => setCancelSuccessMsg(null), 6000);
+
+      // Fire-and-forget: trigger Airbnb pull-sync for the property
+      if (cancelled?.propertyId) {
+        apiGet<{ id: string } | null>(
+          `/calendar-syncs/property/${cancelled.propertyId}`,
+        )
+          .then((sync) => {
+            if (sync?.id) {
+              return apiPost(`/calendar-syncs/${sync.id}/sync`, {});
+            }
+          })
+          .catch(() => {}); // silently ignore if no sync is configured
+      }
     } catch (err) {
       setUnblockError((err as Error).message);
     } finally {
@@ -304,8 +342,8 @@ export default function Home() {
           {/* Main Content Grid - 2 columns */}
           <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
             <UpcomingEventsCard
-              checkIns={data.todayCheckIns}
-              checkOuts={data.todayCheckOuts}
+              checkIns={data.upcomingCheckIns}
+              checkOuts={data.upcomingCheckOuts}
               loading={loading}
             />
             <RecentActivityCard
@@ -340,6 +378,7 @@ export default function Home() {
               onUnblock={handleUnblockBooking}
               unblockingId={unblockingId}
               error={unblockError}
+              successMsg={cancelSuccessMsg}
               loading={loading}
             />
           </div>

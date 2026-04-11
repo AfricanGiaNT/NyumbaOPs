@@ -10,6 +10,7 @@ type PropertyAvailabilityCardProps = {
   onUnblock: (bookingId: string) => void;
   unblockingId: string | null;
   error: string | null;
+  successMsg?: string | null;
   loading?: boolean;
 };
 
@@ -40,6 +41,7 @@ export function PropertyAvailabilityCard({
   onUnblock,
   unblockingId,
   error,
+  successMsg,
   loading = false,
 }: PropertyAvailabilityCardProps) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -103,6 +105,15 @@ export function PropertyAvailabilityCard({
           >
             ×
           </button>
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="mb-4 flex items-center gap-2 rounded bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+          <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span>{successMsg}</span>
         </div>
       )}
 
@@ -232,11 +243,16 @@ export function PropertyAvailabilityCard({
                           </div>
                         </div>
 
-                        {/* Airbnb sync warning */}
+                        {/* Airbnb sync guidance */}
                         {booking.isSyncedBooking && canCancel && (
-                          <p className="mt-1 text-xs italic text-zinc-400">
-                            Cancelling here won&apos;t update Airbnb
-                          </p>
+                          <div className="mt-1 space-y-0.5">
+                            <p className="text-xs italic text-zinc-400">
+                              This block originated on Airbnb — Unblock removes it from NyumbaOPs only.
+                            </p>
+                            <p className="text-xs italic text-zinc-400">
+                              To fully free these dates, also cancel it on Airbnb. NyumbaOPs will auto-detect the change within 30 min.
+                            </p>
+                          </div>
                         )}
                       </div>
                     );

@@ -9,6 +9,7 @@ export interface SyncResult {
   eventsImported: number;
   eventsSkipped: number;
   conflictsResolved: number;
+  autoCancelled?: number;
   error?: string;
   duration: number;
 }
@@ -94,6 +95,39 @@ export class SyncEngineService {
         }
       }
 
+      // Auto-cancel stale synced bookings whose externalId is no longer in the feed.
+      // This handles the case where Airbnb cancels a reservation on their end —
+      // the event disappears from the iCal feed and NyumbaOPs should reflect that.
+      // Safety notes:
+      //   - Only runs when iCal fetch + parse succeeded (inside the try block)
+      //   - CHECKED_IN bookings deliberately excluded (never auto-cancel an active guest)
+      //   - If feed is legitimately empty, notIn([]) matches all records — correct behaviour
+      const syncedUids = new Set(futureEvents.map((e) => e.uid));
+
+      const staleBookings = await this.prisma.booking.findMany({
+        where: {
+          propertyId: calendarSync.propertyId,
+          isSyncedBooking: true,
+          source: calendarSync.platform,
+          status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] },
+          checkOutDate: { gte: new Date() },
+          externalId: { notIn: [...syncedUids] },
+        },
+      });
+
+      for (const stale of staleBookings) {
+        await this.prisma.booking.update({
+          where: { id: stale.id },
+          data: {
+            status: BookingStatus.CANCELLED,
+            notes: `Auto-cancelled: no longer present in ${calendarSync.platform} calendar feed`,
+          },
+        });
+        this.logger.log(`Auto-cancelled stale booking ${stale.id} (no longer in ${calendarSync.platform} feed)`);
+      }
+
+      const autoCancelled = staleBookings.length;
+
       // Update calendar sync status
       await this.prisma.calendarSync.update({
         where: { id: calendarSyncId },
@@ -106,7 +140,7 @@ export class SyncEngineService {
 
       const duration = Date.now() - startTime;
       this.logger.log(
-        `Sync completed: ${eventsImported} imported, ${eventsSkipped} skipped, ${conflictsResolved} conflicts resolved (${duration}ms)`,
+        `Sync completed: ${eventsImported} imported, ${eventsSkipped} skipped, ${conflictsResolved} conflicts resolved, ${autoCancelled} auto-cancelled (${duration}ms)`,
       );
 
       return {
@@ -114,6 +148,7 @@ export class SyncEngineService {
         eventsImported,
         eventsSkipped,
         conflictsResolved,
+        autoCancelled,
         duration,
       };
     } catch (error) {

@@ -28,15 +28,29 @@ async function bootstrap() {
     : [];
 
   app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-      process.env.DASHBOARD_URL ?? 'http://localhost:3000',
-      process.env.PUBLIC_URL ?? 'http://localhost:3001',
-      process.env.DASHBOARD_NGROK_URL,
-      ...extraOrigins,
-    ].filter(Boolean),
+    origin: (origin, callback) => {
+      // Allow requests with no origin (server-to-server, curl, etc.)
+      if (!origin) return callback(null, true);
+
+      const allowed = [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:3002',
+        // Production domains — both www and apex
+        'https://madikweapartments.com',
+        'https://www.madikweapartments.com',
+        process.env.DASHBOARD_URL,
+        process.env.PUBLIC_URL,
+        process.env.DASHBOARD_NGROK_URL,
+        ...extraOrigins,
+      ].filter(Boolean) as string[];
+
+      if (allowed.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin '${origin}' not allowed`));
+      }
+    },
     credentials: true,
   });
   app.setGlobalPrefix('api');

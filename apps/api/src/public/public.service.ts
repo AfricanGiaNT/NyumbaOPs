@@ -161,6 +161,101 @@ export class PublicService {
     return { success: true, data };
   }
 
+  async getBlockedDates(propertyId: string) {
+    const property = await this.prisma.property.findFirst({
+      where: { id: propertyId, status: PropertyStatus.ACTIVE },
+      select: { id: true },
+    });
+    if (!property) {
+      throw new NotFoundException('Property not found');
+    }
+
+    const bookings = await this.prisma.booking.findMany({
+      where: {
+        propertyId,
+        status: { not: BookingStatus.CANCELLED },
+      },
+      select: { checkInDate: true, checkOutDate: true },
+      orderBy: { checkInDate: 'asc' },
+    });
+
+    return {
+      success: true,
+      data: {
+        propertyId,
+        blockedRanges: bookings.map((b) => ({
+          checkInDate: b.checkInDate.toISOString().slice(0, 10),
+          checkOutDate: b.checkOutDate.toISOString().slice(0, 10),
+        })),
+      },
+    };
+  }
+
+  async checkAvailability(
+    propertyId: string,
+    checkInDate: string,
+    checkOutDate: string,
+  ) {
+    if (!checkInDate || !checkOutDate) {
+      throw new BadRequestException('checkInDate and checkOutDate are required');
+    }
+
+    const property = await this.prisma.property.findFirst({
+      where: { id: propertyId, status: PropertyStatus.ACTIVE },
+      select: {
+        id: true,
+        name: true,
+        nightlyRate: true,
+        currency: true,
+        maxGuests: true,
+      },
+    });
+    if (!property) {
+      throw new NotFoundException('Property not found');
+    }
+
+    const checkIn = new Date(checkInDate);
+    const checkOut = new Date(checkOutDate);
+
+    if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+      throw new BadRequestException('Invalid date format. Use YYYY-MM-DD.');
+    }
+    if (checkIn >= checkOut) {
+      throw new BadRequestException('checkOutDate must be after checkInDate');
+    }
+
+    const overlapping = await this.prisma.booking.count({
+      where: {
+        propertyId,
+        status: { not: BookingStatus.CANCELLED },
+        checkInDate: { lt: checkOut },
+        checkOutDate: { gt: checkIn },
+      },
+    });
+
+    const nights = Math.round(
+      (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    const nightlyRate = property.nightlyRate ?? 0;
+    const totalAmount = nightlyRate * nights;
+
+    return {
+      success: true,
+      data: {
+        available: overlapping === 0,
+        propertyId,
+        propertyName: property.name,
+        checkInDate,
+        checkOutDate,
+        nights,
+        nightlyRate,
+        currency: property.currency,
+        totalAmount,
+        maxGuests: property.maxGuests,
+      },
+    };
+  }
+
   async uploadImage(
     file: { buffer: Buffer; mimetype: string; originalname: string },
     propertyId: string,

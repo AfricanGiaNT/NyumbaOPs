@@ -26,6 +26,20 @@ export class PublicController {
     return this.publicService.getPublicProperties(query);
   }
 
+  @Get('properties/:id/blocked-dates')
+  getBlockedDates(@Param('id') id: string) {
+    return this.publicService.getBlockedDates(id);
+  }
+
+  @Get('properties/:id/availability')
+  checkAvailability(
+    @Param('id') id: string,
+    @Query('checkInDate') checkInDate: string,
+    @Query('checkOutDate') checkOutDate: string,
+  ) {
+    return this.publicService.checkAvailability(id, checkInDate, checkOutDate);
+  }
+
   @Get('properties/:id')
   findOne(@Param('id') id: string) {
     return this.publicService.getPublicProperty(id);

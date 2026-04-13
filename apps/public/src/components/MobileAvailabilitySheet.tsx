@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { checkAvailability, fetchBlockedDates } from "@/lib/api";
 import type { AvailabilityResponse, BlockedDateRange } from "@/lib/types";
 import { DateRangePicker } from "./DateRangePicker";
@@ -31,7 +30,6 @@ export function MobileAvailabilitySheet({
   propertyId,
   propertyName,
 }: MobileAvailabilitySheetProps) {
-  const router = useRouter();
   const [checkInDate, setCheckInDate] = useState("");
   const [checkOutDate, setCheckOutDate] = useState("");
   const [checking, setChecking] = useState(false);
@@ -76,12 +74,10 @@ export function MobileAvailabilitySheet({
   };
 
   const handleBookNow = () => {
-    const params = new URLSearchParams({
-      propertyId,
-      checkIn: checkInDate,
-      checkOut: checkOutDate,
-    });
-    router.push(`/checkout?${params.toString()}`);
+    const nights = result!.nights;
+    const message = `Hi, I'd like to book ${propertyName} for ${nights} night${nights > 1 ? "s" : ""} (${checkInDate} to ${checkOutDate}). Is it still available?`;
+    const url = `https://wa.me/2650990845264?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
     onClose();
   };
 

@@ -10,7 +10,7 @@ export function Footer() {
             </p>
             <div className="flex items-center gap-2">
               <a
-                href="https://wa.me/265000000000?text=Hi%2C%20I%27m%20interested%20in%20booking%20an%20apartment."
+                href="https://wa.me/2650990845264?text=Hi%2C%20I%27m%20interested%20in%20booking%20an%20apartment."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 rounded-full bg-[#FF8F35] px-3 py-1.5 text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95"

@@ -81,7 +81,7 @@ export default async function HomePage() {
               Browse all properties
             </Link>
             <a
-              href="https://wa.me/265000000000?text=Hi%2C%20I%27m%20interested%20in%20booking%20an%20apartment."
+              href="https://wa.me/2650990845264?text=Hi%2C%20I%27m%20interested%20in%20booking%20an%20apartment."
               target="_blank"
               rel="noopener noreferrer"
               className="flex w-full items-center justify-center gap-2 rounded-full bg-[#FF8F35] px-8 py-4 text-base font-semibold text-white transition-all hover:opacity-90 active:scale-95 sm:w-auto"
@@ -128,7 +128,7 @@ export default async function HomePage() {
             WhatsApp us for quick answers, availability, and local recommendations.
           </p>
           <a
-            href="https://wa.me/265000000000?text=Hi%2C%20I%27m%20interested%20in%20booking%20an%20apartment."
+            href="https://wa.me/2650990845264?text=Hi%2C%20I%27m%20interested%20in%20booking%20an%20apartment."
             target="_blank"
             rel="noopener noreferrer"
             className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#FF8F35] px-7 py-3.5 text-sm font-bold text-white shadow-md transition-all hover:opacity-90 hover:shadow-lg active:scale-95"

@@ -9,7 +9,11 @@
       "Bash(find /c/Users/Hp/OneDrive/NyumbaOPs -name .env* -type f)",
       "Bash(xargs grep:*)",
       "Bash(grep -r \"railway\\\\|RAILWAY\\\\|railway\\\\.app\" /c/Users/Hp/OneDrive/NyumbaOPs --include=*.json --include=*.yaml --include=*.ts --include=*.tsx --include=*.js --include=*.env*)",
-      "Bash(ls -la /c/Users/Hp/OneDrive/NyumbaOPs/*.yml /c/Users/Hp/OneDrive/NyumbaOPs/*.yaml)"
+      "Bash(ls -la /c/Users/Hp/OneDrive/NyumbaOPs/*.yml /c/Users/Hp/OneDrive/NyumbaOPs/*.yaml)",
+      "Bash(npx next *)",
+      "Bash(npx eslint *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

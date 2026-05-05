@@ -144,7 +144,7 @@ export function DateRangePicker({
       </div>
 
       {/* Calendar */}
-      <div className="rounded-xl border-2 border-zinc-200 p-4 bg-white">
+      <div className="rounded-xl border-2 border-zinc-200 p-3 sm:p-4 bg-white">
         {/* Month navigation */}
         <div className="mb-4 flex items-center justify-between">
           <button
@@ -169,7 +169,7 @@ export function DateRangePicker({
         </div>
 
         {/* Week day headers */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2">
           {weekDays.map((day) => (
             <div key={day} className="text-center text-xs font-bold text-zinc-600 py-2">
               {day}
@@ -178,7 +178,7 @@ export function DateRangePicker({
         </div>
 
         {/* Calendar grid */}
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
           {days.map((date, idx) => {
             if (!date) {
               return <div key={`empty-${idx}`} />;
@@ -215,7 +215,7 @@ export function DateRangePicker({
                 type="button"
                 disabled={disabled}
                 onClick={() => !disabled && handleDateSelect(date)}
-                className="h-10 w-10 flex items-center justify-center rounded-lg text-sm font-semibold transition-all active:scale-95 disabled:cursor-not-allowed"
+                className="aspect-square w-full min-h-[36px] flex items-center justify-center rounded-lg text-xs sm:text-sm font-semibold transition-all active:scale-95 disabled:cursor-not-allowed"
                 style={{
                   backgroundColor,
                   color,

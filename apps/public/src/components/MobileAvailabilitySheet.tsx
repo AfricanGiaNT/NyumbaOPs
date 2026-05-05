@@ -117,14 +117,14 @@ export function MobileAvailabilitySheet({
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-5 border-b border-zinc-100">
-          <div>
-            <h2 className="text-xl font-bold text-zinc-900">Select dates</h2>
-            <p className="mt-1 text-sm text-zinc-500">{propertyName}</p>
+        <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-5 sm:py-5 border-b border-zinc-100">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg sm:text-xl font-bold text-zinc-900">Select dates</h2>
+            <p className="mt-1 text-sm text-zinc-500 truncate">{propertyName}</p>
           </div>
           <button
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100 active:bg-zinc-200"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-zinc-100 active:bg-zinc-200"
             aria-label="Close"
           >
             <svg className="h-5 w-5 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -134,7 +134,7 @@ export function MobileAvailabilitySheet({
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto px-5 py-5" style={{ maxHeight: "calc(95vh - 180px)" }}>
+        <div className="overflow-y-auto px-4 py-4 sm:px-5 sm:py-5" style={{ maxHeight: "calc(95vh - 180px)" }}>
           {/* Date Range Picker */}
           <DateRangePicker
             checkInDate={checkInDate}
@@ -216,9 +216,9 @@ export function MobileAvailabilitySheet({
         </div>
 
         {/* Bottom Action */}
-        <div 
-          className="border-t border-zinc-100 px-5 py-5"
-          style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
+        <div
+          className="border-t border-zinc-100 px-4 py-4 sm:px-5 sm:py-5"
+          style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
         >
           {!result ? (
             <button

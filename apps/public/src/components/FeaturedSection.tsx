@@ -80,9 +80,9 @@ export function FeaturedSection({ properties }: Props) {
           )}
         </div>
       ) : (
-        <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
-          {displayed.map((property) => (
-            <PropertyCard key={property.id} property={property} />
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+          {displayed.map((property, idx) => (
+            <PropertyCard key={property.id} property={property} priority={idx === 0} />
           ))}
         </div>
       )}

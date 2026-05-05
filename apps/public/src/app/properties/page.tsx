@@ -17,7 +17,7 @@ export default async function PropertiesPage() {
 
   return (
     <main className="bg-gradient-to-b from-white via-zinc-50 to-white">
-      <section className="mx-auto max-w-7xl px-4 pb-16 pt-12">
+      <section className="mx-auto max-w-7xl px-4 pb-16 pt-12 sm:px-6 lg:px-8">
 
         {/* ── 1. Compact header ─────────────────────────────────── */}
         <header className="mb-10 space-y-3 text-center">
@@ -49,9 +49,9 @@ export default async function PropertiesPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {properties.data.map((property) => (
-              <PropertyCard key={property.id} property={property} />
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
+            {properties.data.map((property, idx) => (
+              <PropertyCard key={property.id} property={property} priority={idx === 0} />
             ))}
           </div>
         )}

@@ -12,7 +12,13 @@ const formatPrice = (amount?: number | null, currency?: string) => {
   }).format(amount);
 };
 
-export function PropertyCard({ property }: { property: PublicPropertyListItem }) {
+export function PropertyCard({
+  property,
+  priority = false,
+}: {
+  property: PublicPropertyListItem;
+  priority?: boolean;
+}) {
   return (
     <Link href={`/properties/${property.id}`}>
       <article className="group flex flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-md transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
@@ -25,7 +31,8 @@ export function PropertyCard({ property }: { property: PublicPropertyListItem })
               src={transformImageUrl(property.coverImageUrl)}
               alt={property.coverImageAlt ?? `${property.name} preview`}
               className="object-cover transition-transform duration-500 group-hover:scale-110"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+              priority={priority}
               placeholder="blur"
               blurDataURL={BLUR_DATA_URL}
             />
@@ -55,7 +62,7 @@ export function PropertyCard({ property }: { property: PublicPropertyListItem })
           </h3>
 
           {/* ── HIGH VALUE: capacity ─────────────────────────── */}
-          <div className="flex items-center gap-5 text-sm text-zinc-700">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 sm:gap-x-5 text-sm text-zinc-700">
             <div className="flex items-center gap-1.5">
               <svg className="h-4 w-4 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -113,7 +120,7 @@ export function PropertyCard({ property }: { property: PublicPropertyListItem })
           </div>
 
           {/* ── CTA ─────────────────────────────────────────── */}
-          <div className="mt-1 rounded-xl bg-[#FF8F35] py-2.5 text-center text-sm font-semibold text-white transition-opacity group-hover:opacity-90">
+          <div className="mt-1 flex min-h-[44px] items-center justify-center rounded-xl bg-[#FF8F35] py-3 text-center text-sm font-semibold text-white transition-opacity group-hover:opacity-90">
             View details →
           </div>
         </div>

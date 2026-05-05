@@ -41,22 +41,22 @@ export function StickyCheckAvailability({
   }, []);
 
   return (
-    <div 
-      className="fixed left-0 right-0 z-50 bg-white border-t border-zinc-200 shadow-[0_-2px_8px_rgba(0,0,0,0.1)] px-4 py-4 flex items-center justify-between gap-4 lg:hidden"
-      style={{ 
+    <div
+      className="fixed left-0 right-0 z-50 bg-white border-t border-zinc-200 shadow-[0_-2px_8px_rgba(0,0,0,0.1)] px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-4 lg:hidden"
+      style={{
         bottom: `${bottomOffset}px`,
-        paddingBottom: "calc(1rem + env(safe-area-inset-bottom))",
+        paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
         transition: "bottom 0.2s ease-out"
       }}
     >
-      <div>
-        <div className="text-lg font-semibold text-zinc-900">{price}</div>
+      <div className="min-w-0">
+        <div className="truncate text-base sm:text-lg font-semibold text-zinc-900">{price}</div>
         <div className="text-xs text-zinc-600">per night</div>
       </div>
-      
+
       <button
         onClick={onCheckAvailability}
-        className="bg-[#FF8F35] text-white px-6 py-3 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap"
+        className="shrink-0 min-h-[44px] bg-[#FF8F35] text-white px-4 sm:px-6 py-3 rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all whitespace-nowrap"
       >
         Check availability
       </button>

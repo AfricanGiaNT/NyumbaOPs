@@ -46,7 +46,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
     <div className="space-y-8 max-w-full overflow-hidden" onKeyDown={handleKeyDown}>
       {/* Main Carousel */}
       <div className="relative mx-auto w-full max-w-4xl">
-        <div className="relative w-full rounded-2xl overflow-hidden bg-zinc-900" style={{ minHeight: "260px", maxHeight: "520px" }}>
+        <div className="relative w-full rounded-2xl overflow-hidden bg-zinc-900 aspect-[4/3] sm:aspect-[16/10] sm:max-h-[520px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}
@@ -54,18 +54,17 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="flex items-center justify-center"
+              className="absolute inset-0 flex items-center justify-center"
             >
               <Image
+                fill
                 src={transformImageUrl(images[currentIndex].url)}
                 alt={images[currentIndex].alt ?? `${title} photo ${currentIndex + 1}`}
-                width={1200}
-                height={800}
                 priority={currentIndex === 0}
-                sizes="(max-width: 896px) 100vw, 896px"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 896px"
                 placeholder="blur"
                 blurDataURL={BLUR_DATA_URL}
-                style={{ width: "100%", height: "auto", maxHeight: "520px", objectFit: "contain" }}
+                className="object-contain"
               />
             </motion.div>
           </AnimatePresence>
@@ -75,7 +74,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
             <>
               <button
                 onClick={handlePrev}
-                className="absolute left-4 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-lg transition-all hover:bg-white hover:scale-110 active:scale-95"
+                className="absolute left-2 sm:left-4 top-1/2 z-10 -translate-y-1/2 flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-lg transition-all hover:bg-white hover:scale-110 active:scale-95"
                 aria-label="Previous image"
               >
                 <svg className="h-5 w-5 text-zinc-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -84,7 +83,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
               </button>
               <button
                 onClick={handleNext}
-                className="absolute right-4 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-lg transition-all hover:bg-white hover:scale-110 active:scale-95"
+                className="absolute right-2 sm:right-4 top-1/2 z-10 -translate-y-1/2 flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-lg transition-all hover:bg-white hover:scale-110 active:scale-95"
                 aria-label="Next image"
               >
                 <svg className="h-5 w-5 text-zinc-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -135,7 +134,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
               </button>
             )}
           </div>
-          <div className="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10">
+          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
             {images.slice(0, 10).map((image, index) => (
               <button
                 key={image.url}
@@ -151,7 +150,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
                   src={transformImageUrl(image.url)}
                   alt={image.alt ?? `${title} thumbnail ${index + 1}`}
                   className="object-cover"
-                  sizes="80px"
+                  sizes="(max-width: 640px) 25vw, (max-width: 768px) 17vw, (max-width: 1024px) 12vw, 96px"
                   loading="lazy"
                   placeholder="blur"
                   blurDataURL={BLUR_DATA_URL}
@@ -177,13 +176,13 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="relative mx-auto h-[90vh] w-[90vw] max-w-6xl overflow-hidden rounded-2xl bg-black"
+              className="relative mx-auto h-[95vh] w-[95vw] sm:h-[90vh] sm:w-[90vw] max-w-6xl overflow-hidden rounded-2xl bg-black"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close button */}
               <button
                 onClick={() => setShowAllPhotos(false)}
-                className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm transition-all hover:bg-white hover:scale-110 active:scale-95"
+                className="absolute right-3 top-3 sm:right-4 sm:top-4 z-10 flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm transition-all hover:bg-white hover:scale-110 active:scale-95"
                 aria-label="Close photos"
               >
                 <svg className="h-5 w-5 text-zinc-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -192,8 +191,8 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
               </button>
 
               {/* Photo grid */}
-              <div className="h-full overflow-y-auto p-8">
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              <div className="h-full overflow-y-auto p-4 sm:p-8">
+                <div className="grid grid-cols-2 gap-2 sm:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                   {images.map((image, index) => (
                     <motion.div
                       key={image.url}

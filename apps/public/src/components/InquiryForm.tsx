@@ -76,7 +76,7 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
       <div>
         <label className="mb-1 block font-medium">Full name</label>
         <input
-          className="w-full rounded-lg border border-[var(--border)] px-3 py-2"
+          className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
           required
           value={formData.guestName}
           onChange={(event) => setFormData({ ...formData, guestName: event.target.value })}
@@ -86,7 +86,7 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
       <div>
         <label className="mb-1 block font-medium">Phone number</label>
         <input
-          className="w-full rounded-lg border border-[var(--border)] px-3 py-2"
+          className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
           required
           type="tel"
           value={formData.guestPhone}
@@ -97,7 +97,7 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
       <div>
         <label className="mb-1 block font-medium">Email (optional)</label>
         <input
-          className="w-full rounded-lg border border-[var(--border)] px-3 py-2"
+          className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
           type="email"
           value={formData.guestEmail}
           onChange={(event) => setFormData({ ...formData, guestEmail: event.target.value })}
@@ -108,7 +108,7 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
         <div>
           <label className="mb-1 block font-medium">Check-in</label>
           <input
-            className="w-full rounded-lg border border-[var(--border)] px-3 py-2"
+            className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
             required
             type="date"
             min={new Date().toISOString().split("T")[0]}
@@ -119,7 +119,7 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
         <div>
           <label className="mb-1 block font-medium">Check-out</label>
           <input
-            className="w-full rounded-lg border border-[var(--border)] px-3 py-2"
+            className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
             required
             type="date"
             min={formData.checkInDate || new Date().toISOString().split("T")[0]}
@@ -131,7 +131,7 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
       <div>
         <label className="mb-1 block font-medium">Guests</label>
         <input
-          className="w-full rounded-lg border border-[var(--border)] px-3 py-2"
+          className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
           required
           min={1}
           type="number"
@@ -147,7 +147,7 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
       <div>
         <label className="mb-1 block font-medium">Message (optional)</label>
         <textarea
-          className="w-full rounded-lg border border-[var(--border)] px-3 py-2"
+          className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
           rows={3}
           value={formData.message}
           onChange={(event) => setFormData({ ...formData, message: event.target.value })}
@@ -158,7 +158,7 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full rounded-full bg-[var(--accent)] px-4 py-3 text-center text-sm font-semibold text-white disabled:opacity-60"
+        className="w-full min-h-[44px] rounded-full bg-[var(--accent)] px-4 py-3 text-center text-sm font-semibold text-white disabled:opacity-60"
       >
         {submitting ? "Submitting..." : "Submit inquiry"}
       </button>

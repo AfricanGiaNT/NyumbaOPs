@@ -16,6 +16,7 @@ type PropertyGalleryProps = {
 export function PropertyGallery({ images, title }: PropertyGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   if (!images.length) {
     return (
@@ -46,7 +47,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
     <div className="space-y-8 max-w-full overflow-hidden" onKeyDown={handleKeyDown}>
       {/* Main Carousel */}
       <div className="relative mx-auto w-full max-w-4xl">
-        <div className="relative w-full rounded-2xl overflow-hidden bg-zinc-900 aspect-[4/3] sm:aspect-[16/10] sm:max-h-[520px]">
+        <div className="relative w-full rounded-2xl overflow-hidden bg-zinc-900 aspect-[3/4] sm:aspect-[4/3] sm:max-h-[600px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}
@@ -54,7 +55,8 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="absolute inset-0 flex items-center justify-center"
+              className="absolute inset-0 flex items-center justify-center cursor-zoom-in"
+              onClick={() => setLightboxIndex(currentIndex)}
             >
               <Image
                 fill
@@ -64,7 +66,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 896px"
                 placeholder="blur"
                 blurDataURL={BLUR_DATA_URL}
-                className="object-contain"
+                className="object-cover"
               />
             </motion.div>
           </AnimatePresence>
@@ -161,7 +163,75 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
         </div>
       )}
 
-      {/* Full-screen lightbox modal */}
+      {/* Single-image lightbox */}
+      <AnimatePresence>
+        {lightboxIndex !== null && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/95"
+            onClick={() => setLightboxIndex(null)}
+          >
+            {/* Close */}
+            <button
+              onClick={() => setLightboxIndex(null)}
+              className="absolute right-3 top-3 sm:right-4 sm:top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm transition-all hover:bg-white active:scale-95"
+              aria-label="Close"
+            >
+              <svg className="h-5 w-5 text-zinc-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Image */}
+            <div
+              className="relative h-[90vh] w-[95vw] max-w-4xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Image
+                fill
+                src={transformImageUrl(images[lightboxIndex].url)}
+                alt={images[lightboxIndex].alt ?? `${title} photo ${lightboxIndex + 1}`}
+                className="object-contain"
+                sizes="95vw"
+                priority
+              />
+            </div>
+
+            {/* Prev / Next */}
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setLightboxIndex((lightboxIndex - 1 + images.length) % images.length); }}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm transition-all hover:bg-white active:scale-95"
+                  aria-label="Previous image"
+                >
+                  <svg className="h-5 w-5 text-zinc-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setLightboxIndex((lightboxIndex + 1) % images.length); }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm transition-all hover:bg-white active:scale-95"
+                  aria-label="Next image"
+                >
+                  <svg className="h-5 w-5 text-zinc-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </>
+            )}
+
+            {/* Counter */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1.5 text-xs font-medium text-white">
+              {lightboxIndex + 1} / {images.length}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Full-screen photo grid modal */}
       <AnimatePresence>
         {showAllPhotos && (
           <motion.div

@@ -77,6 +77,13 @@ export function GoogleMap({
 
     let cancelled = false;
 
+    // BillingNotEnabledMapError fires as a global event, not a JS exception
+    const prevAuthFailure = (window as any).gm_authfailure;
+    (window as any).gm_authfailure = () => {
+      if (!cancelled) setError("Map unavailable");
+      if (typeof prevAuthFailure === "function") prevAuthFailure();
+    };
+
     async function initMap() {
       try {
         await loadGoogleMapsScript(apiKey!);
@@ -133,10 +140,18 @@ export function GoogleMap({
 
     return () => {
       cancelled = true;
+      (window as any).gm_authfailure = prevAuthFailure;
     };
   }, [latitude, longitude, location, zoom, markerTitle]);
 
   if (error) {
+    const mapsUrl =
+      latitude != null && longitude != null
+        ? `https://www.google.com/maps?q=${latitude},${longitude}`
+        : location
+        ? `https://www.google.com/maps/search/${encodeURIComponent(location)}`
+        : null;
+
     return (
       <div
         className={`flex items-center justify-center bg-zinc-100 text-zinc-400 rounded-xl ${className}`}
@@ -161,7 +176,17 @@ export function GoogleMap({
               d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
             />
           </svg>
-          <p className="text-sm">{error}</p>
+          <p className="text-sm">Map unavailable</p>
+          {mapsUrl && (
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-block text-xs font-medium text-[var(--accent)] hover:underline"
+            >
+              View on Google Maps →
+            </a>
+          )}
         </div>
       </div>
     );

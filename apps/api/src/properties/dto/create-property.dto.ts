@@ -11,7 +11,24 @@ import {
   IsString,
   Max,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class PropertyImageDto {
+  @IsString()
+  url: string;
+
+  @IsString()
+  @IsOptional()
+  alt?: string;
+
+  @IsBoolean()
+  isCover: boolean;
+
+  @IsInt()
+  sortOrder: number;
+}
 
 export class CreatePropertyDto {
   @ApiProperty({ example: 'Area 43 - House A' })
@@ -218,5 +235,12 @@ export class CreatePropertyDto {
   @IsEnum(PropertyStatus)
   @IsOptional()
   status?: PropertyStatus;
+
+  @ApiProperty({ type: [PropertyImageDto], required: false })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PropertyImageDto)
+  @IsOptional()
+  images?: PropertyImageDto[];
 }
 

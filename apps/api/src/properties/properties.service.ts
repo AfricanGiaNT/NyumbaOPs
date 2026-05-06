@@ -210,6 +210,10 @@ export class PropertiesService {
       await this.syncAmenities(property.id, dto.amenities);
     }
 
+    if (dto.images !== undefined) {
+      await this.syncImages(property.id, dto.images);
+    }
+
     await this.audit.logAction({
       action: 'UPDATE',
       resourceType: 'Property',
@@ -219,6 +223,24 @@ export class PropertiesService {
     });
 
     return this.findOne(property.id);
+  }
+
+  private async syncImages(
+    propertyId: string,
+    images: { url: string; alt?: string; isCover: boolean; sortOrder: number }[],
+  ) {
+    await this.prisma.$transaction([
+      this.prisma.propertyImage.deleteMany({ where: { propertyId } }),
+      this.prisma.propertyImage.createMany({
+        data: images.map((img) => ({
+          propertyId,
+          url: img.url,
+          alt: img.alt ?? null,
+          isCover: img.isCover,
+          sortOrder: img.sortOrder,
+        })),
+      }),
+    ]);
   }
 
   async remove(id: string, userId: string) {

@@ -72,6 +72,18 @@ export async function apiDelete<T>(path: string): Promise<T> {
   return handleResponse(response);
 }
 
+export async function triggerPublicRevalidation(propertyId: string): Promise<void> {
+  try {
+    await fetch("/api/revalidate-public", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ propertyId }),
+    });
+  } catch {
+    // Non-critical — don't fail the save if revalidation fails
+  }
+}
+
 // Image upload functions
 
 export async function uploadPropertyImage(data: {

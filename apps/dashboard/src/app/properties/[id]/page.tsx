@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { apiGet, apiPost, apiPatch, uploadPropertyImage, deletePropertyImage } from "../../../lib/api";
+import { apiGet, apiPost, apiPatch, uploadPropertyImage, deletePropertyImage, triggerPublicRevalidation } from "../../../lib/api";
 import {
   AnalyticsSummary,
   Category,
@@ -217,7 +217,8 @@ export default function PropertyDetailPage() {
       
       // Step 4: Reload property data to get newly uploaded image URLs
       await loadProperty();
-      
+      triggerPublicRevalidation(property.id);
+
       setShowEditForm(false);
       setPropertyForm(initialPropertyForm);
     } catch (err) {

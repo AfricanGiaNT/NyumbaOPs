@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { apiGet, apiPost, apiPatch, apiDelete, uploadPropertyImage } from "../../lib/api";
+import { apiGet, apiPost, apiPatch, apiDelete, uploadPropertyImage, triggerPublicRevalidation } from "../../lib/api";
 import { Property } from "../../lib/types";
 import { EmptyState } from "../../components/EmptyState";
 import { LoadingSkeleton } from "../../components/LoadingSkeleton";
@@ -90,6 +90,7 @@ export default function PropertiesPage() {
         } else {
           setProperties((prev: Property[]) => [created, ...prev]);
         }
+        triggerPublicRevalidation(created.id);
       } else {
         // Edit mode
         const propertyId = editingProperty?.id as string;
@@ -173,6 +174,7 @@ export default function PropertiesPage() {
         setProperties((prev: Property[]) =>
           prev.map((p: Property) => (p.id === propertyId ? updated : p))
         );
+        triggerPublicRevalidation(propertyId);
       }
     } catch (err) {
       setError((err as Error).message);

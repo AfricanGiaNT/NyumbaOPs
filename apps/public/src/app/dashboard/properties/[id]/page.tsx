@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { apiGet, apiPost, apiPatch, requestImageUpload, uploadFileToSignedUrl, deletePropertyImage } from "@/lib/dashboard/api";
+import { apiGet, apiPost, apiPatch, uploadImageFile } from "@/lib/dashboard/api";
 import {
   AnalyticsSummary,
   Category,
@@ -145,68 +145,26 @@ export default function PropertyDetailPage() {
 
   const handleSaveProperty = async () => {
     if (!property) return;
-    
+
     setEditingProperty(true);
     setPropertyError(null);
-    
+
     try {
-      const existingImages = property.images || [];
-      const formImages = propertyForm.images;
-      
-      // Step 1: Upload new images and collect their URLs
-      const imagesToUpload = formImages.filter((img) => img.file && !img.url);
-      const uploadedImageUrls: string[] = [];
-      
-      for (const [index, img] of imagesToUpload.entries()) {
-        if (!img.file) continue;
-        
-        try {
-          const { uploadUrl, publicUrl } = await requestImageUpload({
-            propertyId: property.id,
-            filename: img.file.name,
-            contentType: img.file.type,
-            alt: img.alt,
-            isCover: img.isCover,
-            sortOrder: existingImages.length + index,
-          });
-          
-          await uploadFileToSignedUrl(uploadUrl, img.file);
-          uploadedImageUrls.push(publicUrl);
-        } catch (err) {
-          console.error(`Failed to upload image ${img.file.name}:`, err);
-          // Continue with other uploads
+      // Build final images array in one pass, uploading new files inline
+      const finalImages: PropertyImage[] = [];
+      for (const [index, img] of propertyForm.images.entries()) {
+        if (img.file && !img.url) {
+          try {
+            const { publicUrl } = await uploadImageFile(img.file, property.id, img.alt);
+            finalImages.push({ url: publicUrl, alt: img.alt ?? null, isCover: img.isCover, sortOrder: index });
+          } catch (err) {
+            console.error(`Failed to upload ${img.file.name}:`, err);
+          }
+        } else if (img.url) {
+          finalImages.push({ url: img.url, alt: img.alt ?? null, isCover: img.isCover, sortOrder: index });
         }
       }
-      
-      // Step 2: Build final images array
-      // Map form images to PropertyImage format, using uploaded URLs for new images
-      const finalImages = formImages
-        .map<PropertyImage | null>((img, index) => {
-          // If it's a new upload, use the URL from upload response
-          if (img.file && !img.url) {
-            const uploadedUrl = uploadedImageUrls.shift();
-            if (!uploadedUrl) return null; // Skip if upload failed
-            return {
-              url: uploadedUrl,
-              alt: img.alt ?? null,
-              isCover: img.isCover,
-              sortOrder: index,
-            };
-          }
-          // Existing image
-          if (img.url) {
-            return {
-              url: img.url,
-              alt: img.alt ?? null,
-              isCover: img.isCover,
-              sortOrder: index,
-            };
-          }
-          return null;
-        })
-        .filter((img): img is PropertyImage => img !== null);
-      
-      // Step 3: Update property with all changes
+
       await apiPatch<Property>(`/properties/${property.id}`, {
         name: propertyForm.name,
         location: propertyForm.location || undefined,
@@ -217,10 +175,8 @@ export default function PropertyDetailPage() {
         currency: propertyForm.currency,
         images: finalImages,
       });
-      
-      // Step 4: Reload property data to get newly uploaded image URLs
+
       await loadProperty();
-      
       setShowEditForm(false);
       setPropertyForm(initialPropertyForm);
     } catch (err) {

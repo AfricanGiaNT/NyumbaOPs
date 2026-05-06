@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { apiGet, apiPost, apiPatch, requestImageUpload, uploadFileToSignedUrl } from "@/lib/dashboard/api";
+import { apiGet, apiPost, apiPatch, uploadImageFile } from "@/lib/dashboard/api";
 import { Property } from "@/lib/dashboard/types";
 import { EmptyState } from "@/components/dashboard-app/EmptyState";
 import { LoadingSkeleton } from "@/components/dashboard-app/LoadingSkeleton";
@@ -93,17 +93,22 @@ export default function PropertiesPage() {
         // Edit mode
         const propertyId = editingProperty?.id as string;
         if (!propertyId) return;
-        
-        // Step 1: Update property with all fields
-        const existingImageData = formData.images
-          .filter((img: ImageFile) => img.url && !img.file)
-          .map((img: ImageFile, index: number) => ({
-            url: img.url!,
-            alt: img.alt ?? null,
-            isCover: img.isCover,
-            sortOrder: index,
-          }));
-        
+
+        // Build final images in one pass, uploading new files inline
+        const finalImages: { url: string; alt: string | null; isCover: boolean; sortOrder: number }[] = [];
+        for (const [index, img] of formData.images.entries()) {
+          if (img.file && !img.url) {
+            try {
+              const { publicUrl } = await uploadImageFile(img.file, propertyId, img.alt);
+              finalImages.push({ url: publicUrl, alt: img.alt ?? null, isCover: img.isCover, sortOrder: index });
+            } catch (err) {
+              console.error(`Failed to upload ${img.file.name}:`, err);
+            }
+          } else if (img.url) {
+            finalImages.push({ url: img.url, alt: img.alt ?? null, isCover: img.isCover, sortOrder: index });
+          }
+        }
+
         await apiPatch<Property>(`/properties/${propertyId}`, {
           name: formData.name,
           propertyType: formData.propertyType,
@@ -143,36 +148,9 @@ export default function PropertiesPage() {
           longitude: formData.longitude,
           googleMapsUrl: formData.googleMapsUrl,
           status: formData.status,
-          images: existingImageData,
+          images: finalImages,
         });
-        
-        // Step 2: Upload new images if any
-        const imagesToUpload = formData.images.filter(
-          (img: ImageFile) => img.file && !img.url
-        );
-        
-        if (imagesToUpload.length > 0) {
-          for (const [index, img] of imagesToUpload.entries()) {
-            if (!img.file) continue;
-            
-            try {
-              const { uploadUrl } = await requestImageUpload({
-                propertyId,
-                filename: img.file.name,
-                contentType: img.file.type,
-                alt: img.alt,
-                isCover: img.isCover,
-                sortOrder: existingImageData.length + index,
-              });
-              
-              await uploadFileToSignedUrl(uploadUrl, img.file);
-            } catch (err) {
-              console.error(`Failed to upload image ${img.file.name}:`, err);
-            }
-          }
-        }
-        
-        // Step 3: Reload property
+
         const updated = await apiGet<Property>(`/properties/${propertyId}`);
         setProperties((prev: Property[]) =>
           prev.map((p: Property) => (p.id === propertyId ? updated : p))
@@ -184,30 +162,19 @@ export default function PropertiesPage() {
     }
   };
 
-  async function uploadPropertyImages(
-    propertyId: string,
-    images: ImageFile[]
-  ) {
+  async function uploadPropertyImages(propertyId: string, images: ImageFile[]) {
+    const uploaded: { url: string; alt: string | null; isCover: boolean; sortOrder: number }[] = [];
     for (const [index, img] of images.entries()) {
       if (!img.file) continue;
-      
       try {
-        // Request signed URL
-        const { uploadUrl } = await requestImageUpload({
-          propertyId,
-          filename: img.file.name,
-          contentType: img.file.type,
-          alt: img.alt,
-          isCover: img.isCover,
-          sortOrder: index,
-        });
-        
-        // Upload file to signed URL
-        await uploadFileToSignedUrl(uploadUrl, img.file);
+        const { publicUrl } = await uploadImageFile(img.file, propertyId, img.alt);
+        uploaded.push({ url: publicUrl, alt: img.alt ?? null, isCover: img.isCover, sortOrder: index });
       } catch (err) {
-        console.error(`Failed to upload image ${img.file.name}:`, err);
-        // Continue with other images even if one fails
+        console.error(`Failed to upload ${img.file.name}:`, err);
       }
+    }
+    if (uploaded.length > 0) {
+      await apiPatch<Property>(`/properties/${propertyId}`, { images: uploaded });
     }
   }
 

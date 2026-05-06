@@ -76,54 +76,25 @@ export async function apiDelete<T>(path: string): Promise<T> {
 
 // Image upload functions
 
-export async function requestImageUpload(data: {
-  propertyId: string;
-  filename: string;
-  contentType: string;
-  alt?: string;
-  isCover?: boolean;
-  sortOrder?: number;
-}): Promise<{ uploadUrl: string; publicUrl: string }> {
-  console.log('[DEBUG] requestImageUpload called:', data);
-  
-  const response = await apiPost<{ success: boolean; data: { uploadUrl: string; publicUrl: string } }>(
-    "/v1/public/uploads",
-    data
-  );
-  
-  console.log('[DEBUG] requestImageUpload response:', response.data);
-  
-  return response.data;
-}
+export async function uploadImageFile(
+  file: File,
+  propertyId: string,
+  alt?: string,
+): Promise<{ publicUrl: string }> {
+  const token = getAuthToken();
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("propertyId", propertyId);
+  if (alt) formData.append("alt", alt);
 
-export async function uploadFileToSignedUrl(
-  signedUrl: string,
-  file: File
-): Promise<void> {
-  console.log('[DEBUG] uploadFileToSignedUrl called:', { signedUrl, fileName: file.name, fileType: file.type, fileSize: file.size });
-  
-  const response = await fetch(signedUrl, {
-    method: "PUT",
-    headers: {
-      "Content-Type": file.type,
-    },
-    body: file,
+  const response = await fetch(`${API_BASE_URL}/v1/public/uploads`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: formData,
   });
 
-  console.log('[DEBUG] Upload response:', { 
-    ok: response.ok, 
-    status: response.status, 
-    statusText: response.statusText,
-    url: signedUrl.substring(0, 80) + '...'
-  });
-
-  if (!response.ok) {
-    const responseText = await response.text().catch(() => 'Unable to read response');
-    console.error('[DEBUG] Upload failed, response body:', responseText);
-    throw new Error(`Upload failed: ${response.statusText}`);
-  }
-  
-  console.log('[DEBUG] Upload successful');
+  const result = await handleResponse(response) as { success: boolean; data: { publicUrl: string } };
+  return { publicUrl: result.data.publicUrl };
 }
 
 export async function updatePropertyImages<T>(

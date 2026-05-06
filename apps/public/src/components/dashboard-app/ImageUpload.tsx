@@ -190,7 +190,7 @@ export function ImageUpload({
               
               return (
                 <div
-                  key={`${imageUrl}-${index}`}
+                  key={imageUrl}
                   draggable
                   onDragStart={() => handleDragStart(index)}
                   onDragOver={(e) => handleDragOver(e, index)}

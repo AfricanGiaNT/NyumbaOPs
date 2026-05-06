@@ -12,4 +12,4 @@ RUN npm install --include=dev
 COPY apps/api/ ./
 RUN npx prisma generate && npm run build && ls dist/src/main.js
 
-CMD ["sh", "-c", "(npx prisma migrate resolve --applied 20260121_telegram_bot 2>/dev/null || true) && npx prisma migrate deploy && node dist/src/main"]
+CMD ["node", "dist/src/main"]

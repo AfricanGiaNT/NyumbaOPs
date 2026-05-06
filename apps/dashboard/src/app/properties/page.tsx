@@ -95,17 +95,43 @@ export default function PropertiesPage() {
         // Edit mode
         const propertyId = editingProperty?.id as string;
         if (!propertyId) return;
-        
-        // Step 1: Update property with all fields
-        const existingImageData = formData.images
-          .filter((img: ImageFile) => img.url && !img.file)
-          .map((img: ImageFile, index: number) => ({
-            url: img.url!,
-            alt: img.alt ?? null,
-            isCover: img.isCover,
-            sortOrder: index,
-          }));
-        
+
+        // Step 1: Upload any new image files first so we have their URLs
+        const uploadedUrls: string[] = [];
+        for (const img of formData.images as ImageFile[]) {
+          if (!img.file || img.url) continue;
+          try {
+            const { publicUrl } = await uploadPropertyImage({
+              propertyId,
+              file: img.file,
+              alt: img.alt,
+              isCover: img.isCover,
+              sortOrder: 0, // will be overwritten by the PATCH below
+            });
+            uploadedUrls.push(publicUrl);
+          } catch (err) {
+            console.error(`Failed to upload image ${img.file.name}:`, err);
+          }
+        }
+
+        // Step 2: Build the final images array preserving the user's order,
+        // cover selection, and sort position (index = display order).
+        const uploadedUrlsCopy = [...uploadedUrls];
+        const finalImages = (formData.images as ImageFile[])
+          .map((img, index) => {
+            if (img.file && !img.url) {
+              const url = uploadedUrlsCopy.shift();
+              if (!url) return null;
+              return { url, alt: img.alt ?? null, isCover: img.isCover, sortOrder: index };
+            }
+            if (img.url) {
+              return { url: img.url, alt: img.alt ?? null, isCover: img.isCover, sortOrder: index };
+            }
+            return null;
+          })
+          .filter((img): img is NonNullable<typeof img> => img !== null);
+
+        // Step 3: Single PATCH — property fields + full images array in one go
         await apiPatch<Property>(`/properties/${propertyId}`, {
           name: formData.name,
           propertyType: formData.propertyType,
@@ -145,31 +171,10 @@ export default function PropertiesPage() {
           longitude: formData.longitude,
           googleMapsUrl: formData.googleMapsUrl,
           status: formData.status.toUpperCase() as "ACTIVE" | "INACTIVE" | "MAINTENANCE",
+          images: finalImages,
         });
-        
-        // Step 2: Upload new images if any
-        const imagesToUpload = formData.images.filter(
-          (img: ImageFile) => img.file && !img.url
-        );
-        
-        if (imagesToUpload.length > 0) {
-          await Promise.allSettled(
-            imagesToUpload.map((img, index) => {
-              if (!img.file) return Promise.resolve();
-              return uploadPropertyImage({
-                propertyId,
-                file: img.file,
-                alt: img.alt,
-                isCover: img.isCover,
-                sortOrder: existingImageData.length + index,
-              }).catch((err) => {
-                console.error(`Failed to upload image ${img.file!.name}:`, err);
-              });
-            })
-          );
-        }
-        
-        // Step 3: Reload property
+
+        // Step 4: Reload property
         const updated = await apiGet<Property>(`/properties/${propertyId}`);
         setProperties((prev: Property[]) =>
           prev.map((p: Property) => (p.id === propertyId ? updated : p))

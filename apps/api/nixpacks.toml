@@ -8,4 +8,4 @@ cmds = ["npm install"]
 cmds = ["npx prisma generate && npm run build"]
 
 [start]
-cmd = "(npx prisma migrate resolve --applied 20260121_telegram_bot 2>/dev/null || true) && npx prisma migrate deploy && node dist/main"
+cmd = "node dist/main"

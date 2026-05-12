@@ -25,14 +25,19 @@ export function FeaturedSection({ properties }: Props) {
 
   return (
     <section>
-      {/* Header row */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-zinc-900 sm:text-2xl lg:text-3xl">
-          Featured properties
-        </h2>
+      {/* Header */}
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-4xl">
+            Featured properties
+          </h2>
+          <p className="mt-1.5 text-base text-zinc-500">
+            Hand-picked apartments — verified, clean, and ready to book.
+          </p>
+        </div>
         <Link
           href="/properties"
-          className="ml-3 flex flex-shrink-0 items-center gap-1 text-sm font-semibold text-[var(--accent)] hover:underline"
+          className="mt-2 flex shrink-0 items-center gap-1 text-sm font-semibold text-[var(--accent)] hover:underline sm:mt-0"
         >
           View all
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -99,22 +99,16 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
                   {property.maxGuests} guests
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-                  {property.bedrooms} bedroom{property.bedrooms !== 1 ? "s" : ""}
+                  <span className="text-base leading-none">🛏️</span>
+                  {property.bedrooms} {property.bedrooms === 1 ? "bedroom" : "bedrooms"}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                  </svg>
-                  {property.beds ?? property.bedrooms} bed{(property.beds ?? property.bedrooms) !== 1 ? "s" : ""}
+                  <span className="text-base leading-none">🛏️</span>
+                  {property.beds ?? property.bedrooms} {(property.beds ?? property.bedrooms) === 1 ? "bed" : "beds"}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-                  </svg>
-                  {property.bathrooms} bath{property.bathrooms !== 1 ? "s" : ""}
+                  <span className="text-base leading-none">🚿</span>
+                  {property.bathrooms} {property.bathrooms === 1 ? "bathroom" : "bathrooms"}
                 </span>
               </div>
             </div>

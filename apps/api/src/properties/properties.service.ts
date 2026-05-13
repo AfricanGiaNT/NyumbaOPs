@@ -110,6 +110,10 @@ export class PropertiesService {
           latitude: dto.latitude,
           longitude: dto.longitude,
           googleMapsUrl: dto.googleMapsUrl,
+          slug: dto.slug,
+          seoTitle: dto.seoTitle,
+          seoDescription: dto.seoDescription,
+          seoKeywords: dto.seoKeywords ?? [],
           status: dto.status ?? PropertyStatus.ACTIVE,
         },
       });
@@ -202,6 +206,10 @@ export class PropertiesService {
         latitude: dto.latitude,
         longitude: dto.longitude,
         googleMapsUrl: dto.googleMapsUrl,
+        slug: dto.slug,
+        seoTitle: dto.seoTitle,
+        seoDescription: dto.seoDescription,
+        seoKeywords: dto.seoKeywords,
         status: dto.status,
       },
     });

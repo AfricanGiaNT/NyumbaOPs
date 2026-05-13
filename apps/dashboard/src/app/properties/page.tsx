@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiGet, apiPost, apiPatch, apiDelete, uploadPropertyImage, triggerPublicRevalidation } from "../../lib/api";
 import { Property } from "../../lib/types";
@@ -12,11 +11,10 @@ import { PropertyFormDialog } from "../../components/property-form/PropertyFormD
 import { PropertyFormData } from "../../types/property-form";
 import { ImageFile } from "../../components/ImageUpload";
 import { ProtectedRoute } from "../../components/ProtectedRoute";
-import { useAuth } from "../../lib/AuthContext";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 
 export default function PropertiesPage() {
-  const { signOut } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -274,34 +272,25 @@ export default function PropertiesPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-zinc-50 px-8 py-10 text-zinc-900">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8">
+      <AppLayout>
+        <div className="mx-auto max-w-6xl">
           <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-zinc-900">Properties</h1>
-              <p className="mt-1 text-sm text-zinc-600">
+              <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Properties</h1>
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                 Manage your properties and log revenue or expenses.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Link href="/" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Home</Link>
-              <Link href="/finance" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">💰 Finance</Link>
-              <Link href="/properties" className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition">Properties</Link>
-              <Link href="/guests" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Guests</Link>
-              <Link href="/bookings" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Bookings</Link>
-              <Link href="/calendar-sync" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">� Calendar Sync</Link>
-              <button onClick={() => signOut()} className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Sign out</button>
-              <ActionButton
-                variant="primary"
-                onClick={() => {
-                  setDialogMode("add");
-                  setEditingProperty(undefined);
-                  setShowDialog(true);
-                }}
-              >
-                + Add Property
-              </ActionButton>
-            </div>
+            <ActionButton
+              variant="primary"
+              onClick={() => {
+                setDialogMode("add");
+                setEditingProperty(undefined);
+                setShowDialog(true);
+              }}
+            >
+              + Add Property
+            </ActionButton>
           </header>
 
           <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -332,7 +321,7 @@ export default function PropertiesPage() {
           onSubmit={handleFormSubmit}
           mode={dialogMode}
         />
-      </div>
+      </AppLayout>
     </ProtectedRoute>
   );
 }

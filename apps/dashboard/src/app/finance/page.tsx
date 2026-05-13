@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { apiGet } from "../../lib/api";
 import { AnalyticsSummary, Loan, Transaction } from "../../lib/types";
 import { ProtectedRoute } from "../../components/ProtectedRoute";
-import { useAuth } from "../../lib/AuthContext";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { StatCard } from "../../components/dashboard/StatCard";
 import { QuickActionsGrid } from "../../components/finance/QuickActionsGrid";
 import { LoansSection } from "../../components/finance/LoansSection";
@@ -49,7 +48,6 @@ function exportTransactionsCsv(transactions: Transaction[]) {
 }
 
 export default function FinancePage() {
-  const { signOut } = useAuth();
   const [period, setPeriod] = useState<Period>(defaultPeriod);
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -115,26 +113,13 @@ export default function FinancePage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100">
-        <div className="mx-auto max-w-7xl px-6 py-8">
-
-          {/* Header */}
-          <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-zinc-900">Finance & Loans</h1>
-              <p className="mt-1 text-sm text-zinc-600">
-                Manage your revenue, expenses, and loans
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link href="/" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Home</Link>
-              <Link href="/finance" className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition">💰 Finance</Link>
-              <Link href="/properties" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Properties</Link>
-              <Link href="/guests" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Guests</Link>
-              <Link href="/bookings" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Bookings</Link>
-              <Link href="/calendar-sync" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">📅 Calendar Sync</Link>
-              <button onClick={() => signOut()} className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Sign out</button>
-            </div>
+      <AppLayout>
+        <div className="mx-auto max-w-7xl">
+          <header className="mb-8">
+            <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Finance & Loans</h1>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              Manage your revenue, expenses, and loans
+            </p>
           </header>
 
           {/* Period Selector */}
@@ -221,8 +206,8 @@ export default function FinancePage() {
 
           {/* Loans Management */}
           <div>
-            <h2 className="mb-4 text-xl font-semibold text-zinc-900">Loans Management</h2>
-            <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-xl font-semibold text-zinc-900 dark:text-zinc-100">Loans Management</h2>
+            <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
               <LoansSection
                 loans={loans}
                 loading={loansLoading}
@@ -235,19 +220,19 @@ export default function FinancePage() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Modals */}
-      <AddRevenueModal
+        {/* Modals */}
+        <AddRevenueModal
         isOpen={showRevenue}
         onClose={() => setShowRevenue(false)}
         onSuccess={handleTransactionSuccess}
       />
-      <AddExpenseModal
-        isOpen={showExpense}
-        onClose={() => setShowExpense(false)}
-        onSuccess={handleTransactionSuccess}
-      />
+        <AddExpenseModal
+          isOpen={showExpense}
+          onClose={() => setShowExpense(false)}
+          onSuccess={handleTransactionSuccess}
+        />
+      </AppLayout>
     </ProtectedRoute>
   );
 }

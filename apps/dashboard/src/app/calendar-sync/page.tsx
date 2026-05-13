@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useEffect } from "react";
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api";
 import { ActionButton } from "@/components/ActionButton";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { useAuth } from "@/lib/AuthContext";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 interface Property {
   id: string;
@@ -50,7 +49,6 @@ const ICAL_EXPORT_BASE =
 export default function CalendarSyncPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState("");
-  const { signOut } = useAuth();
   const [syncConfig, setSyncConfig] = useState<SyncConfig | null>(null);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [loading, setLoading] = useState(false);
@@ -173,25 +171,13 @@ export default function CalendarSyncPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-zinc-50 p-6">
+      <AppLayout>
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-zinc-900">Calendar Sync</h1>
-              <p className="mt-1 text-sm text-zinc-500">
-                Sync your Airbnb calendar to prevent double bookings
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link href="/" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Home</Link>
-              <Link href="/finance" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">💰 Finance</Link>
-              <Link href="/properties" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Properties</Link>
-              <Link href="/guests" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Guests</Link>
-              <Link href="/bookings" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Bookings</Link>
-              <Link href="/calendar-sync" className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition">📅 Calendar Sync</Link>
-              <button onClick={() => signOut()} className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Sign out</button>
-            </div>
+          <header className="mb-8">
+            <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Calendar Sync</h1>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              Sync your Airbnb calendar to prevent double bookings
+            </p>
           </header>
 
           {/* Property Selector */}
@@ -430,7 +416,7 @@ export default function CalendarSyncPage() {
             </div>
           )}
         </div>
-      </div>
+      </AppLayout>
     </ProtectedRoute>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { apiGet, apiPatch, apiPost } from "../lib/api";
 import {
   AnalyticsSummary,
@@ -31,7 +31,7 @@ type DashboardData = {
 };
 
 export default function Home() {
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
   const [data, setData] = useState<DashboardData>({
     analytics: null,
     recentBookings: [],
@@ -197,62 +197,16 @@ export default function Home() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100">
-        <div className="mx-auto max-w-7xl px-6 py-8">
+      <AppLayout>
+        <div className="mx-auto max-w-7xl">
           {/* Header */}
-          <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-zinc-900">
-                Dashboard Overview
-              </h1>
-              <p className="mt-1 text-sm text-zinc-600">
-                Welcome back{user?.email ? `, ${user.email.split("@")[0]}` : ""}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href="/"
-                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition"
-              >
-                Home
-              </Link>
-              <Link
-                href="/finance"
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition"
-              >
-                💰 Finance
-              </Link>
-              <Link
-                href="/properties"
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition"
-              >
-                Properties
-              </Link>
-              <Link
-                href="/guests"
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition"
-              >
-                Guests
-              </Link>
-              <Link
-                href="/bookings"
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition"
-              >
-                Bookings
-              </Link>
-              <Link
-                href="/calendar-sync"
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition"
-              >
-                📅 Calendar Sync
-              </Link>
-              <button
-                onClick={() => signOut()}
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition"
-              >
-                Sign out
-              </button>
-            </div>
+          <header className="mb-8">
+            <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
+              Dashboard Overview
+            </h1>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              Welcome back{user?.email ? `, ${user.email.split("@")[0]}` : ""}
+            </p>
           </header>
 
           {/* Stats Grid - 4 columns */}
@@ -383,7 +337,7 @@ export default function Home() {
             />
           </div>
         </div>
-      </div>
+      </AppLayout>
     </ProtectedRoute>
   );
 }

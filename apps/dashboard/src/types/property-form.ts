@@ -58,6 +58,12 @@ export interface PropertyFormData {
 
   // Status
   status: "active" | "inactive" | "maintenance";
+
+  // SEO (for public listing site)
+  slug?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string[];
 }
 
 export const DEFAULT_FORM_DATA: PropertyFormData = {
@@ -100,4 +106,8 @@ export const DEFAULT_FORM_DATA: PropertyFormData = {
   additionalRules: "",
   cancellationPolicy: "moderate",
   status: "active",
+  slug: "",
+  seoTitle: "",
+  seoDescription: "",
+  seoKeywords: [],
 };

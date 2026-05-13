@@ -9,7 +9,7 @@ import { LoadingSkeleton } from "../../components/LoadingSkeleton";
 import { SidebarForm } from "../../components/SidebarForm";
 import { FormField } from "../../components/FormField";
 import { ActionButton } from "../../components/ActionButton";
-import { useAuth } from "../../lib/AuthContext";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 type BookingFormState = {
   guestId: string;
@@ -49,7 +49,6 @@ export default function BookingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<BookingFormState>(initialForm);
   const [submitting, setSubmitting] = useState(false);
-  const { signOut } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showNewGuestForm, setShowNewGuestForm] = useState(false);
   const [newGuestForm, setNewGuestForm] = useState<NewGuestFormState>(initialGuestForm);
@@ -119,25 +118,16 @@ export default function BookingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 px-8 py-10 text-zinc-900">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8">
+    <AppLayout>
+      <div className="mx-auto max-w-6xl">
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-zinc-900">Bookings</h1>
-            <p className="mt-1 text-sm text-zinc-600">
+            <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Bookings</h1>
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
               Manage bookings and status updates.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Home</Link>
-            <Link href="/finance" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">💰 Finance</Link>
-            <Link href="/properties" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Properties</Link>
-            <Link href="/guests" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Guests</Link>
-            <Link href="/bookings" className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition">Bookings</Link>
-            <Link href="/calendar-sync" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">📅 Calendar Sync</Link>
-            <button onClick={() => signOut()} className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition">Sign out</button>
-            <ActionButton variant="primary" onClick={() => setShowAddForm(true)}>+ Add Booking</ActionButton>
-          </div>
+          <ActionButton variant="primary" onClick={() => setShowAddForm(true)}>+ Add Booking</ActionButton>
         </header>
 
         <section className="space-y-3">
@@ -410,6 +400,6 @@ export default function BookingsPage() {
           </div>
         </div>
       </SidebarForm>
-    </div>
+    </AppLayout>
   );
 }

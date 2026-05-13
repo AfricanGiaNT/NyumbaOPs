@@ -110,6 +110,10 @@ model Property {
   latitude           Float?
   longitude          Float?
   googleMapsUrl      String?        @map("google_maps_url")
+  slug               String?        @unique
+  seoTitle           String?        @map("seo_title")
+  seoDescription     String?        @map("seo_description")
+  seoKeywords        String[]       @default([]) @map("seo_keywords")
   status             PropertyStatus @default(ACTIVE)
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt

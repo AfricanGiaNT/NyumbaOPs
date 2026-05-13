@@ -20,6 +20,7 @@ import { PhotosTab } from "./PhotosTab";
 import { DetailsTab } from "./DetailsTab";
 import { PricingTab } from "./PricingTab";
 import { RulesTab } from "./RulesTab";
+import { SeoTab } from "./SeoTab";
 
 export interface PropertyFormDialogProps {
   open: boolean;
@@ -37,6 +38,7 @@ const TABS = [
   { id: "details", label: "Details", icon: "📊" },
   { id: "pricing", label: "Pricing", icon: "💰" },
   { id: "rules", label: "Rules", icon: "📋" },
+  { id: "seo", label: "SEO", icon: "🔍" },
 ];
 
 export function PropertyFormDialog({
@@ -182,6 +184,8 @@ export function PropertyFormDialog({
         return formData.nightlyRate > 0;
       case "rules":
         return !!(formData.checkInTime || formData.checkOutTime);
+      case "seo":
+        return !!(formData.slug || formData.seoTitle);
       default:
         return false;
     }
@@ -303,6 +307,14 @@ export function PropertyFormDialog({
 
               <TabsContent value="rules" currentValue={activeTab}>
                 <RulesTab
+                  data={formData}
+                  onChange={updateFormData}
+                  errors={errors}
+                />
+              </TabsContent>
+
+              <TabsContent value="seo" currentValue={activeTab}>
+                <SeoTab
                   data={formData}
                   onChange={updateFormData}
                   errors={errors}

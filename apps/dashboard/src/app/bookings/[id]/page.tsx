@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { apiGet, apiPatch } from "../../../lib/api";
@@ -99,7 +100,7 @@ export default function BookingDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 px-8 py-10 text-zinc-900">
+    <AppLayout>
       <div className="mx-auto flex max-w-5xl flex-col gap-8">
         <header className="flex items-center justify-between">
           <div>
@@ -249,6 +250,6 @@ export default function BookingDetailPage() {
           />
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }

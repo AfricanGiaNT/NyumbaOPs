@@ -242,5 +242,26 @@ export class CreatePropertyDto {
   @Type(() => PropertyImageDto)
   @IsOptional()
   images?: PropertyImageDto[];
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  slug?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  seoTitle?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  seoDescription?: string;
+
+  @ApiProperty({ type: [String], required: false })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  seoKeywords?: string[];
 }
 

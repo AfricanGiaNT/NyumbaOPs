@@ -68,6 +68,10 @@ export type Property = {
   status: PropertyStatus;
   images?: PropertyImage[];
   amenities?: string[];
+  slug?: string | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  seoKeywords?: string[];
 };
 
 export type Category = {

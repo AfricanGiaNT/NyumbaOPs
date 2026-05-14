@@ -15,7 +15,15 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Hp\\\\OneDrive\\\\NyumbaOPs\" -Directory)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(pnpm tsc *)",
+      "Bash(pnpm build *)",
+      "Bash(Select-String -Pattern \"migrate|prisma|start|dev\")",
+      "Bash(npx prisma *)",
+      "Bash(git push *)",
+      "Bash(dir \"C:\\\\Users\\\\Hp\\\\OneDrive\\\\NyumbaOPs\\\\apps\\\\dashboard\\\\src\\\\app\" /b)",
+      "Bash(Start-Sleep -Seconds 15)",
+      "Bash(Get-Content \"C:\\\\Users\\\\Hp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Hp-OneDrive-NyumbaOPs\\\\969b233d-e555-468e-93d3-8ba2093e5a95\\\\tasks\\\\bkj1r0qzo.output\" -ErrorAction SilentlyContinue)"
     ]
   }
 }

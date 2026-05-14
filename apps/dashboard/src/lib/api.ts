@@ -116,6 +116,10 @@ export async function uploadPropertyImage(data: {
   return json.data;
 }
 
+export async function sendWorkToAnyDo(workId: string) {
+  return apiPost<import('./types').Work>(`/works/${workId}/send-to-anydo`, {});
+}
+
 export async function updatePropertyImages<T>(
   propertyId: string,
   images: PropertyImage[]

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { apiDelete, apiGet } from "@/lib/api";
+import { apiDelete, apiGet, sendWorkToAnyDo } from "@/lib/api";
 import { Property, Work, WorkPriority, WorkStatus } from "@/lib/types";
 import { WorkStatusBadge } from "@/components/works/WorkStatusBadge";
 import { WorkPriorityBadge } from "@/components/works/WorkPriorityBadge";
@@ -64,12 +64,16 @@ function WorkCard({
   work,
   onEdit,
   onDelete,
+  onSendToAnyDo,
   deleting,
+  sending,
 }: {
   work: Work;
   onEdit: (w: Work) => void;
   onDelete: (w: Work) => void;
+  onSendToAnyDo: (w: Work) => void;
   deleting: boolean;
+  sending: boolean;
 }) {
   const overdue = isOverdue(work);
   const cost = formatCost(work.actualCost ?? work.estimatedCost, work.currency);
@@ -93,6 +97,14 @@ function WorkCard({
         {overdue && (
           <span className="inline-flex items-center gap-0.5 rounded-full bg-red-100 dark:bg-red-900/30 px-2 py-0.5 text-xs font-medium text-red-600 dark:text-red-400">
             ⚠ Overdue
+          </span>
+        )}
+        {work.sentToAnyDo && (
+          <span
+            className="inline-flex items-center gap-0.5 rounded-full bg-green-100 dark:bg-green-900/30 px-2 py-0.5 text-xs font-medium text-green-600 dark:text-green-400"
+            title={work.sentToAnyDoAt ? `Sent ${new Date(work.sentToAnyDoAt).toLocaleDateString()}` : "Sent to Any.do"}
+          >
+            ✓ Any.do
           </span>
         )}
       </div>
@@ -128,6 +140,22 @@ function WorkCard({
       {/* Hover action buttons */}
       <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
+          onClick={() => onSendToAnyDo(work)}
+          disabled={sending}
+          className="rounded-lg p-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:text-green-600 dark:hover:text-green-400 hover:border-green-300 dark:hover:border-green-700 transition shadow-sm disabled:opacity-50"
+          title="Send to Any.do"
+        >
+          {sending ? (
+            <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          ) : (
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          )}
+        </button>
+        <button
           onClick={() => onEdit(work)}
           className="rounded-lg p-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-700 transition shadow-sm"
           title="Edit"
@@ -162,7 +190,9 @@ function LocationColumn({
   onNewWork,
   onEdit,
   onDelete,
+  onSendToAnyDo,
   deleting,
+  sending,
 }: {
   location: string;
   locationProperties: Property[];
@@ -171,7 +201,9 @@ function LocationColumn({
   onNewWork: (location: string, propertyId: string) => void;
   onEdit: (w: Work) => void;
   onDelete: (w: Work) => void;
+  onSendToAnyDo: (w: Work) => void;
   deleting: string | null;
+  sending: string | null;
 }) {
   const visible = showCompleted
     ? works
@@ -221,7 +253,9 @@ function LocationColumn({
               work={work}
               onEdit={onEdit}
               onDelete={onDelete}
+              onSendToAnyDo={onSendToAnyDo}
               deleting={deleting === work.id}
+              sending={sending === work.id}
             />
           ))
         )}
@@ -247,6 +281,7 @@ function WorksContent() {
   const [loading, setLoading] = useState(true);
   const [editWork, setEditWork] = useState<Work | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [sending, setSending] = useState<string | null>(null);
   const [showCompleted, setShowCompleted] = useState(false);
 
   // Modal state: which location triggered it
@@ -287,6 +322,20 @@ function WorksContent() {
       alert("Failed to delete work order");
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleSendToAnyDo = async (work: Work) => {
+    setSending(work.id);
+    try {
+      const updated = await sendWorkToAnyDo(work.id);
+      setWorks((prev) => prev.map((w) => (w.id === work.id ? updated : w)));
+    } catch (err) {
+      console.error(err);
+      const msg = err instanceof Error ? err.message : String(err);
+      alert(`Failed to send to Any.do:\n\n${msg}`);
+    } finally {
+      setSending(null);
     }
   };
 
@@ -388,7 +437,9 @@ function WorksContent() {
               }
               onEdit={setEditWork}
               onDelete={handleDelete}
+              onSendToAnyDo={handleSendToAnyDo}
               deleting={deleting}
+              sending={sending}
             />
           ))}
         </div>

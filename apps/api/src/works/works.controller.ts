@@ -53,6 +53,13 @@ export class WorksController {
     return this.worksService.update(id, dto, userId);
   }
 
+  @Post(':id/send-to-anydo')
+  sendToAnyDo(
+    @Param('id') id: string,
+  ) {
+    return this.worksService.sendToAnyDo(id);
+  }
+
   @Delete(':id')
   remove(
     @Param('id') id: string,

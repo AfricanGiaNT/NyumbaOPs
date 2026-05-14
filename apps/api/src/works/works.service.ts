@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { CategoryType, Currency, TransactionType, WorkStatus } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
+import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TransactionsService } from '../transactions/transactions.service';
 import { CreateWorkDto } from './dto/create-work.dto';
@@ -17,6 +18,7 @@ export class WorksService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly transactionsService: TransactionsService,
+    private readonly emailService: EmailService,
   ) {}
 
   private async getOrCreateMaintenanceCategory(userId: string) {
@@ -96,6 +98,25 @@ export class WorksService {
     return work;
   }
 
+  async sendToAnyDo(id: string) {
+    const work = await this.prisma.work.findUnique({
+      where: { id },
+      include: { property: { select: { name: true, location: true } } },
+    });
+    if (!work) throw new NotFoundException('Work not found');
+
+    await this.emailService.sendWorkOrderToAnyDo(work);
+
+    return this.prisma.work.update({
+      where: { id },
+      data: { sentToAnyDo: true, sentToAnyDoAt: new Date() },
+      include: {
+        property: { select: { id: true, name: true, location: true } },
+        transaction: { select: { id: true, amount: true, currency: true } },
+      },
+    });
+  }
+
   async update(id: string, dto: UpdateWorkDto, userId: string) {
     const existing = await this.prisma.work.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Work not found');
@@ -162,6 +183,21 @@ export class WorksService {
       userId,
       details: { status: work.status, autoExpenseCreated: shouldCreateExpense },
     });
+
+    // Auto-send to Any.do when work transitions PENDING → IN_PROGRESS
+    if (
+      dto.status === WorkStatus.IN_PROGRESS &&
+      existing.status === WorkStatus.PENDING
+    ) {
+      this.emailService.sendWorkOrderToAnyDo(work).catch(() => {
+        // Non-fatal — don't fail the update if email fails
+      });
+      await this.prisma.work.update({
+        where: { id },
+        data: { sentToAnyDo: true, sentToAnyDoAt: new Date() },
+      });
+      return { ...work, sentToAnyDo: true, sentToAnyDoAt: new Date() };
+    }
 
     return work;
   }

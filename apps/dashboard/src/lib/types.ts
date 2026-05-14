@@ -228,6 +228,8 @@ export type Work = {
   notes?: string | null;
   property?: { id: string; name: string; location?: string | null } | null;
   transaction?: { id: string; amount: number; currency: Currency } | null;
+  sentToAnyDo?: boolean;
+  sentToAnyDoAt?: string | null;
   createdAt: string;
   updatedAt: string;
 };

@@ -459,6 +459,8 @@ model Work {
   currency      Currency     @default(MWK)
   transactionId String?      @unique @map("transaction_id")
   notes         String?
+  sentToAnyDo   Boolean      @default(false) @map("sent_to_any_do")
+  sentToAnyDoAt DateTime?    @map("sent_to_any_do_at")
   createdBy     String       @map("created_by")
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")

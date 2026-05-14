@@ -8,6 +8,10 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  /** Pre-select a property when opening from a location column */
+  defaultPropertyId?: string;
+  /** Restrict the property dropdown to a specific location */
+  locationFilter?: string;
 };
 
 const PRIORITIES: WorkPriority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
@@ -20,14 +24,14 @@ function formatLabel(value: string) {
   return value.charAt(0) + value.slice(1).toLowerCase().replace(/_/g, " ");
 }
 
-export function AddWorkModal({ isOpen, onClose, onSuccess }: Props) {
+export function AddWorkModal({ isOpen, onClose, onSuccess, defaultPropertyId, locationFilter }: Props) {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
-    propertyId: "",
+    propertyId: defaultPropertyId ?? "",
     description: "",
     priority: "MEDIUM" as WorkPriority,
     category: "GENERAL" as WorkCategory,
@@ -41,11 +45,17 @@ export function AddWorkModal({ isOpen, onClose, onSuccess }: Props) {
     if (isOpen) {
       setLoading(true);
       apiGet<Property[]>("/properties")
-        .then(setProperties)
+        .then((props) => {
+          setProperties(props);
+          // Pre-select defaultPropertyId when modal opens
+          if (defaultPropertyId) {
+            setForm((f) => ({ ...f, propertyId: defaultPropertyId }));
+          }
+        })
         .catch(console.error)
         .finally(() => setLoading(false));
     }
-  }, [isOpen]);
+  }, [isOpen, defaultPropertyId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +85,7 @@ export function AddWorkModal({ isOpen, onClose, onSuccess }: Props) {
   const handleClose = () => {
     setForm({
       title: "",
-      propertyId: "",
+      propertyId: defaultPropertyId ?? "",
       description: "",
       priority: "MEDIUM",
       category: "GENERAL",
@@ -135,9 +145,12 @@ export function AddWorkModal({ isOpen, onClose, onSuccess }: Props) {
                 className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:text-zinc-100"
               >
                 <option value="">Select a property…</option>
-                {properties.map((p) => (
+                {(locationFilter
+                  ? properties.filter((p) => p.location === locationFilter)
+                  : properties
+                ).map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name}{p.location ? ` — ${p.location}` : ""}
+                    {p.name}{!locationFilter && p.location ? ` — ${p.location}` : ""}
                   </option>
                 ))}
               </select>

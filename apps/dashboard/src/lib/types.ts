@@ -195,3 +195,87 @@ export type Loan = {
   repayments?: LoanRepayment[];
 };
 
+// ─── Works & Maintenance ────────────────────────────────────────────────────
+
+export type WorkStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+export type WorkPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+export type WorkCategory =
+  | "PLUMBING"
+  | "ELECTRICAL"
+  | "PAINTING"
+  | "CLEANING"
+  | "CARPENTRY"
+  | "APPLIANCE"
+  | "HVAC"
+  | "LANDSCAPING"
+  | "GENERAL"
+  | "OTHER";
+
+export type Work = {
+  id: string;
+  propertyId: string;
+  title: string;
+  description?: string | null;
+  status: WorkStatus;
+  priority: WorkPriority;
+  category: WorkCategory;
+  scheduledDate?: string | null;
+  completedDate?: string | null;
+  estimatedCost?: number | null;
+  actualCost?: number | null;
+  currency: Currency;
+  transactionId?: string | null;
+  notes?: string | null;
+  property?: { id: string; name: string; location?: string | null } | null;
+  transaction?: { id: string; amount: number; currency: Currency } | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// ─── Inventory ──────────────────────────────────────────────────────────────
+
+export type InventoryCategory =
+  | "CLEANING_SUPPLIES"
+  | "TOOLS"
+  | "BEDDING"
+  | "KITCHEN"
+  | "TOILETRIES"
+  | "FURNITURE"
+  | "APPLIANCES"
+  | "SAFETY"
+  | "GENERAL"
+  | "OTHER";
+
+export type StockMovementType = "IN" | "OUT";
+
+export type StockMovement = {
+  id: string;
+  inventoryItemId: string;
+  workId?: string | null;
+  type: StockMovementType;
+  quantity: number;
+  unitCost?: number | null;
+  currency: Currency;
+  transactionId?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  transaction?: { id: string; amount: number; currency: Currency } | null;
+};
+
+export type InventoryItem = {
+  id: string;
+  propertyId: string;
+  name: string;
+  category: InventoryCategory;
+  unit: string;
+  quantity: number;
+  minQuantity: number;
+  unitCost?: number | null;
+  currency: Currency;
+  notes?: string | null;
+  property?: { id: string; name: string; location?: string | null } | null;
+  movements?: StockMovement[];
+  createdAt: string;
+  updatedAt: string;
+};
+

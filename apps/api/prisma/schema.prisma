@@ -49,6 +49,51 @@ enum LoanStatus {
   SETTLED
 }
 
+enum WorkStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum WorkPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum WorkCategory {
+  PLUMBING
+  ELECTRICAL
+  PAINTING
+  CLEANING
+  CARPENTRY
+  APPLIANCE
+  HVAC
+  LANDSCAPING
+  GENERAL
+  OTHER
+}
+
+enum InventoryCategory {
+  CLEANING_SUPPLIES
+  TOOLS
+  BEDDING
+  KITCHEN
+  TOILETRIES
+  FURNITURE
+  APPLIANCES
+  SAFETY
+  GENERAL
+  OTHER
+}
+
+enum StockMovementType {
+  IN
+  OUT
+}
+
 model User {
   id           String    @id @default(uuid())
   email        String    @unique
@@ -70,6 +115,9 @@ model User {
   notificationSettings NotificationSettings?
   loans          Loan[]
   loanRepayments LoanRepayment[]
+  works          Work[]
+  stockMovements StockMovement[]
+  inventoryItems InventoryItem[]
 }
 
 model Property {
@@ -124,6 +172,8 @@ model Property {
   amenities           PropertyAmenity[]
   images              PropertyImage[]
   calendarSync        CalendarSync?
+  works               Work[]
+  inventoryItems      InventoryItem[]
 }
 
 model Amenity {
@@ -203,6 +253,8 @@ model Transaction {
   category            Category             @relation(fields: [categoryId], references: [id])
   creator             User                 @relation(fields: [createdBy], references: [id])
   transactionMappings TransactionProperty[]
+  work                Work?
+  stockMovement       StockMovement?
 
   @@index([propertyId])
   @@index([bookingId])
@@ -252,6 +304,7 @@ model NotificationSettings {
   weeklySummaryTelegram Boolean @default(false) @map("weekly_summary_telegram")
   weeklySummaryDay Int @default(1) @map("weekly_summary_day")
   weeklySummaryHour Int @default(8) @map("weekly_summary_hour")
+  workRemindersTelegram Boolean @default(true) @map("work_reminders_telegram")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -389,5 +442,83 @@ model LoanRepayment {
 
   @@index([loanId])
   @@map("loan_repayments")
+}
+
+model Work {
+  id            String       @id @default(uuid())
+  propertyId    String       @map("property_id")
+  title         String
+  description   String?
+  status        WorkStatus   @default(PENDING)
+  priority      WorkPriority @default(MEDIUM)
+  category      WorkCategory @default(GENERAL)
+  scheduledDate DateTime?    @map("scheduled_date")
+  completedDate DateTime?    @map("completed_date")
+  estimatedCost Int?         @map("estimated_cost")
+  actualCost    Int?         @map("actual_cost")
+  currency      Currency     @default(MWK)
+  transactionId String?      @unique @map("transaction_id")
+  notes         String?
+  createdBy     String       @map("created_by")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  property       Property      @relation(fields: [propertyId], references: [id])
+  transaction    Transaction?  @relation(fields: [transactionId], references: [id])
+  creator        User          @relation(fields: [createdBy], references: [id])
+  stockMovements StockMovement[]
+
+  @@index([propertyId])
+  @@index([status])
+  @@index([scheduledDate])
+  @@map("works")
+}
+
+model InventoryItem {
+  id          String            @id @default(uuid())
+  propertyId  String            @map("property_id")
+  name        String
+  category    InventoryCategory @default(GENERAL)
+  unit        String            @default("unit")
+  quantity    Int               @default(0)
+  minQuantity Int               @default(0) @map("min_quantity")
+  unitCost    Int?              @map("unit_cost")
+  currency    Currency          @default(MWK)
+  notes       String?
+  createdBy   String            @map("created_by")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  property  Property      @relation(fields: [propertyId], references: [id])
+  creator   User          @relation(fields: [createdBy], references: [id])
+  movements StockMovement[]
+
+  @@unique([propertyId, name])
+  @@index([propertyId])
+  @@map("inventory_items")
+}
+
+model StockMovement {
+  id              String            @id @default(uuid())
+  inventoryItemId String            @map("inventory_item_id")
+  workId          String?           @map("work_id")
+  type            StockMovementType
+  quantity        Int
+  unitCost        Int?              @map("unit_cost")
+  currency        Currency          @default(MWK)
+  transactionId   String?           @unique @map("transaction_id")
+  notes           String?
+  createdBy       String            @map("created_by")
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  work          Work?         @relation(fields: [workId], references: [id])
+  transaction   Transaction?  @relation(fields: [transactionId], references: [id])
+  creator       User          @relation(fields: [createdBy], references: [id])
+
+  @@index([inventoryItemId])
+  @@index([workId])
+  @@index([createdAt])
+  @@map("stock_movements")
 }
 

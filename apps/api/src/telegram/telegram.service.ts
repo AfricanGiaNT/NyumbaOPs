@@ -67,6 +67,19 @@ export class TelegramService implements OnModuleInit {
     }
   }
 
+  /**
+   * Public helper: send a plain-text message to a Telegram chat by ID.
+   * Used by WorksScheduler for daily reminders.
+   */
+  async sendMessage(telegramId: string, text: string) {
+    if (!this.bot) return;
+    try {
+      await this.bot.sendMessage(Number(telegramId), text, { parse_mode: 'Markdown' });
+    } catch (error) {
+      this.logger.error(`Failed to send Telegram message to ${telegramId}`, error);
+    }
+  }
+
   async notifyNewBooking(bookingId: string) {
     if (!this.bot) {
       return;

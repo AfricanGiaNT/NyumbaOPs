@@ -23,6 +23,60 @@ export class TransactionsService {
     });
   }
 
+  /**
+   * Internal version of create() that skips the property status check.
+   * Used by WorksService and InventoryService to auto-create expense transactions
+   * even when a property has status MAINTENANCE.
+   */
+  async createInternal(
+    type: TransactionType,
+    dto: CreateTransactionDto,
+    userId: string,
+    metadata?: { createdVia?: string },
+  ) {
+    let categoryId = dto.categoryId;
+
+    if (categoryId) {
+      const category = await this.prisma.category.findUnique({
+        where: { id: categoryId },
+      });
+      if (!category) {
+        throw new NotFoundException('Category not found');
+      }
+      if (category.type !== type) {
+        throw new BadRequestException('Category type does not match transaction type');
+      }
+    } else {
+      const defaultCategory = await this.getOrCreateDefaultCategory(type, userId);
+      categoryId = defaultCategory.id;
+    }
+
+    const transaction = await this.prisma.transaction.create({
+      data: {
+        propertyId: dto.propertyId,
+        bookingId: dto.bookingId,
+        type,
+        categoryId,
+        amount: dto.amount,
+        currency: dto.currency,
+        date: new Date(dto.date),
+        notes: dto.notes,
+        createdVia: metadata?.createdVia ?? 'DASHBOARD',
+        createdBy: userId,
+      },
+    });
+
+    await this.audit.logAction({
+      action: 'CREATE',
+      resourceType: 'Transaction',
+      resourceId: transaction.id,
+      userId,
+      details: { type, amount: transaction.amount, currency: transaction.currency },
+    });
+
+    return transaction;
+  }
+
   async create(
     type: TransactionType,
     dto: CreateTransactionDto,

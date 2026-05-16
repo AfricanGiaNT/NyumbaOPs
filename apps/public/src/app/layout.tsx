@@ -19,6 +19,7 @@ export const metadata: Metadata = {
       "Browse verified apartments in Lilongwe with transparent pricing and local support.",
     type: "website",
   },
+  icons: { icon: "/icon.svg", shortcut: "/icon.svg", apple: "/icon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -24,14 +24,14 @@ export function FormField({
     <div className="space-y-1.5">
       <label
         htmlFor={htmlFor}
-        className="block text-sm font-semibold text-zinc-800"
+        className="block text-sm font-semibold text-zinc-800 dark:text-zinc-200"
       >
         {label}
         {required && <span className="ml-1 text-red-600">*</span>}
       </label>
       {children}
       {helpText && !error && (
-        <p id={helpId} className="text-xs text-zinc-600">
+        <p id={helpId} className="text-xs text-zinc-600 dark:text-zinc-400">
           {helpText}
         </p>
       )}

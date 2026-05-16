@@ -67,7 +67,7 @@ export function SidebarForm({
       <div
         ref={sidebarRef}
         className={`
-          fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-2xl z-50
+          fixed right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-zinc-900 shadow-2xl z-50
           transform transition-transform duration-300 ease-in-out
           flex flex-col
           ${isOpen ? "translate-x-0" : "translate-x-full"}
@@ -78,13 +78,13 @@ export function SidebarForm({
         tabIndex={-1}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4">
-          <h2 id="sidebar-title" className="text-xl font-semibold text-zinc-900">
+        <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-6 py-4">
+          <h2 id="sidebar-title" className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="rounded-md p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="rounded-md p-2 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             aria-label="Close sidebar"
           >
             <svg

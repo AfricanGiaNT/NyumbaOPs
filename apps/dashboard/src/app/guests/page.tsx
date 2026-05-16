@@ -104,11 +104,11 @@ export default function GuestsPage() {
               <Link
                 key={guest.id}
                 href={`/guests/${guest.id}`}
-                className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-indigo-200"
+                className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 shadow-sm transition hover:border-indigo-200 dark:hover:border-indigo-800"
               >
-                <div className="text-lg font-semibold">{guest.name}</div>
-                <div className="text-sm text-zinc-600">{guest.email ?? "No email"}</div>
-                <div className="text-sm text-zinc-500">{guest.source}</div>
+                <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{guest.name}</div>
+                <div className="text-sm text-zinc-600 dark:text-zinc-400">{guest.email ?? "No email"}</div>
+                <div className="text-sm text-zinc-500 dark:text-zinc-400">{guest.source}</div>
               </Link>
             ))}
         </section>
@@ -123,13 +123,13 @@ export default function GuestsPage() {
         <div className="space-y-6">
           {/* Section 1: Contact Information */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-zinc-900 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
               Contact Information
             </h3>
             <FormField label="Full Name" required htmlFor="name">
               <input
                 id="name"
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="e.g., John Doe"
                 value={form.name}
                 onChange={(event) =>
@@ -147,7 +147,7 @@ export default function GuestsPage() {
               <input
                 id="email"
                 type="email"
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="e.g., john@example.com"
                 value={form.email}
                 onChange={(event) =>
@@ -164,7 +164,7 @@ export default function GuestsPage() {
               <input
                 id="phone"
                 type="tel"
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="e.g., +265 123 456 789"
                 value={form.phone}
                 onChange={(event) =>
@@ -175,8 +175,8 @@ export default function GuestsPage() {
           </div>
 
           {/* Section 2: Booking Details */}
-          <div className="space-y-4 border-t border-zinc-200 pt-6">
-            <h3 className="text-sm font-semibold text-zinc-900 uppercase tracking-wide">
+          <div className="space-y-4 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
               Booking Details
             </h3>
             <FormField
@@ -187,7 +187,7 @@ export default function GuestsPage() {
             >
               <select
                 id="source"
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={form.source}
                 onChange={(event) =>
                   setForm((prev) => ({
@@ -215,7 +215,7 @@ export default function GuestsPage() {
                 type="number"
                 min={1}
                 max={5}
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="5"
                 value={form.rating}
                 onChange={(event) =>
@@ -229,8 +229,8 @@ export default function GuestsPage() {
           </div>
 
           {/* Section 3: Additional Notes */}
-          <div className="space-y-4 border-t border-zinc-200 pt-6">
-            <h3 className="text-sm font-semibold text-zinc-900 uppercase tracking-wide">
+          <div className="space-y-4 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
               Additional Notes
             </h3>
             <FormField
@@ -241,7 +241,7 @@ export default function GuestsPage() {
               <textarea
                 id="notes"
                 rows={4}
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="e.g., Prefers ground floor, allergic to pets..."
                 value={form.notes}
                 onChange={(event) =>
@@ -253,13 +253,13 @@ export default function GuestsPage() {
 
           {/* Error Message */}
           {error && (
-            <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div className="rounded-lg bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm text-red-600 dark:text-red-400">
               {error}
             </div>
           )}
 
           {/* Form Actions */}
-          <div className="flex gap-3 border-t border-zinc-200 pt-6">
+          <div className="flex gap-3 border-t border-zinc-200 dark:border-zinc-800 pt-6">
             <ActionButton
               variant="primary"
               onClick={handleSubmit}

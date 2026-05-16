@@ -74,11 +74,11 @@ export function QuickActionsGrid({
   ];
 
   const colorMap = {
-    emerald: "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
-    rose: "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100",
-    amber: "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100",
-    indigo: "border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100",
-    zinc: "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50",
+    emerald: "border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-950/50",
+    rose: "border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/50",
+    amber: "border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/50",
+    indigo: "border-indigo-300 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/50",
+    zinc: "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700",
   };
 
   return (

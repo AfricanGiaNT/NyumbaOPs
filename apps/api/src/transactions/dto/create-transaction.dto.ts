@@ -31,6 +31,11 @@ export class CreateTransactionDto {
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
+  name?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
   notes?: string;
 
   @ApiProperty({ required: false })

@@ -23,7 +23,9 @@
       "Bash(git push *)",
       "Bash(dir \"C:\\\\Users\\\\Hp\\\\OneDrive\\\\NyumbaOPs\\\\apps\\\\dashboard\\\\src\\\\app\" /b)",
       "Bash(Start-Sleep -Seconds 15)",
-      "Bash(Get-Content \"C:\\\\Users\\\\Hp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Hp-OneDrive-NyumbaOPs\\\\969b233d-e555-468e-93d3-8ba2093e5a95\\\\tasks\\\\bkj1r0qzo.output\" -ErrorAction SilentlyContinue)"
+      "Bash(Get-Content \"C:\\\\Users\\\\Hp\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-Hp-OneDrive-NyumbaOPs\\\\969b233d-e555-468e-93d3-8ba2093e5a95\\\\tasks\\\\bkj1r0qzo.output\" -ErrorAction SilentlyContinue)",
+      "Bash(cd /c/Users/Hp/OneDrive/NyumbaOPs/apps/dashboard/src && grep -r \"bg-white\" --include=\"*.tsx\" | head -50)",
+      "Bash(Remove-Item \"C:\\\\Users\\\\Hp\\\\OneDrive\\\\NyumbaOPs\\\\apps\\\\dashboard\\\\src\\\\app\\\\favicon.ico\")"
     ]
   }
 }

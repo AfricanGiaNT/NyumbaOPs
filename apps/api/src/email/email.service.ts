@@ -26,12 +26,15 @@ export class EmailService {
 
     this.transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
+      port: 587,
+      secure: false,
       auth: {
         user: this.gmailUser,
         pass: appPassword,
       },
+      connectionTimeout: 10000,
+      socketTimeout: 10000,
+      greetingTimeout: 10000,
     });
   }
 
@@ -70,17 +73,24 @@ export class EmailService {
       work.notes ?? 'None',
     ].join('\n');
 
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('SMTP connection timed out after 12s — port 587 on smtp.gmail.com may be blocked by the host')), 12000),
+    );
+
     try {
-      await this.transporter.sendMail({
-        from: this.gmailUser,
-        to: this.anyDoEmail,
-        subject: `[Work Order] ${work.title}`,
-        text: body,
-      });
+      await Promise.race([
+        this.transporter.sendMail({
+          from: this.gmailUser,
+          to: this.anyDoEmail,
+          subject: `[Work Order] ${work.title}`,
+          text: body,
+        }),
+        timeout,
+      ]);
     } catch (err: unknown) {
       const detail = err instanceof Error ? err.message : String(err);
       this.logger.error(`Any.do email failed: ${detail}`);
-      throw new Error(`Gmail SMTP error: ${detail}`);
+      throw new Error(detail);
     }
 
     this.logger.log(`Sent work order "${work.title}" to Any.do`);

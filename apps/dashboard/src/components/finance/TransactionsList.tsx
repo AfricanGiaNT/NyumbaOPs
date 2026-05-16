@@ -81,6 +81,7 @@ export function TransactionsList({ refreshTrigger, period, onTransactionsLoaded 
     if (!filters.search) return true;
     const term = filters.search.toLowerCase();
     return (
+      t.name?.toLowerCase().includes(term) ||
       t.notes?.toLowerCase().includes(term) ||
       t.category?.name?.toLowerCase().includes(term) ||
       t.property?.name?.toLowerCase().includes(term)
@@ -99,20 +100,20 @@ export function TransactionsList({ refreshTrigger, period, onTransactionsLoaded 
       {/* Filter bar */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
         {/* Type filter */}
-        <div className="flex rounded-lg border border-zinc-200 bg-white overflow-hidden shadow-sm">
+        <div className="flex rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm">
           {([["", "All"], ["REVENUE", "Revenue"], ["EXPENSE", "Expenses"]] as [TransactionType | "", string][]).map(
             ([val, label]) => (
               <button
                 key={val}
                 onClick={() => setFilters((f) => ({ ...f, type: val }))}
-                className={`px-3 py-1.5 text-sm font-medium border-r border-zinc-200 last:border-r-0 transition ${
+                className={`px-3 py-1.5 text-sm font-medium border-r border-zinc-200 dark:border-zinc-700 last:border-r-0 transition ${
                   filters.type === val
                     ? val === "REVENUE"
                       ? "bg-emerald-600 text-white"
                       : val === "EXPENSE"
                       ? "bg-rose-600 text-white"
                       : "bg-indigo-600 text-white"
-                    : "text-zinc-600 hover:bg-zinc-50"
+                    : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                 }`}
               >
                 {label}
@@ -125,7 +126,7 @@ export function TransactionsList({ refreshTrigger, period, onTransactionsLoaded 
         <select
           value={filters.propertyId}
           onChange={(e) => setFilters((f) => ({ ...f, propertyId: e.target.value }))}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-700 shadow-sm focus:border-indigo-500 focus:outline-none"
+          className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-300 shadow-sm focus:border-indigo-500 focus:outline-none"
         >
           <option value="">All Properties</option>
           {properties.map((p) => (
@@ -137,7 +138,7 @@ export function TransactionsList({ refreshTrigger, period, onTransactionsLoaded 
         <select
           value={filters.categoryId}
           onChange={(e) => setFilters((f) => ({ ...f, categoryId: e.target.value }))}
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-700 shadow-sm focus:border-indigo-500 focus:outline-none"
+          className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-300 shadow-sm focus:border-indigo-500 focus:outline-none"
         >
           <option value="">All Categories</option>
           {categories.map((c) => (
@@ -155,7 +156,7 @@ export function TransactionsList({ refreshTrigger, period, onTransactionsLoaded 
             placeholder="Search notes, category..."
             value={filters.search}
             onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-            className="w-full rounded-lg border border-zinc-200 bg-white py-1.5 pl-9 pr-3 text-sm shadow-sm focus:border-indigo-500 focus:outline-none"
+            className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 py-1.5 pl-9 pr-3 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 shadow-sm focus:border-indigo-500 focus:outline-none"
           />
         </div>
       </div>
@@ -180,32 +181,32 @@ export function TransactionsList({ refreshTrigger, period, onTransactionsLoaded 
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-zinc-200 bg-white py-12 text-center">
-          <p className="text-sm text-zinc-500">No transactions found</p>
-          <p className="mt-1 text-xs text-zinc-400">Try adjusting the filters or adding a transaction</p>
+        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 py-12 text-center">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">No transactions found</p>
+          <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">Try adjusting the filters or adding a transaction</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-100 bg-zinc-50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Date</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Type</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Category</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Property</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-500">Amount</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">Notes</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-500"></th>
+                <tr className="border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Date</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Type</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Name / Category</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Property</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Amount</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Notes</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400"></th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((t, i) => (
                   <tr
                     key={t.id}
-                    className={`border-b border-zinc-100 last:border-b-0 hover:bg-zinc-50 ${i % 2 === 0 ? "" : "bg-zinc-50/40"}`}
+                    className={`border-b border-zinc-100 dark:border-zinc-800 last:border-b-0 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 ${i % 2 === 0 ? "" : "bg-zinc-50/40 dark:bg-zinc-800/20"}`}
                   >
-                    <td className="whitespace-nowrap px-4 py-3 text-zinc-600">
+                    <td className="whitespace-nowrap px-4 py-3 text-zinc-600 dark:text-zinc-400">
                       {new Date(t.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
                     </td>
                     <td className="px-4 py-3">
@@ -219,14 +220,20 @@ export function TransactionsList({ refreshTrigger, period, onTransactionsLoaded 
                         {t.type === "REVENUE" ? "Revenue" : "Expense"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-zinc-700">{t.category?.name ?? "—"}</td>
-                    <td className="px-4 py-3 text-zinc-600">{t.property?.name ?? <span className="text-zinc-400">General</span>}</td>
+                    <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">
+                      {t.name ? (
+                        <span className="font-medium">{t.name}</span>
+                      ) : (
+                        <span className="text-zinc-400 dark:text-zinc-500 italic">{t.category?.name ?? "—"}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">{t.property?.name ?? <span className="text-zinc-400 dark:text-zinc-500">General</span>}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-right font-semibold">
                       <span className={t.type === "REVENUE" ? "text-emerald-600" : "text-rose-600"}>
                         {t.type === "REVENUE" ? "+" : "-"}{t.currency} {t.amount.toLocaleString()}
                       </span>
                     </td>
-                    <td className="max-w-[200px] truncate px-4 py-3 text-zinc-500">{t.notes ?? "—"}</td>
+                    <td className="max-w-[200px] truncate px-4 py-3 text-zinc-500 dark:text-zinc-400">{t.notes ?? "—"}</td>
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => handleDelete(t.id)}

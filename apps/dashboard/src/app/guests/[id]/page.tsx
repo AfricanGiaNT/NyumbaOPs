@@ -31,14 +31,14 @@ export default function GuestDetailPage() {
       <div className="mx-auto flex max-w-5xl flex-col gap-8">
         <header className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-semibold">{guest?.name ?? "Guest"}</h1>
-            <p className="text-sm text-zinc-600">
+            <h1 className="text-3xl font-semibold text-zinc-900 dark:text-zinc-100">{guest?.name ?? "Guest"}</h1>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
               {guest?.email ?? "No email on file"}
             </p>
           </div>
           <Link
             href="/guests"
-            className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
+            className="rounded-md border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
             Back to Guests
           </Link>
@@ -50,9 +50,9 @@ export default function GuestDetailPage() {
         )}
 
         {!loading && !error && guest && (
-          <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold">Guest Details</h2>
-            <div className="mt-4 grid grid-cols-1 gap-3 text-sm text-zinc-600 md:grid-cols-2">
+          <section className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Guest Details</h2>
+            <div className="mt-4 grid grid-cols-1 gap-3 text-sm text-zinc-600 dark:text-zinc-400 md:grid-cols-2">
               <div>Phone: {guest.phone ?? "N/A"}</div>
               <div>Source: {guest.source}</div>
               <div>Rating: {guest.rating ?? "N/A"}</div>
@@ -69,16 +69,16 @@ export default function GuestDetailPage() {
                 guest.bookings.map((booking) => (
                   <div
                     key={booking.id}
-                    className="rounded-lg border border-zinc-200 bg-white p-4 text-sm"
+                    className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 text-sm"
                   >
-                    <div className="font-medium text-zinc-900">
+                    <div className="font-medium text-zinc-900 dark:text-zinc-100">
                       {booking.property?.name ?? booking.propertyId}
                     </div>
-                    <div className="text-zinc-500">
+                    <div className="text-zinc-500 dark:text-zinc-400">
                       {new Date(booking.checkInDate).toLocaleDateString()} →{" "}
                       {new Date(booking.checkOutDate).toLocaleDateString()}
                     </div>
-                    <div className="text-zinc-500">Status: {booking.status}</div>
+                    <div className="text-zinc-500 dark:text-zinc-400">Status: {booking.status}</div>
                   </div>
                 ))
               ) : (

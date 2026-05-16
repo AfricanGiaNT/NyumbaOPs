@@ -87,6 +87,7 @@ export type Transaction = {
   bookingId?: string | null;
   type: TransactionType;
   categoryId: string;
+  name?: string | null;
   amount: number;
   currency: Currency;
   date: string;

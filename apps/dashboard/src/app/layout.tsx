@@ -21,6 +21,7 @@ export const metadata: Metadata = {
   },
   description: "Property and financial management for short-term rentals",
   robots: { index: false, follow: false },
+  icons: { icon: "/icon.svg", shortcut: "/icon.svg" },
 };
 
 export default function RootLayout({

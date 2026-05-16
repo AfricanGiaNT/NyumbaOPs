@@ -112,7 +112,7 @@ export default function BookingDetailPage() {
           </div>
           <Link
             href="/bookings"
-            className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
+            className="rounded-md border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
             Back to Bookings
           </Link>
@@ -124,9 +124,9 @@ export default function BookingDetailPage() {
         )}
 
         {!loading && !error && booking && (
-          <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <section className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm">
             <h2 className="text-lg font-semibold">Details</h2>
-            <div className="mt-4 grid grid-cols-1 gap-3 text-sm text-zinc-600 md:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-3 text-sm text-zinc-600 dark:text-zinc-400 md:grid-cols-2">
               <div>Status: {booking.status}</div>
               <div>
                 Dates: {new Date(booking.checkInDate).toLocaleDateString()} →{" "}
@@ -138,7 +138,7 @@ export default function BookingDetailPage() {
         )}
 
         {!loading && !error && booking && (
-          <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <section className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-semibold">Payments</h2>
               <button
@@ -149,7 +149,7 @@ export default function BookingDetailPage() {
                 Add payment
               </button>
             </div>
-            <div className="mt-3 grid grid-cols-1 gap-2 text-sm text-zinc-600 md:grid-cols-3">
+            <div className="mt-3 grid grid-cols-1 gap-2 text-sm text-zinc-600 dark:text-zinc-400 md:grid-cols-3">
               <div>Total: {booking.totalAmount ?? 0}</div>
               <div>Paid: {booking.amountPaid ?? 0}</div>
               <div>Status: {booking.paymentStatus ?? "UNPAID"}</div>
@@ -161,7 +161,7 @@ export default function BookingDetailPage() {
                 payments.map((payment) => (
                   <div
                     key={payment.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-zinc-200 px-3 py-2 text-sm text-zinc-700"
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300"
                   >
                     <span>
                       {payment.amount} {payment.currency} • {payment.method}
@@ -175,11 +175,11 @@ export default function BookingDetailPage() {
         )}
 
         {!loading && !error && booking && (
-          <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <section className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm">
             <h2 className="text-lg font-semibold">Update Status</h2>
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
               <select
-                className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                className="rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100"
                 value={form.status}
                 onChange={(event) =>
                   setForm((prev) => ({
@@ -197,7 +197,7 @@ export default function BookingDetailPage() {
               </select>
               <input
                 type="datetime-local"
-                className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                className="rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100"
                 value={form.actualCheckIn}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, actualCheckIn: event.target.value }))
@@ -205,14 +205,14 @@ export default function BookingDetailPage() {
               />
               <input
                 type="datetime-local"
-                className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                className="rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100"
                 value={form.actualCheckOut}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, actualCheckOut: event.target.value }))
                 }
               />
               <input
-                className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                className="rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100"
                 placeholder="Check-in notes"
                 value={form.checkInNotes}
                 onChange={(event) =>
@@ -220,7 +220,7 @@ export default function BookingDetailPage() {
                 }
               />
               <input
-                className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                className="rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100"
                 placeholder="Check-out notes"
                 value={form.checkOutNotes}
                 onChange={(event) =>

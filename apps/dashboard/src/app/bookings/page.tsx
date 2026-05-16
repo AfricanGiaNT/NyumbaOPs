@@ -143,22 +143,22 @@ export default function BookingsPage() {
               <Link
                 key={booking.id}
                 href={`/bookings/${booking.id}`}
-                className="block rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-indigo-200"
+                className="block rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 shadow-sm transition hover:border-indigo-200 dark:hover:border-indigo-800"
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-lg font-semibold">
+                    <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
                       {booking.guest?.name ?? booking.guestId}
                     </div>
-                    <div className="text-sm text-zinc-600">
+                    <div className="text-sm text-zinc-600 dark:text-zinc-400">
                       {booking.property?.name ?? booking.propertyId}
                     </div>
                   </div>
-                  <span className="text-sm font-medium text-indigo-600">
+                  <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
                     {booking.status}
                   </span>
                 </div>
-                <div className="mt-2 text-sm text-zinc-500">
+                <div className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
                   {new Date(booking.checkInDate).toLocaleDateString()} →{" "}
                   {new Date(booking.checkOutDate).toLocaleDateString()}
                 </div>
@@ -176,13 +176,13 @@ export default function BookingsPage() {
         <div className="space-y-6">
           {/* Guest Selection */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-zinc-900 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
               Guest Information
             </h3>
             <FormField label="Select Guest" required htmlFor="guestId">
               <select
                 id="guestId"
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={form.guestId}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, guestId: event.target.value }))
@@ -209,14 +209,14 @@ export default function BookingsPage() {
 
             {/* Inline New Guest Form */}
             {showNewGuestForm && (
-              <div className="space-y-4 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-                <h4 className="text-sm font-semibold text-zinc-900">
+              <div className="space-y-4 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/20 p-4">
+                <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                   New Guest Details
                 </h4>
                 <FormField label="Guest Name" required htmlFor="newGuestName">
                   <input
                     id="newGuestName"
-                    className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="e.g., Jane Smith"
                     value={newGuestForm.name}
                     onChange={(event) =>
@@ -233,7 +233,7 @@ export default function BookingsPage() {
                   <input
                     id="newGuestEmail"
                     type="email"
-                    className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="e.g., jane@example.com"
                     value={newGuestForm.email}
                     onChange={(event) =>
@@ -249,7 +249,7 @@ export default function BookingsPage() {
                   <input
                     id="newGuestPhone"
                     type="tel"
-                    className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="e.g., +265 123 456 789"
                     value={newGuestForm.phone}
                     onChange={(event) =>
@@ -264,7 +264,7 @@ export default function BookingsPage() {
                 <FormField label="Source" htmlFor="newGuestSource">
                   <select
                     id="newGuestSource"
-                    className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     value={newGuestForm.source}
                     onChange={(event) =>
                       setNewGuestForm((prev) => ({
@@ -295,14 +295,14 @@ export default function BookingsPage() {
           </div>
 
           {/* Property and Dates */}
-          <div className="space-y-4 border-t border-zinc-200 pt-6">
-            <h3 className="text-sm font-semibold text-zinc-900 uppercase tracking-wide">
+          <div className="space-y-4 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 uppercase tracking-wide">
               Booking Details
             </h3>
             <FormField label="Property" required htmlFor="propertyId">
               <select
                 id="propertyId"
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={form.propertyId}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, propertyId: event.target.value }))
@@ -323,7 +323,7 @@ export default function BookingsPage() {
                 <input
                   id="checkInDate"
                   type="date"
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   value={form.checkInDate}
                   onChange={(event) =>
                     setForm((prev) => ({
@@ -339,7 +339,7 @@ export default function BookingsPage() {
                 <input
                   id="checkOutDate"
                   type="date"
-                  className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   value={form.checkOutDate}
                   onChange={(event) =>
                     setForm((prev) => ({
@@ -360,7 +360,7 @@ export default function BookingsPage() {
               <textarea
                 id="notes"
                 rows={3}
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="e.g., Early check-in requested..."
                 value={form.notes}
                 onChange={(event) =>
@@ -372,13 +372,13 @@ export default function BookingsPage() {
 
           {/* Error Message */}
           {error && (
-            <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div className="rounded-lg bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm text-red-600 dark:text-red-400">
               {error}
             </div>
           )}
 
           {/* Form Actions */}
-          <div className="flex gap-3 border-t border-zinc-200 pt-6">
+          <div className="flex gap-3 border-t border-zinc-200 dark:border-zinc-800 pt-6">
             <ActionButton
               variant="primary"
               onClick={handleSubmit}

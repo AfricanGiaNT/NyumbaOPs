@@ -181,14 +181,14 @@ export default function CalendarSyncPage() {
           </header>
 
           {/* Property Selector */}
-          <div className="bg-white rounded-lg shadow-sm p-5 mb-5">
-            <label className="block text-sm font-medium text-zinc-700 mb-2">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm p-5 mb-5">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
               Select Property
             </label>
             <select
               value={selectedProperty}
               onChange={(e) => setSelectedProperty(e.target.value)}
-              className="w-full max-w-md rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="w-full max-w-md rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             >
               <option value="">-- Select a property --</option>
               {properties.map((p) => (
@@ -202,9 +202,9 @@ export default function CalendarSyncPage() {
           {selectedProperty && (
             <>
               {/* Import Config Form — Step 1 */}
-              <div className="bg-white rounded-lg shadow-sm p-5 mb-5">
+              <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm p-5 mb-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-base font-semibold text-zinc-900">Step 1 — Import from Airbnb</h2>
+                  <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Step 1 — Import from Airbnb</h2>
                   {syncConfig && (
                     <div className="flex gap-2">
                       <ActionButton
@@ -228,11 +228,11 @@ export default function CalendarSyncPage() {
                 ) : (
                   <form onSubmit={handleSave} className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-zinc-700 mb-1">Platform</label>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Platform</label>
                       <select
                         value={platform}
                         onChange={(e) => setPlatform(e.target.value)}
-                        className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                        className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100"
                       >
                         <option value="AIRBNB">Airbnb</option>
                         <option value="BOOKING_COM">Booking.com</option>
@@ -241,24 +241,24 @@ export default function CalendarSyncPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-zinc-700 mb-1">iCal URL</label>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">iCal URL</label>
                       <input
                         type="url"
                         value={icalUrl}
                         onChange={(e) => setIcalUrl(e.target.value)}
                         placeholder="https://www.airbnb.com/calendar/ical/..."
                         required
-                        className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                        className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
                       />
-                      <p className="mt-1 text-xs text-zinc-500">Must be HTTPS and end with .ics</p>
+                      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Must be HTTPS and end with .ics</p>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-zinc-700 mb-1">Sync Frequency</label>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Sync Frequency</label>
                       <select
                         value={syncFrequency}
                         onChange={(e) => setSyncFrequency(parseInt(e.target.value))}
-                        className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+                        className="w-full rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100"
                       >
                         <option value={15}>Every 15 minutes</option>
                         <option value={30}>Every 30 minutes (Recommended)</option>
@@ -277,20 +277,20 @@ export default function CalendarSyncPage() {
                         onChange={(e) => setIsEnabled(e.target.checked)}
                         className="h-4 w-4 rounded border-zinc-300 text-indigo-600"
                       />
-                      <label htmlFor="isEnabled" className="text-sm text-zinc-700">
+                      <label htmlFor="isEnabled" className="text-sm text-zinc-700 dark:text-zinc-300">
                         Enable automatic sync
                       </label>
                     </div>
 
                     {syncConfig?.lastSyncAt && (
-                      <div className="rounded-md bg-zinc-50 p-3 text-sm space-y-1">
+                      <div className="rounded-md bg-zinc-50 dark:bg-zinc-800/50 p-3 text-sm space-y-1">
                         <div className="flex justify-between">
-                          <span className="text-zinc-500">Last sync:</span>
-                          <span className="font-medium">{new Date(syncConfig.lastSyncAt).toLocaleString()}</span>
+                          <span className="text-zinc-500 dark:text-zinc-400">Last sync:</span>
+                          <span className="font-medium text-zinc-900 dark:text-zinc-100">{new Date(syncConfig.lastSyncAt).toLocaleString()}</span>
                         </div>
                         {syncConfig.lastSyncStatus && (
                           <div className="flex justify-between">
-                            <span className="text-zinc-500">Status:</span>
+                            <span className="text-zinc-500 dark:text-zinc-400">Status:</span>
                             <span className={syncConfig.lastSyncStatus === "SUCCESS" ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
                               {syncConfig.lastSyncStatus}
                             </span>
@@ -306,11 +306,11 @@ export default function CalendarSyncPage() {
                 )}
 
                 {/* Help */}
-                <div className="mt-6 rounded-md border border-zinc-200 bg-zinc-50 p-4">
-                  <h3 className="text-sm font-semibold text-zinc-900 mb-2">
+                <div className="mt-6 rounded-md border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-4">
+                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
                     How to get your Airbnb iCal URL:
                   </h3>
-                  <ol className="list-decimal list-inside space-y-1 text-sm text-zinc-600">
+                  <ol className="list-decimal list-inside space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
                     <li>Go to your Airbnb calendar</li>
                     <li>Click &quot;Availability settings&quot;</li>
                     <li>Scroll to &quot;Calendar sync&quot;</li>
@@ -322,11 +322,11 @@ export default function CalendarSyncPage() {
               </div>
 
               {/* Export URL — Step 2 */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-sm p-5 mb-5 border border-blue-200">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg shadow-sm p-5 mb-5 border border-blue-200 dark:border-blue-800">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h2 className="text-base font-semibold text-zinc-900">Step 2 — Export to Airbnb</h2>
-                    <p className="text-xs text-zinc-600 mt-1">
+                    <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Step 2 — Export to Airbnb</h2>
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
                       Now give Airbnb this URL so it can import your bookings back
                     </p>
                   </div>
@@ -340,8 +340,8 @@ export default function CalendarSyncPage() {
                 </div>
                 {showExportUrl && (
                   <div className="mt-3 space-y-2">
-                    <div className="bg-white rounded-md p-3 border border-zinc-200">
-                      <code className="text-xs text-zinc-700 break-all">{exportUrl}</code>
+                    <div className="bg-white dark:bg-zinc-800 rounded-md p-3 border border-zinc-200 dark:border-zinc-700">
+                      <code className="text-xs text-zinc-700 dark:text-zinc-300 break-all">{exportUrl}</code>
                     </div>
                     <div className="flex gap-2">
                       <ActionButton
@@ -371,32 +371,32 @@ export default function CalendarSyncPage() {
 
               {/* Sync History */}
               {syncLogs.length > 0 && (
-                <div className="bg-white rounded-lg shadow-sm p-5">
-                  <h2 className="text-base font-semibold text-zinc-900 mb-3">Sync History</h2>
+                <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm p-5">
+                  <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mb-3">Sync History</h2>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead className="bg-zinc-50 border-b border-zinc-200">
+                      <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-700">
                         <tr>
-                          <th className="px-3 py-2 text-left font-medium text-zinc-700">Date</th>
-                          <th className="px-3 py-2 text-left font-medium text-zinc-700">Status</th>
-                          <th className="px-3 py-2 text-right font-medium text-zinc-700">Imported</th>
-                          <th className="px-3 py-2 text-right font-medium text-zinc-700">Skipped</th>
-                          <th className="px-3 py-2 text-right font-medium text-zinc-700">Duration</th>
-                          <th className="px-3 py-2 text-left font-medium text-zinc-700">Error</th>
+                          <th className="px-3 py-2 text-left font-medium text-zinc-700 dark:text-zinc-300">Date</th>
+                          <th className="px-3 py-2 text-left font-medium text-zinc-700 dark:text-zinc-300">Status</th>
+                          <th className="px-3 py-2 text-right font-medium text-zinc-700 dark:text-zinc-300">Imported</th>
+                          <th className="px-3 py-2 text-right font-medium text-zinc-700 dark:text-zinc-300">Skipped</th>
+                          <th className="px-3 py-2 text-right font-medium text-zinc-700 dark:text-zinc-300">Duration</th>
+                          <th className="px-3 py-2 text-left font-medium text-zinc-700 dark:text-zinc-300">Error</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-zinc-100">
+                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
                         {syncLogs.map((log) => (
                           <tr key={log.id}>
-                            <td className="px-3 py-2 text-zinc-900">{new Date(log.createdAt).toLocaleString()}</td>
+                            <td className="px-3 py-2 text-zinc-900 dark:text-zinc-100">{new Date(log.createdAt).toLocaleString()}</td>
                             <td className="px-3 py-2">
                               <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${log.status === "SUCCESS" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
                                 {log.status}
                               </span>
                             </td>
                             <td className="px-3 py-2 text-right">{log.eventsImported}</td>
-                            <td className="px-3 py-2 text-right text-zinc-500">{log.eventsSkipped}</td>
-                            <td className="px-3 py-2 text-right text-zinc-500">{log.syncDuration ? `${log.syncDuration}ms` : "-"}</td>
+                            <td className="px-3 py-2 text-right text-zinc-500 dark:text-zinc-400">{log.eventsSkipped}</td>
+                            <td className="px-3 py-2 text-right text-zinc-500 dark:text-zinc-400">{log.syncDuration ? `${log.syncDuration}ms` : "-"}</td>
                             <td className="px-3 py-2 text-xs text-red-600">{log.errorMessage || "-"}</td>
                           </tr>
                         ))}
@@ -409,10 +409,10 @@ export default function CalendarSyncPage() {
           )}
 
           {!selectedProperty && (
-            <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+            <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-sm p-12 text-center">
               <div className="text-5xl mb-3">📅</div>
-              <h3 className="text-lg font-medium text-zinc-900 mb-1">Select a Property</h3>
-              <p className="text-sm text-zinc-500">Choose a property above to manage its calendar sync</p>
+              <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100 mb-1">Select a Property</h3>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Choose a property above to manage its calendar sync</p>
             </div>
           )}
         </div>

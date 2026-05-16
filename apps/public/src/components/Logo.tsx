@@ -1,0 +1,15 @@
+export function LogoIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 32 32"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <rect width="32" height="32" rx="6" fill="#1B2E4B" />
+      <polygon points="16,6 28,16 24,16 24,27 8,27 8,16 4,16" fill="white" />
+      <polygon points="16,4 30,15 28,15 16,8 4,15 2,15" fill="#FF8F35" />
+      <rect x="13" y="19" width="6" height="8" fill="#1B2E4B" />
+    </svg>
+  );
+}

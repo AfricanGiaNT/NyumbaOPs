@@ -238,6 +238,7 @@ model Transaction {
   bookingId  String?         @map("booking_id")
   type       TransactionType
   categoryId String
+  name       String?
   amount     Int
   currency   Currency
   date       DateTime

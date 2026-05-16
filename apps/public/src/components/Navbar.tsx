@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LogoIcon } from "./Logo";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -17,9 +18,7 @@ export function Navbar() {
           href="/"
           className="flex items-center gap-2 text-base font-bold text-zinc-900 active:opacity-70"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)] text-sm font-bold text-white">
-            M
-          </span>
+          <LogoIcon className="h-8 w-8" />
           <span className="hidden sm:inline">Madikwe Apartments</span>
         </Link>
 

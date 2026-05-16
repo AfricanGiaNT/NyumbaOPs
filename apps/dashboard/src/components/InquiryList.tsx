@@ -93,14 +93,14 @@ export function InquiryList({ initialStatus }: InquiryListProps) {
   }
 
   return (
-    <section className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section className="space-y-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Inquiries</h2>
-          <p className="text-sm text-zinc-500">Track new and contacted requests.</p>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Inquiries</h2>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">Track new and contacted requests.</p>
         </div>
         <select
-          className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+          className="rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100"
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value as Inquiry["status"] | "ALL")}
         >
@@ -133,20 +133,20 @@ export function InquiryList({ initialStatus }: InquiryListProps) {
             return (
               <div
                 key={inquiry.id}
-                className="rounded-lg border border-zinc-200 p-4 text-sm text-zinc-700"
+                className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 text-sm text-zinc-700 dark:text-zinc-300"
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-zinc-900">{inquiry.guestName}</p>
-                    <p className="text-zinc-500">
+                    <p className="font-semibold text-zinc-900 dark:text-zinc-100">{inquiry.guestName}</p>
+                    <p className="text-zinc-500 dark:text-zinc-400">
                       {property?.name ?? inquiry.propertyId} • {inquiry.guestPhone}
                     </p>
                   </div>
-                  <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600">
+                  <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
                     {inquiry.status}
                   </span>
                 </div>
-                <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
+                <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">
                   <span>
                     {new Date(inquiry.checkInDate).toLocaleDateString()} →{" "}
                     {new Date(inquiry.checkOutDate).toLocaleDateString()}
@@ -157,7 +157,7 @@ export function InquiryList({ initialStatus }: InquiryListProps) {
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
                     type="button"
-                    className="rounded-md border border-zinc-300 px-3 py-1 text-xs font-semibold"
+                    className="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                     onClick={() => updateStatus(inquiry.id, "CONTACTED")}
                     disabled={inquiry.status !== "NEW"}
                   >

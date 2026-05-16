@@ -1,4 +1,5 @@
 import {
+  BadGatewayException,
   BadRequestException,
   Injectable,
   NotFoundException,
@@ -105,7 +106,12 @@ export class WorksService {
     });
     if (!work) throw new NotFoundException('Work not found');
 
-    await this.emailService.sendWorkOrderToAnyDo(work);
+    try {
+      await this.emailService.sendWorkOrderToAnyDo(work);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new BadGatewayException(msg);
+    }
 
     return this.prisma.work.update({
       where: { id },

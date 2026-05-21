@@ -282,21 +282,21 @@ export default function Home() {
             />
           </div>
 
-          {/* Property Financial Breakdown */}
-          <div className="mb-6">
-            <PropertyFinancialBreakdown
-              transactions={data.transactions}
-              properties={data.properties}
-              loading={loading}
-            />
-          </div>
-
           {/* Outstanding Reimbursements */}
           <div className="mb-6">
             <ReimbursementsCard
               transactions={data.transactions}
               loading={loading}
               onReimbursed={loadDashboardData}
+            />
+          </div>
+
+          {/* Property Financial Breakdown */}
+          <div className="mb-6">
+            <PropertyFinancialBreakdown
+              transactions={data.transactions}
+              properties={data.properties}
+              loading={loading}
             />
           </div>
 

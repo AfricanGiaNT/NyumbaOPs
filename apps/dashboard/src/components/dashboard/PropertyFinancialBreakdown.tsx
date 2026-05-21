@@ -74,13 +74,13 @@ export function PropertyFinancialBreakdown({ transactions, properties, loading =
       {displayRows.length === 0 ? (
         <p className="py-6 text-center text-sm text-zinc-500 dark:text-zinc-400">No transactions recorded this month</p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-zinc-100 dark:border-zinc-800">
                 <th className="pb-2 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400">Property</th>
-                <th className="pb-2 text-right text-xs font-medium text-zinc-500 dark:text-zinc-400">Revenue</th>
-                <th className="pb-2 text-right text-xs font-medium text-zinc-500 dark:text-zinc-400">Expenses</th>
+                <th className="hidden sm:table-cell pb-2 text-right text-xs font-medium text-zinc-500 dark:text-zinc-400">Revenue</th>
+                <th className="hidden sm:table-cell pb-2 text-right text-xs font-medium text-zinc-500 dark:text-zinc-400">Expenses</th>
                 <th className="pb-2 text-right text-xs font-medium text-zinc-500 dark:text-zinc-400">Net Profit</th>
               </tr>
             </thead>
@@ -93,10 +93,10 @@ export function PropertyFinancialBreakdown({ transactions, properties, loading =
                 if (activeCurrencies.length === 0) {
                   return (
                     <tr key={row.id}>
-                      <td className="py-3 font-medium text-zinc-700 dark:text-zinc-300">{row.name}</td>
-                      <td className="py-3 text-right text-zinc-400">—</td>
-                      <td className="py-3 text-right text-zinc-400">—</td>
-                      <td className="py-3 text-right text-zinc-400">—</td>
+                      <td className="py-2.5 font-medium text-zinc-700 dark:text-zinc-300 max-w-[150px] sm:max-w-none truncate">{row.name}</td>
+                      <td className="hidden sm:table-cell py-2.5 text-right text-zinc-400">—</td>
+                      <td className="hidden sm:table-cell py-2.5 text-right text-zinc-400">—</td>
+                      <td className="py-2.5 text-right text-zinc-400">—</td>
                     </tr>
                   );
                 }
@@ -105,19 +105,21 @@ export function PropertyFinancialBreakdown({ transactions, properties, loading =
                   const t = row.byCurrency[cur];
                   return (
                     <tr key={`${row.id}-${cur}`}>
-                      <td className="py-3 font-medium text-zinc-700 dark:text-zinc-300">
-                        {idx === 0 ? row.name : ""}
+                      <td className="py-2.5 font-medium text-zinc-700 dark:text-zinc-300 max-w-[150px] sm:max-w-none">
+                        <span className="block truncate">
+                          {idx === 0 ? row.name : ""}
+                        </span>
                         {activeCurrencies.length > 1 && (
-                          <span className="ml-1 text-xs text-zinc-400">({cur})</span>
+                          <span className="text-xs text-zinc-400">({cur})</span>
                         )}
                       </td>
-                      <td className="py-3 text-right font-medium text-emerald-600 dark:text-emerald-400">
+                      <td className="hidden sm:table-cell py-2.5 text-right font-medium text-emerald-600 dark:text-emerald-400">
                         {t.revenue > 0 ? `+${t.revenue.toLocaleString()}` : "—"}
                       </td>
-                      <td className="py-3 text-right font-medium text-rose-600 dark:text-rose-400">
+                      <td className="hidden sm:table-cell py-2.5 text-right font-medium text-rose-600 dark:text-rose-400">
                         {t.expense > 0 ? `-${t.expense.toLocaleString()}` : "—"}
                       </td>
-                      <td className={`py-3 text-right font-semibold ${
+                      <td className={`py-2.5 text-right font-semibold ${
                         t.profit > 0
                           ? "text-emerald-600 dark:text-emerald-400"
                           : t.profit < 0

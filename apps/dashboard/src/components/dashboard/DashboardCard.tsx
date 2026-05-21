@@ -20,13 +20,13 @@ export function DashboardCard({
 }: DashboardCardProps) {
   return (
     <div
-      className={`rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm transition hover:shadow-md ${className}`}
+      className={`rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-6 shadow-sm transition hover:shadow-md ${className}`}
     >
       {(title || action) && (
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-3 sm:mb-4 flex items-center justify-between">
           <div>
             {title && (
-              <h3 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100">{title}</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-zinc-800 dark:text-zinc-100">{title}</h3>
             )}
             {subtitle && (
               <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{subtitle}</p>

@@ -66,7 +66,7 @@ export function FinancialSummaryCard({
                     {item.profit.toLocaleString()}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 text-sm">
                   <div>
                     <p className="text-xs text-zinc-500">Revenue</p>
                     <p className="font-semibold text-emerald-600">

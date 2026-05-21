@@ -214,7 +214,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl">
           {/* Header */}
           <header className="mb-6">
-            <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
+            <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100">
               Dashboard Overview
             </h1>
             <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
@@ -223,33 +223,33 @@ export default function Home() {
           </header>
 
           {/* Quick Log Actions */}
-          <div className="mb-6 flex flex-wrap gap-3">
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
             <button
               onClick={() => setShowLogRevenue(true)}
-              className="flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-5 py-3 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
+              className="flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 sm:px-5 py-3 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
-                <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
+                <svg className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </div>
-              <div className="text-left">
+              <div className="text-left min-w-0">
                 <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Log Revenue</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Record income received</p>
+                <p className="hidden sm:block text-xs text-zinc-500 dark:text-zinc-400">Record income received</p>
               </div>
             </button>
             <button
               onClick={() => setShowLogExpense(true)}
-              className="flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-5 py-3 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
+              className="flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 sm:px-5 py-3 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-900/40">
-                <svg className="h-5 w-5 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-900/40">
+                <svg className="h-4 w-4 sm:h-5 sm:w-5 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                 </svg>
               </div>
-              <div className="text-left">
+              <div className="text-left min-w-0">
                 <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Log Expense</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Record a cost or payment</p>
+                <p className="hidden sm:block text-xs text-zinc-500 dark:text-zinc-400">Record a cost or payment</p>
               </div>
             </button>
           </div>

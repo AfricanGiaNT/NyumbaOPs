@@ -24,12 +24,12 @@ export function StatCard({
   const trendIcon = trend?.direction === "up" ? "↑" : "↓";
 
   return (
-    <div className="group rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <div className="group rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">{title}</p>
           <div className="mt-2 flex items-baseline gap-2">
-            <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
+            <p className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100 truncate">
               {valuePrefix}
               {typeof value === "number" ? value.toLocaleString() : value}
             </p>
@@ -44,7 +44,7 @@ export function StatCard({
           )}
         </div>
         {icon && (
-          <div className="rounded-lg bg-indigo-50 dark:bg-indigo-950/30 p-3 text-indigo-600 dark:text-indigo-400">
+          <div className="shrink-0 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 p-2 sm:p-3 text-indigo-600 dark:text-indigo-400">
             {icon}
           </div>
         )}

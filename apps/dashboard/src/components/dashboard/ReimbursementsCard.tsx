@@ -95,7 +95,7 @@ export function ReimbursementsCard({ transactions, loading = false, onReimbursed
               {/* Expense list */}
               <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
                 {employee.expenses.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between px-4 py-2.5">
+                  <div key={tx.id} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:py-2.5">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-zinc-700 dark:text-zinc-300">
                         {tx.name || tx.category?.name || "Expense"}
@@ -105,14 +105,14 @@ export function ReimbursementsCard({ transactions, loading = false, onReimbursed
                         {tx.property && ` · ${tx.property.name}`}
                       </p>
                     </div>
-                    <div className="ml-4 flex items-center gap-3 shrink-0">
+                    <div className="flex items-center justify-between gap-3 sm:justify-end sm:shrink-0">
                       <span className="text-sm font-semibold text-rose-600 dark:text-rose-400">
                         {tx.currency} {tx.amount.toLocaleString()}
                       </span>
                       <button
                         onClick={() => handleMarkReimbursed(tx.id)}
                         disabled={reimbursing === tx.id}
-                        className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50 transition"
+                        className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50 transition"
                       >
                         {reimbursing === tx.id ? "..." : "Reimbursed"}
                       </button>

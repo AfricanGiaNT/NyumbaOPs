@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { TransactionType } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -41,6 +41,13 @@ export class TransactionsController {
   getLatest(@Req() req: { user?: { id?: string } }) {
     const userId = req.user?.id ?? 'system';
     return this.transactionsService.findLatestByUser(userId);
+  }
+
+  @Patch(':id/reimburse')
+  @UseGuards(JwtAuthGuard)
+  reimburse(@Param('id') id: string, @Req() req: { user?: { id?: string } }) {
+    const userId = req.user?.id ?? 'system';
+    return this.transactionsService.markReimbursed(id, userId);
   }
 
   @Delete(':id')

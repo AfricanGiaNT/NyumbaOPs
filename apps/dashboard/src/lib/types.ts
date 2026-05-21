@@ -92,6 +92,9 @@ export type Transaction = {
   currency: Currency;
   date: string;
   notes?: string | null;
+  paidBy?: string | null;
+  requiresReimbursement?: boolean;
+  reimbursedAt?: string | null;
   category?: { id: string; name: string; type: CategoryType } | null;
   property?: { id: string; name: string } | null;
 };

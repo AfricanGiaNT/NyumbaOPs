@@ -62,6 +62,8 @@ export class TransactionsService {
         currency: dto.currency,
         date: new Date(dto.date),
         notes: dto.notes,
+        paidBy: dto.paidBy,
+        requiresReimbursement: dto.requiresReimbursement ?? false,
         createdVia: metadata?.createdVia ?? 'DASHBOARD',
         createdBy: userId,
       },
@@ -124,6 +126,8 @@ export class TransactionsService {
         currency: dto.currency,
         date: new Date(dto.date),
         notes: dto.notes,
+        paidBy: dto.paidBy,
+        requiresReimbursement: dto.requiresReimbursement ?? false,
         createdVia: metadata?.createdVia ?? 'DASHBOARD',
         telegramMessageId: metadata?.telegramMessageId
           ? BigInt(metadata.telegramMessageId)
@@ -171,6 +175,23 @@ export class TransactionsService {
         property: { select: { id: true, name: true } },
       },
     });
+  }
+
+  async markReimbursed(id: string, userId: string) {
+    const transaction = await this.prisma.transaction.update({
+      where: { id },
+      data: { reimbursedAt: new Date() },
+    });
+
+    await this.audit.logAction({
+      action: 'UPDATE',
+      resourceType: 'Transaction',
+      resourceId: transaction.id,
+      userId,
+      details: { action: 'reimbursed' },
+    });
+
+    return transaction;
   }
 
   async remove(id: string, userId: string) {

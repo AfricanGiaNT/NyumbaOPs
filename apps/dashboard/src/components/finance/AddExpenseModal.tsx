@@ -22,6 +22,8 @@ export function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalP
     currency: "MWK" as Currency,
     date: new Date().toISOString().split("T")[0],
     notes: "",
+    paidBy: "",
+    requiresReimbursement: false,
   });
 
   useEffect(() => {
@@ -47,6 +49,8 @@ export function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalP
         date: new Date(form.date).toISOString(),
         notes: form.notes || undefined,
         propertyId: form.propertyId || undefined,
+        paidBy: form.paidBy || undefined,
+        requiresReimbursement: form.paidBy ? form.requiresReimbursement : false,
       });
       onSuccess?.();
       handleClose();
@@ -66,6 +70,8 @@ export function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalP
       currency: "MWK",
       date: new Date().toISOString().split("T")[0],
       notes: "",
+      paidBy: "",
+      requiresReimbursement: false,
     });
     onClose();
   };
@@ -180,6 +186,40 @@ export function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalP
                 className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none resize-none"
               />
             </div>
+
+            {/* Paid by employee */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                Paid by <span className="text-zinc-400 dark:text-zinc-500 font-normal">(if employee paid out of pocket)</span>
+              </label>
+              <input
+                type="text"
+                value={form.paidBy}
+                onChange={(e) => setForm({
+                  ...form,
+                  paidBy: e.target.value,
+                  requiresReimbursement: e.target.value.trim().length > 0,
+                })}
+                placeholder="e.g. John"
+                className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Reimbursement toggle — only shown when paidBy is set */}
+            {form.paidBy.trim() && (
+              <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={form.requiresReimbursement}
+                  onChange={(e) => setForm({ ...form, requiresReimbursement: e.target.checked })}
+                  className="h-4 w-4 rounded border-zinc-300 text-amber-600 focus:ring-amber-500"
+                />
+                <div>
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-300">Needs reimbursement</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-500">Track this as money owed to {form.paidBy}</p>
+                </div>
+              </label>
+            )}
 
             <div className="flex gap-3 pt-2">
               <button

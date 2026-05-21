@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { apiGet, apiPatch, apiPost } from "../lib/api";
 import {
@@ -8,6 +8,7 @@ import {
   Booking,
   Property,
   Inquiry,
+  Transaction,
 } from "../lib/types";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { useAuth } from "@/lib/AuthContext";
@@ -19,6 +20,10 @@ import { InquiriesCard } from "../components/dashboard/InquiriesCard";
 import { PropertiesOverviewCard } from "../components/dashboard/PropertiesOverviewCard";
 import { QuickActionsCard } from "../components/dashboard/QuickActionsCard";
 import { PropertyAvailabilityCard } from "../components/dashboard/PropertyAvailabilityCard";
+import { PropertyFinancialBreakdown } from "../components/dashboard/PropertyFinancialBreakdown";
+import { ReimbursementsCard } from "../components/dashboard/ReimbursementsCard";
+import { AddRevenueModal } from "../components/finance/AddRevenueModal";
+import { AddExpenseModal } from "../components/finance/AddExpenseModal";
 
 type DashboardData = {
   analytics: AnalyticsSummary | null;
@@ -28,6 +33,7 @@ type DashboardData = {
   upcomingActiveBookings: Booking[];
   properties: Property[];
   inquiries: Inquiry[];
+  transactions: Transaction[];
 };
 
 export default function Home() {
@@ -40,30 +46,34 @@ export default function Home() {
     upcomingActiveBookings: [],
     properties: [],
     inquiries: [],
+    transactions: [],
   });
   const [loading, setLoading] = useState(true);
   const [unblockingId, setUnblockingId] = useState<string | null>(null);
   const [unblockError, setUnblockError] = useState<string | null>(null);
   const [cancelSuccessMsg, setCancelSuccessMsg] = useState<string | null>(null);
+  const [showLogRevenue, setShowLogRevenue] = useState(false);
+  const [showLogExpense, setShowLogExpense] = useState(false);
 
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      setLoading(true);
-      const today = new Date().toISOString().split("T")[0];
-      const month = `${new Date().getUTCFullYear()}-${String(new Date().getUTCMonth() + 1).padStart(2, "0")}`;
+  const loadDashboardData = useCallback(async () => {
+    setLoading(true);
+    const today = new Date().toISOString().split("T")[0];
+    const month = `${new Date().getUTCFullYear()}-${String(new Date().getUTCMonth() + 1).padStart(2, "0")}`;
 
-      try {
-        const [
-          analyticsRes,
-          bookingsRes,
-          propertiesRes,
-          inquiriesRes,
-        ] = await Promise.allSettled([
-          apiGet<AnalyticsSummary>(`/analytics/summary?month=${month}`),
-          apiGet<Booking[]>("/bookings"),
-          apiGet<Property[]>("/properties"),
-          apiGet<{ success: boolean; data: Inquiry[] }>("/inquiries"),
-        ]);
+    try {
+      const [
+        analyticsRes,
+        bookingsRes,
+        propertiesRes,
+        inquiriesRes,
+        transactionsRes,
+      ] = await Promise.allSettled([
+        apiGet<AnalyticsSummary>(`/analytics/summary?month=${month}`),
+        apiGet<Booking[]>("/bookings"),
+        apiGet<Property[]>("/properties"),
+        apiGet<{ success: boolean; data: Inquiry[] }>("/inquiries"),
+        apiGet<Transaction[]>(`/transactions?month=${month}`),
+      ]);
 
         const analytics = analyticsRes.status === "fulfilled" ? analyticsRes.value : null;
         const allBookings = bookingsRes.status === "fulfilled" ? bookingsRes.value : [];
@@ -74,6 +84,7 @@ export default function Home() {
                 (i) => i.status === "NEW" || i.status === "CONTACTED",
               ) || []
             : [];
+        const transactions = transactionsRes.status === "fulfilled" ? transactionsRes.value : [];
 
         // Upcoming check-ins & check-outs within the next 30 days
         // Use Date objects to correctly compare Prisma ISO datetime strings
@@ -126,16 +137,18 @@ export default function Home() {
           upcomingActiveBookings,
           properties,
           inquiries,
+          transactions,
         });
       } catch (error) {
         console.error("Error loading dashboard data:", error);
       } finally {
         setLoading(false);
       }
-    };
-
-    loadDashboardData();
   }, []);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   const handleUnblockBooking = async (bookingId: string) => {
     setUnblockingId(bookingId);
@@ -187,20 +200,20 @@ export default function Home() {
     (sum, item) => sum + item.revenue,
     0,
   ) || 0;
+  const monthlyExpenses = data.analytics?.totals.reduce(
+    (sum, item) => sum + item.expense,
+    0,
+  ) || 0;
   const activeProperties = data.properties.filter(
     (p) => p.status === "ACTIVE",
   ).length;
-  const occupancyRate =
-    data.properties.length > 0
-      ? Math.round((activeGuests / data.properties.length) * 100)
-      : 0;
 
   return (
     <ProtectedRoute>
       <AppLayout>
         <div className="mx-auto max-w-7xl">
           {/* Header */}
-          <header className="mb-8">
+          <header className="mb-6">
             <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
               Dashboard Overview
             </h1>
@@ -209,91 +222,85 @@ export default function Home() {
             </p>
           </header>
 
-          {/* Stats Grid - 4 columns */}
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Total Bookings"
-              value={totalBookings}
-              subtitle="All time"
-              icon={
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
+          {/* Quick Log Actions */}
+          <div className="mb-6 flex flex-wrap gap-3">
+            <button
+              onClick={() => setShowLogRevenue(true)}
+              className="flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-5 py-3 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
+                <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-              }
-            />
-            <StatCard
-              title="Active Guests"
-              value={activeGuests}
-              subtitle="Currently staying"
-              icon={
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                  />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Log Revenue</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">Record income received</p>
+              </div>
+            </button>
+            <button
+              onClick={() => setShowLogExpense(true)}
+              className="flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-5 py-3 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-900/40">
+                <svg className="h-5 w-5 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                 </svg>
-              }
-            />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Log Expense</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">Record a cost or payment</p>
+              </div>
+            </button>
+          </div>
+
+          {/* Financial Overview — stats + summary side by side */}
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <StatCard
               title="Revenue (Month)"
               value={monthlyRevenue.toLocaleString()}
               subtitle="Current month"
               icon={
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               }
             />
             <StatCard
-              title="Occupancy Rate"
-              value={`${occupancyRate}%`}
-              subtitle={`${activeProperties} active properties`}
+              title="Expenses (Month)"
+              value={monthlyExpenses.toLocaleString()}
+              subtitle="Current month"
               icon={
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                  />
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               }
             />
+            <FinancialSummaryCard
+              summary={data.analytics}
+              loading={loading}
+            />
           </div>
 
-          {/* Main Content Grid - 2 columns */}
+          {/* Property Financial Breakdown */}
+          <div className="mb-6">
+            <PropertyFinancialBreakdown
+              transactions={data.transactions}
+              properties={data.properties}
+              loading={loading}
+            />
+          </div>
+
+          {/* Outstanding Reimbursements */}
+          <div className="mb-6">
+            <ReimbursementsCard
+              transactions={data.transactions}
+              loading={loading}
+              onReimbursed={loadDashboardData}
+            />
+          </div>
+
+          {/* Upcoming Events + Recent Activity */}
           <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
             <UpcomingEventsCard
               checkIns={data.upcomingCheckIns}
@@ -306,26 +313,21 @@ export default function Home() {
             />
           </div>
 
-          {/* Secondary Content Grid - 2 columns */}
+          {/* Inquiries + Properties Overview + Quick Actions */}
           <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <FinancialSummaryCard
-              summary={data.analytics}
-              loading={loading}
-            />
             <InquiriesCard inquiries={data.inquiries} loading={loading} />
+            <QuickActionsCard />
           </div>
 
-          {/* Tertiary Content Grid - 2 columns */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="mb-6">
             <PropertiesOverviewCard
               properties={data.properties}
               loading={loading}
             />
-            <QuickActionsCard />
           </div>
 
-          {/* Property Availability - full width */}
-          <div className="mt-6">
+          {/* Property Availability */}
+          <div className="mb-6">
             <PropertyAvailabilityCard
               bookings={data.upcomingActiveBookings}
               properties={data.properties}
@@ -336,7 +338,43 @@ export default function Home() {
               loading={loading}
             />
           </div>
+
+          {/* Operational stats — moved below financial content */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <StatCard
+              title="Total Bookings"
+              value={totalBookings}
+              subtitle="All time"
+              icon={
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              }
+            />
+            <StatCard
+              title="Active Guests"
+              value={activeGuests}
+              subtitle="Currently staying"
+              icon={
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              }
+            />
+          </div>
         </div>
+
+        {/* Modals */}
+        <AddRevenueModal
+          isOpen={showLogRevenue}
+          onClose={() => setShowLogRevenue(false)}
+          onSuccess={() => { setShowLogRevenue(false); loadDashboardData(); }}
+        />
+        <AddExpenseModal
+          isOpen={showLogExpense}
+          onClose={() => setShowLogExpense(false)}
+          onSuccess={() => { setShowLogExpense(false); loadDashboardData(); }}
+        />
       </AppLayout>
     </ProtectedRoute>
   );

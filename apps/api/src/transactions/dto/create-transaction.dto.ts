@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Currency } from '@prisma/client';
 import {
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsInt,
@@ -47,5 +48,15 @@ export class CreateTransactionDto {
   @IsString()
   @IsOptional()
   bookingId?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  paidBy?: string;
+
+  @ApiProperty({ required: false })
+  @IsBoolean()
+  @IsOptional()
+  requiresReimbursement?: boolean;
 }
 

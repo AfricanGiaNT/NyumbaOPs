@@ -242,7 +242,10 @@ model Transaction {
   amount     Int
   currency   Currency
   date       DateTime
-  notes      String?
+  notes                 String?
+  paidBy                String?
+  requiresReimbursement Boolean   @default(false)  @map("requires_reimbursement")
+  reimbursedAt          DateTime? @map("reimbursed_at")
   createdVia String          @default("DASHBOARD") @map("created_via")
   telegramMessageId BigInt?  @map("telegram_message_id")
   createdBy  String

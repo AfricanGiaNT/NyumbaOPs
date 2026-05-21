@@ -243,7 +243,7 @@ model Transaction {
   currency   Currency
   date       DateTime
   notes                 String?
-  paidBy                String?
+  paidBy                String?   @map("paid_by")
   requiresReimbursement Boolean   @default(false)  @map("requires_reimbursement")
   reimbursedAt          DateTime? @map("reimbursed_at")
   createdVia String          @default("DASHBOARD") @map("created_via")

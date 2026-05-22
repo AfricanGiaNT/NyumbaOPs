@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { BookingStatus, PropertyStatus } from '@prisma/client';
+import { BookingStatus, PropertyStatus, ReviewStatus } from '@prisma/client';
 import { PublicPropertiesQueryDto } from './dto/public-properties-query.dto';
 import {
   PublicPropertyDetailDto,
@@ -64,8 +64,21 @@ export class PublicService {
       }),
     ]);
 
+    // Fetch approved review stats for all returned properties in one query
+    const propertyIds = properties.map((p) => p.id);
+    const reviewStats = await this.prisma.review.groupBy({
+      by: ['propertyId'],
+      where: { propertyId: { in: propertyIds }, status: ReviewStatus.APPROVED },
+      _count: { id: true },
+      _avg: { overallRating: true },
+    });
+    const reviewMap = new Map(
+      reviewStats.map((r) => [r.propertyId, { count: r._count.id, avg: r._avg.overallRating }]),
+    );
+
     const data: PublicPropertyListItemDto[] = properties.map((property) => {
       const coverImage = property.images.find((image) => image.isCover) ?? property.images[0];
+      const stats = reviewMap.get(property.id);
       return {
         id: property.id,
         name: property.name,
@@ -79,6 +92,8 @@ export class PublicService {
         coverImageUrl: coverImage?.url ? this.normalizeImageUrl(coverImage.url) : null,
         coverImageAlt: coverImage?.alt ?? null,
         amenities: property.amenities.map((amenity) => amenity.amenity.name),
+        reviewCount: stats?.count ?? 0,
+        averageRating: stats?.avg != null ? Math.round(stats.avg * 10) / 10 : null,
       };
     });
 

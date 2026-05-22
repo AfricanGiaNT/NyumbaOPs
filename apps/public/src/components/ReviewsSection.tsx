@@ -49,7 +49,7 @@ export function ReviewsSection({
   const overallAvg = avg(reviews.map((r) => r.overallRating));
 
   return (
-    <div className="space-y-6 border-b border-zinc-200 py-8">
+    <div id="reviews" className="scroll-mt-6 space-y-6 border-b border-zinc-200 py-8">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-bold text-zinc-900">Reviews</h2>

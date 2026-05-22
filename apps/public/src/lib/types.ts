@@ -24,6 +24,8 @@ export type PublicPropertyListItem = {
   coverImageUrl?: string | null;
   coverImageAlt?: string | null;
   amenities: string[];
+  reviewCount: number;
+  averageRating: number | null;
 };
 
 export type AvailabilityResponse = {

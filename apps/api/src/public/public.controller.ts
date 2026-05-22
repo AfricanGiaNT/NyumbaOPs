@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Controller,
   Get,
+  HttpCode,
   Param,
   Post,
   Query,
@@ -15,11 +16,16 @@ import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { PublicService } from './public.service';
 import { PublicPropertiesQueryDto } from './dto/public-properties-query.dto';
+import { ReviewsService } from '../reviews/reviews.service';
+import { CreateReviewDto } from '../reviews/dto/create-review.dto';
 
 @ApiTags('Public')
 @Controller('v1/public')
 export class PublicController {
-  constructor(private readonly publicService: PublicService) {}
+  constructor(
+    private readonly publicService: PublicService,
+    private readonly reviewsService: ReviewsService,
+  ) {}
 
   @Get('properties')
   findAll(@Query() query: PublicPropertiesQueryDto) {
@@ -55,6 +61,17 @@ export class PublicController {
     res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${propertyId}.ics"`);
     res.send(ical);
+  }
+
+  @Post('properties/:id/reviews')
+  @HttpCode(201)
+  submitReview(@Param('id') id: string, @Body() dto: CreateReviewDto) {
+    return this.reviewsService.submitReview(id, dto);
+  }
+
+  @Get('properties/:id/reviews')
+  getApprovedReviews(@Param('id') id: string) {
+    return this.reviewsService.getApprovedReviews(id);
   }
 
   @Post('uploads')

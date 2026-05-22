@@ -1,3 +1,21 @@
+export type ReviewStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type Review = {
+  id: string;
+  propertyId: string;
+  reviewerName: string;
+  overallRating: number;
+  comment?: string | null;
+  cleanlinessRating: number;
+  locationRating: number;
+  valueRating: number;
+  communicationRating: number;
+  status: ReviewStatus;
+  createdAt: string;
+  updatedAt: string;
+  property?: { id: string; name: string } | null;
+};
+
 export type Currency = "MWK" | "USD";
 export type PropertyStatus = "ACTIVE" | "INACTIVE" | "MAINTENANCE";
 export type TransactionType = "REVENUE" | "EXPENSE";

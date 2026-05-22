@@ -1,6 +1,8 @@
 import type {
   PublicPropertyDetail,
   PublicPropertyListResponse,
+  PublicReview,
+  PublicReviewsResponse,
   AvailabilityResponse,
   BlockedDatesResponse,
   CreateBookingResponse,
@@ -145,6 +147,48 @@ export async function fetchPublicBooking(bookingId: string): Promise<PublicBooki
 
   if (!response.ok) {
     throw new Error("Booking not found");
+  }
+
+  return response.json();
+}
+
+export async function fetchApprovedReviews(propertyId: string): Promise<PublicReviewsResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/v1/public/properties/${propertyId}/reviews`,
+    { next: { revalidate: 300 } },
+  );
+
+  if (!response.ok) {
+    return { success: true, data: [] };
+  }
+
+  return response.json();
+}
+
+export async function submitReview(
+  propertyId: string,
+  data: {
+    reviewerName: string;
+    overallRating: number;
+    comment?: string;
+    cleanlinessRating: number;
+    locationRating: number;
+    valueRating: number;
+    communicationRating: number;
+  },
+): Promise<{ success: boolean; data: PublicReview }> {
+  const response = await fetch(
+    `${API_BASE_URL}/v1/public/properties/${propertyId}/reviews`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    },
+  );
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new Error(payload?.message ?? "Failed to submit review");
   }
 
   return response.json();

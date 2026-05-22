@@ -101,6 +101,28 @@ export type BlockedDatesResponse = {
   };
 };
 
+export type ReviewStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type PublicReview = {
+  id: string;
+  propertyId: string;
+  reviewerName: string;
+  overallRating: number;
+  comment?: string | null;
+  cleanlinessRating: number;
+  locationRating: number;
+  valueRating: number;
+  communicationRating: number;
+  status: ReviewStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PublicReviewsResponse = {
+  success: boolean;
+  data: PublicReview[];
+};
+
 export type PublicPropertyDetail = {
   success: boolean;
   data: {

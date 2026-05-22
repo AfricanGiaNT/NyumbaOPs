@@ -1,13 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { fetchPublicProperty } from "@/lib/api";
+import { fetchPublicProperty, fetchApprovedReviews } from "@/lib/api";
 import { AmenitiesList } from "@/components/AmenitiesList";
 import { PropertyGallery } from "@/components/PropertyGallery";
 import { Footer } from "@/components/Footer";
 import { HostSection } from "@/components/HostSection";
 import { LocationSection } from "@/components/LocationSection";
 import { PropertyBookingClient } from "@/components/PropertyBookingClient";
+import { ReviewsSection } from "@/components/ReviewsSection";
 
 type PropertyPageProps = {
   params: Promise<{ id: string }>;
@@ -40,9 +41,14 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   const { id } = await params;
 
   let property: Awaited<ReturnType<typeof fetchPublicProperty>>["data"];
+  let reviews: Awaited<ReturnType<typeof fetchApprovedReviews>>["data"] = [];
   try {
-    const res = await fetchPublicProperty(id);
+    const [res, reviewsRes] = await Promise.all([
+      fetchPublicProperty(id),
+      fetchApprovedReviews(id).catch(() => ({ success: true, data: [] as typeof reviews })),
+    ]);
     property = res.data;
+    reviews = reviewsRes.data;
   } catch {
     notFound();
   }
@@ -182,6 +188,9 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
                 </dl>
               </div>
             )}
+
+            {/* Reviews */}
+            <ReviewsSection reviews={reviews} propertyId={property.id} />
 
             {/* Host Section */}
             <HostSection />

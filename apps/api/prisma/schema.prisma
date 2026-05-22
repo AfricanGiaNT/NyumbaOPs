@@ -94,6 +94,12 @@ enum StockMovementType {
   OUT
 }
 
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id           String    @id @default(uuid())
   email        String    @unique
@@ -174,6 +180,7 @@ model Property {
   calendarSync        CalendarSync?
   works               Work[]
   inventoryItems      InventoryItem[]
+  reviews             Review[]
 }
 
 model Amenity {
@@ -526,5 +533,26 @@ model StockMovement {
   @@index([workId])
   @@index([createdAt])
   @@map("stock_movements")
+}
+
+model Review {
+  id                  String       @id @default(uuid())
+  propertyId          String       @map("property_id")
+  reviewerName        String       @map("reviewer_name")
+  overallRating       Int          @map("overall_rating")
+  comment             String?
+  cleanlinessRating   Int          @map("cleanliness_rating")
+  locationRating      Int          @map("location_rating")
+  valueRating         Int          @map("value_rating")
+  communicationRating Int          @map("communication_rating")
+  status              ReviewStatus @default(PENDING)
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([propertyId, status])
+  @@map("reviews")
 }
 

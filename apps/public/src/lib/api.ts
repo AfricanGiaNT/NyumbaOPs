@@ -155,7 +155,7 @@ export async function fetchPublicBooking(bookingId: string): Promise<PublicBooki
 export async function fetchApprovedReviews(propertyId: string): Promise<PublicReviewsResponse> {
   const response = await fetch(
     `${API_BASE_URL}/v1/public/properties/${propertyId}/reviews`,
-    { next: { revalidate: 300 } },
+    { cache: "no-store" },
   );
 
   if (!response.ok) {
@@ -171,10 +171,10 @@ export async function submitReview(
     reviewerName: string;
     overallRating: number;
     comment?: string;
-    cleanlinessRating: number;
-    locationRating: number;
-    valueRating: number;
-    communicationRating: number;
+    cleanlinessRating?: number;
+    locationRating?: number;
+    valueRating?: number;
+    communicationRating?: number;
   },
 ): Promise<{ success: boolean; data: PublicReview }> {
   const response = await fetch(

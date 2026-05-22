@@ -18,27 +18,31 @@ export class CreateReviewDto {
   @IsOptional()
   comment?: string;
 
-  @ApiProperty({ example: 5, minimum: 1, maximum: 5 })
+  @ApiPropertyOptional({ example: 5, minimum: 1, maximum: 5 })
   @IsInt()
   @Min(1)
   @Max(5)
-  cleanlinessRating: number;
+  @IsOptional()
+  cleanlinessRating?: number;
 
-  @ApiProperty({ example: 4, minimum: 1, maximum: 5 })
+  @ApiPropertyOptional({ example: 4, minimum: 1, maximum: 5 })
   @IsInt()
   @Min(1)
   @Max(5)
-  locationRating: number;
+  @IsOptional()
+  locationRating?: number;
 
-  @ApiProperty({ example: 4, minimum: 1, maximum: 5 })
+  @ApiPropertyOptional({ example: 4, minimum: 1, maximum: 5 })
   @IsInt()
   @Min(1)
   @Max(5)
-  valueRating: number;
+  @IsOptional()
+  valueRating?: number;
 
-  @ApiProperty({ example: 5, minimum: 1, maximum: 5 })
+  @ApiPropertyOptional({ example: 5, minimum: 1, maximum: 5 })
   @IsInt()
   @Min(1)
   @Max(5)
-  communicationRating: number;
+  @IsOptional()
+  communicationRating?: number;
 }

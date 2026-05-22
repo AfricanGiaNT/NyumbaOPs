@@ -22,10 +22,10 @@ export class ReviewsService {
         reviewerName: dto.reviewerName,
         overallRating: dto.overallRating,
         comment: dto.comment ?? null,
-        cleanlinessRating: dto.cleanlinessRating,
-        locationRating: dto.locationRating,
-        valueRating: dto.valueRating,
-        communicationRating: dto.communicationRating,
+        cleanlinessRating: dto.cleanlinessRating ?? null,
+        locationRating: dto.locationRating ?? null,
+        valueRating: dto.valueRating ?? null,
+        communicationRating: dto.communicationRating ?? null,
       },
     });
 

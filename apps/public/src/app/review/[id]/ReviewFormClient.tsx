@@ -87,14 +87,7 @@ export function ReviewFormClient({ propertyId }: { propertyId: string; }) {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const allRatingsSet =
-    form.overallRating > 0 &&
-    form.cleanlinessRating > 0 &&
-    form.locationRating > 0 &&
-    form.valueRating > 0 &&
-    form.communicationRating > 0;
-
-  const canSubmit = form.reviewerName.trim().length > 0 && allRatingsSet && !submitting;
+  const canSubmit = form.reviewerName.trim().length > 0 && form.overallRating > 0 && !submitting;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -108,10 +101,10 @@ export function ReviewFormClient({ propertyId }: { propertyId: string; }) {
         reviewerName: form.reviewerName.trim(),
         overallRating: form.overallRating,
         comment: form.comment.trim() || undefined,
-        cleanlinessRating: form.cleanlinessRating,
-        locationRating: form.locationRating,
-        valueRating: form.valueRating,
-        communicationRating: form.communicationRating,
+        cleanlinessRating: form.cleanlinessRating > 0 ? form.cleanlinessRating : undefined,
+        locationRating: form.locationRating > 0 ? form.locationRating : undefined,
+        valueRating: form.valueRating > 0 ? form.valueRating : undefined,
+        communicationRating: form.communicationRating > 0 ? form.communicationRating : undefined,
       });
       setSubmitted(true);
     } catch (err) {
@@ -195,7 +188,8 @@ export function ReviewFormClient({ propertyId }: { propertyId: string; }) {
       {/* Sub-ratings */}
       <div className="space-y-3">
         <p className="text-sm font-medium text-zinc-700">
-          Rate the details <span className="text-red-500">*</span>
+          Rate the details{" "}
+          <span className="text-zinc-400 font-normal">(optional)</span>
         </p>
         <div className="rounded-xl border border-zinc-200 divide-y divide-zinc-100 px-4 py-1">
           {SUB_RATINGS.map(({ key, label }) => (
@@ -230,10 +224,6 @@ export function ReviewFormClient({ propertyId }: { propertyId: string; }) {
 
       {error && (
         <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
-      )}
-
-      {!allRatingsSet && form.reviewerName.trim().length > 0 && (
-        <p className="text-xs text-zinc-400">All star ratings are required before submitting.</p>
       )}
 
       <button

@@ -6,10 +6,10 @@ export type Review = {
   reviewerName: string;
   overallRating: number;
   comment?: string | null;
-  cleanlinessRating: number;
-  locationRating: number;
-  valueRating: number;
-  communicationRating: number;
+  cleanlinessRating: number | null;
+  locationRating: number | null;
+  valueRating: number | null;
+  communicationRating: number | null;
   status: ReviewStatus;
   createdAt: string;
   updatedAt: string;

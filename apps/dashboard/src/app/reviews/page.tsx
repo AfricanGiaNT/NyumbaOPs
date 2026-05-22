@@ -116,6 +116,8 @@ export default function ReviewsPage() {
       setReviews((prev) =>
         prev.map((r) => (r.id === review.id ? { ...r, status: "REJECTED" } : r)),
       );
+      // Revalidate in case the review was previously approved and showing publicly
+      triggerPublicRevalidation(review.propertyId).catch(() => {});
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to reject review");
     } finally {
@@ -129,6 +131,7 @@ export default function ReviewsPage() {
     try {
       await apiDelete(`/reviews/${review.id}`);
       setReviews((prev) => prev.filter((r) => r.id !== review.id));
+      triggerPublicRevalidation(review.propertyId).catch(() => {});
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to delete review");
     } finally {
@@ -238,15 +241,21 @@ export default function ReviewsPage() {
                     </div>
                   </div>
 
-                  {/* Sub-ratings */}
-                  <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1.5 sm:grid-cols-4 ml-10">
-                    {SUB_RATINGS.map(({ key, label }) => (
-                      <div key={key} className="flex items-center gap-1.5">
-                        <span className="text-xs text-zinc-400 w-24 flex-shrink-0">{label}</span>
-                        <StarDisplay rating={review[key]} />
-                      </div>
-                    ))}
-                  </div>
+                  {/* Sub-ratings — only render rows that have data */}
+                  {SUB_RATINGS.some(({ key }) => review[key] !== null) && (
+                    <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1.5 sm:grid-cols-4 ml-10">
+                      {SUB_RATINGS.map(({ key, label }) => {
+                        const val = review[key];
+                        if (val === null) return null;
+                        return (
+                          <div key={key} className="flex items-center gap-1.5">
+                            <span className="text-xs text-zinc-400 w-24 flex-shrink-0">{label}</span>
+                            <StarDisplay rating={val} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Comment */}
                   {review.comment && (

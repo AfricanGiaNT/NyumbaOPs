@@ -19,9 +19,10 @@ function StarDisplay({ rating, size = "sm" }: { rating: number; size?: "sm" | "m
   );
 }
 
-function avg(values: number[]): number {
-  if (values.length === 0) return 0;
-  return values.reduce((a, b) => a + b, 0) / values.length;
+function avg(values: (number | null)[]): number | null {
+  const valid = values.filter((v): v is number => v !== null && v > 0);
+  if (valid.length === 0) return null;
+  return valid.reduce((a, b) => a + b, 0) / valid.length;
 }
 
 function formatDate(iso: string): string {
@@ -46,7 +47,11 @@ export function ReviewsSection({
   reviews: PublicReview[];
   propertyId: string;
 }) {
-  const overallAvg = avg(reviews.map((r) => r.overallRating));
+  // overallRating is always required — compute directly to keep type as number
+  const overallAvg =
+    reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.overallRating, 0) / reviews.length
+      : 0;
 
   return (
     <div id="reviews" className="scroll-mt-6 space-y-6 border-b border-zinc-200 py-8">
@@ -80,21 +85,24 @@ export function ReviewsSection({
         <p className="text-zinc-500 text-sm">No reviews yet. Be the first to share your experience!</p>
       ) : (
         <>
-          {/* Sub-rating averages */}
-          <div className="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-4">
-            {SUB_RATINGS.map(({ key, label }) => {
-              const subAvg = avg(reviews.map((r) => r[key]));
-              return (
-                <div key={key}>
-                  <p className="text-xs font-medium text-zinc-500 mb-1">{label}</p>
-                  <div className="flex items-center gap-1.5">
-                    <StarDisplay rating={Math.round(subAvg)} />
-                    <span className="text-sm font-semibold text-zinc-900">{subAvg.toFixed(1)}</span>
+          {/* Sub-rating averages — only show categories where at least one review has data */}
+          {SUB_RATINGS.some(({ key }) => avg(reviews.map((r) => r[key])) !== null) && (
+            <div className="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-4">
+              {SUB_RATINGS.map(({ key, label }) => {
+                const subAvg = avg(reviews.map((r) => r[key]));
+                if (subAvg === null) return null;
+                return (
+                  <div key={key}>
+                    <p className="text-xs font-medium text-zinc-500 mb-1">{label}</p>
+                    <div className="flex items-center gap-1.5">
+                      <StarDisplay rating={Math.round(subAvg)} />
+                      <span className="text-sm font-semibold text-zinc-900">{subAvg.toFixed(1)}</span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Individual reviews */}
           <div className="space-y-6 mt-2">

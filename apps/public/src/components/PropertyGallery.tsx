@@ -47,7 +47,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
     <div className="space-y-8 max-w-full overflow-hidden" onKeyDown={handleKeyDown}>
       {/* Main Carousel */}
       <div className="relative mx-auto w-full max-w-4xl">
-        <div className="relative w-full rounded-2xl overflow-hidden bg-zinc-900 aspect-[3/4] sm:aspect-[4/3] sm:max-h-[600px]">
+        <div className="relative w-full rounded-2xl overflow-hidden bg-zinc-900 aspect-[4/3] sm:max-h-[600px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}
@@ -141,7 +141,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
               <button
                 key={image.url}
                 onClick={() => handleThumbnailClick(index)}
-                className={`relative aspect-square overflow-hidden rounded-lg transition-all skeleton ${
+                className={`relative aspect-square overflow-hidden rounded-lg transition-all bg-zinc-100 ${
                   index === currentIndex
                     ? "ring-2 ring-zinc-900 ring-offset-1"
                     : "opacity-70 hover:opacity-100 active:opacity-100"
@@ -154,6 +154,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
                   className="object-cover"
                   sizes="(max-width: 640px) 25vw, (max-width: 768px) 17vw, (max-width: 1024px) 12vw, 96px"
                   loading="lazy"
+                  quality={70}
                   placeholder="blur"
                   blurDataURL={BLUR_DATA_URL}
                 />

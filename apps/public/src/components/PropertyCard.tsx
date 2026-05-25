@@ -24,7 +24,7 @@ export function PropertyCard({
       <article className="group flex flex-col overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-md transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
 
         {/* ── 1. Image + price overlay ─────────────────────────── */}
-        <div className="relative aspect-[4/3] w-full overflow-hidden skeleton">
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-100">
           {property.coverImageUrl ? (
             <Image
               fill
@@ -33,6 +33,8 @@ export function PropertyCard({
               className="object-cover transition-transform duration-500 group-hover:scale-110"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
               priority={priority}
+              loading={priority ? undefined : "lazy"}
+              quality={70}
               placeholder="blur"
               blurDataURL={BLUR_DATA_URL}
             />

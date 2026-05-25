@@ -60,7 +60,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   return (
     <>
       <main className="bg-white pb-32" style={{ scrollBehavior: "smooth" }}>
-        <section className="mx-auto max-w-5xl px-4 pb-20 pt-8 sm:px-6 lg:px-8 lg:grid-cols-[1fr_380px] lg:gap-8">
+        <section className="mx-auto max-w-5xl px-4 pb-20 pt-8 sm:px-6 lg:px-8">
           <Link
             href="/properties"
             className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900 transition-all hover:gap-3 active:scale-95"

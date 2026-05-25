@@ -35,10 +35,11 @@ const nextConfig: NextConfig = {
         hostname: "*.ngrok.io",
       },
     ],
-    formats: ['image/webp', 'image/avif'],
+    formats: ['image/avif', 'image/webp'],
     deviceSizes: [360, 414, 640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 3600,
+    minimumCacheTTL: 86400,
+    qualities: [70, 75, 85],
   },
   async rewrites() {
     // Storage proxy only needed for local emulator development

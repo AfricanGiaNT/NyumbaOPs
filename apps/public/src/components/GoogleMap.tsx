@@ -193,13 +193,20 @@ export function GoogleMap({
   }
 
   return (
-    <div className={`relative overflow-hidden rounded-xl ${className}`}>
+    <div
+      className={`relative overflow-hidden rounded-xl ${className}`}
+      style={{ contain: "layout paint size", maxWidth: "100%", minWidth: 0 }}
+    >
       {!isLoaded && (
         <div className="absolute inset-0 flex items-center justify-center bg-zinc-100 z-10">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-300 border-t-zinc-600" />
         </div>
       )}
-      <div ref={mapRef} className="h-full w-full" />
+      <div
+        ref={mapRef}
+        className="absolute inset-0"
+        style={{ maxWidth: "100%", minWidth: 0 }}
+      />
     </div>
   );
 }

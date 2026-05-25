@@ -20,14 +20,20 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html,
+body {
+  /* Hard lock against horizontal scroll on mobile. Both elements must clip;
+     Android Chrome will scroll on whichever one is missing it. */
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Lock horizontal scroll at the root — mobile browsers (Android Chrome)
-     ignore body-level overflow-x:hidden and still scroll on html when an
-     inner element exceeds the viewport width. */
-  overflow-x: clip;
 }
 
 body {
@@ -35,8 +41,6 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   overscroll-behavior-y: none;
-  overflow-x: clip;
-  width: 100%;
 }
 
 a {

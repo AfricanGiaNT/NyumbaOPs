@@ -146,7 +146,7 @@ export default function ReviewsPage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Reviews</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">Reviews</h1>
               {pendingCount > 0 && (
                 <p className="mt-0.5 text-sm text-amber-600">
                   {pendingCount} {pendingCount === 1 ? "review" : "reviews"} awaiting approval
@@ -156,7 +156,7 @@ export default function ReviewsPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 border-b border-zinc-200 dark:border-zinc-700">
+          <div className="flex gap-1 border-b border-zinc-200 dark:border-zinc-700 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
             {TABS.map((tab) => {
               const count =
                 tab.value === "ALL"
@@ -166,7 +166,7 @@ export default function ReviewsPage() {
                 <button
                   key={tab.value}
                   onClick={() => setActiveTab(tab.value)}
-                  className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                  className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap flex-shrink-0 ${
                     activeTab === tab.value
                       ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
                       : "border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
@@ -206,34 +206,34 @@ export default function ReviewsPage() {
               {filtered.map((review) => (
                 <div
                   key={review.id}
-                  className={`rounded-xl border bg-white dark:bg-zinc-900 p-5 ${
+                  className={`rounded-xl border bg-white dark:bg-zinc-900 p-4 sm:p-5 ${
                     review.status === "PENDING"
                       ? "border-amber-200 dark:border-amber-800 border-l-4 border-l-amber-400"
                       : "border-zinc-200 dark:border-zinc-700"
                   }`}
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-3">
                     {/* Left: reviewer + property */}
-                    <div className="space-y-1 min-w-0">
+                    <div className="space-y-1 min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900 text-sm font-semibold text-indigo-700 dark:text-indigo-300 flex-shrink-0">
                           {review.reviewerName.charAt(0).toUpperCase()}
                         </div>
-                        <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
+                        <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 truncate">
                           {review.reviewerName}
                         </span>
                         <ReviewStatusBadge status={review.status} />
                       </div>
                       {review.property && (
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400 ml-10">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 ml-0 sm:ml-10 truncate">
                           {review.property.name}
                         </p>
                       )}
-                      <p className="text-xs text-zinc-400 ml-10">{formatDate(review.createdAt)}</p>
+                      <p className="text-xs text-zinc-400 ml-0 sm:ml-10">{formatDate(review.createdAt)}</p>
                     </div>
 
                     {/* Right: overall rating */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                       <StarDisplay rating={review.overallRating} />
                       <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
                         {review.overallRating}/5
@@ -243,13 +243,13 @@ export default function ReviewsPage() {
 
                   {/* Sub-ratings — only render rows that have data */}
                   {SUB_RATINGS.some(({ key }) => review[key] !== null) && (
-                    <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1.5 sm:grid-cols-4 ml-10">
+                    <div className="mt-3 grid grid-cols-2 gap-x-4 sm:gap-x-6 gap-y-1.5 sm:grid-cols-4 ml-0 sm:ml-10">
                       {SUB_RATINGS.map(({ key, label }) => {
                         const val = review[key];
                         if (val === null) return null;
                         return (
                           <div key={key} className="flex items-center gap-1.5">
-                            <span className="text-xs text-zinc-400 w-24 flex-shrink-0">{label}</span>
+                            <span className="text-xs text-zinc-400 w-20 sm:w-24 flex-shrink-0">{label}</span>
                             <StarDisplay rating={val} />
                           </div>
                         );
@@ -259,13 +259,13 @@ export default function ReviewsPage() {
 
                   {/* Comment */}
                   {review.comment && (
-                    <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-300 ml-10 leading-relaxed">
+                    <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-300 ml-0 sm:ml-10 leading-relaxed break-words">
                       &ldquo;{review.comment}&rdquo;
                     </p>
                   )}
 
                   {/* Actions */}
-                  <div className="mt-4 ml-10 flex flex-wrap gap-2">
+                  <div className="mt-4 ml-0 sm:ml-10 flex flex-wrap gap-2">
                     {review.status !== "APPROVED" && (
                       <button
                         onClick={() => handleApprove(review)}

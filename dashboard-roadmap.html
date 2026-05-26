@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NyumbaOps Dashboard Roadmap</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --card: #ffffff;
+    --border: #e7e5e4;
+    --text: #1c1917;
+    --muted: #78716c;
+    --accent: #059669;
+    --accent-bg: #ecfdf5;
+    --done: #a8a29e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0a09;
+      --card: #1c1917;
+      --border: #292524;
+      --text: #f5f5f4;
+      --muted: #a8a29e;
+      --accent: #34d399;
+      --accent-bg: #064e3b;
+      --done: #57534e;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    padding: 2rem 1rem 4rem;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  header { margin-bottom: 2rem; }
+  h1 { font-size: 1.875rem; margin: 0 0 0.5rem; }
+  .sub { color: var(--muted); font-size: 0.95rem; margin: 0; }
+  .progress {
+    margin: 1.25rem 0 0;
+    display: flex; align-items: center; gap: 0.75rem;
+    font-size: 0.875rem; color: var(--muted);
+  }
+  .bar {
+    flex: 1; height: 6px; background: var(--border);
+    border-radius: 999px; overflow: hidden;
+  }
+  .bar > div {
+    height: 100%; background: var(--accent);
+    width: 0%; transition: width 0.3s ease;
+  }
+  .priority {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .priority-header {
+    display: flex; align-items: center; gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .rank {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--accent-bg); color: var(--accent);
+    font-weight: 700; font-size: 0.875rem;
+  }
+  h2 { font-size: 1.125rem; margin: 0; flex: 1; }
+  .tagline {
+    color: var(--muted); font-size: 0.875rem;
+    margin: 0 0 0.875rem; padding-left: 40px;
+  }
+  ul.tasks { list-style: none; padding: 0; margin: 0; }
+  ul.tasks li {
+    display: flex; align-items: flex-start; gap: 0.625rem;
+    padding: 0.5rem 0; border-top: 1px solid var(--border);
+  }
+  ul.tasks li:first-child { border-top: none; }
+  ul.tasks input[type="checkbox"] {
+    margin-top: 0.3rem; accent-color: var(--accent);
+    width: 16px; height: 16px; cursor: pointer; flex-shrink: 0;
+  }
+  ul.tasks label {
+    cursor: pointer; font-size: 0.9375rem;
+    flex: 1;
+  }
+  ul.tasks input:checked + label {
+    color: var(--done); text-decoration: line-through;
+  }
+  strong { font-weight: 600; }
+  .footer {
+    margin-top: 2rem; padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 0.875rem;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 1rem; flex-wrap: wrap;
+  }
+  button.reset {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); padding: 0.4rem 0.8rem;
+    border-radius: 6px; cursor: pointer; font-size: 0.8125rem;
+  }
+  button.reset:hover { color: var(--text); border-color: var(--muted); }
+  .note {
+    background: var(--accent-bg);
+    border-left: 3px solid var(--accent);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>NyumbaOps Dashboard Roadmap</h1>
+    <p class="sub">Next 5 priorities, sequenced for fastest value. Progress saves automatically in this browser.</p>
+    <div class="progress">
+      <span id="progress-text">0 of 0 done</span>
+      <div class="bar"><div id="progress-fill"></div></div>
+    </div>
+  </header>
+
+  <div class="note">
+    <strong>Suggested order:</strong> Ship #1 first (inventory page already exists — fastest to value).
+    Then #2 (mostly UI on existing data). Then #3 — justifies your management fee to owners
+    before tackling the bigger #4/#5 engineering lifts.
+  </div>
+
+  <section class="priority">
+    <div class="priority-header">
+      <span class="rank">1</span>
+      <h2>Per-property inventory + utilities tracker</h2>
+    </div>
+    <p class="tagline">Highest leverage — you named it first. Builds on existing /inventory page.</p>
+    <ul class="tasks">
+      <li><input type="checkbox" id="t1-1"><label for="t1-1"><strong>Stock levels per property</strong> for consumables (tissues, soap, coffee, gas) with par levels</label></li>
+      <li><input type="checkbox" id="t1-2"><label for="t1-2"><strong>Low-stock alerts</strong> surfaced on the dashboard home</label></li>
+      <li><input type="checkbox" id="t1-3"><label for="t1-3"><strong>Utility readings</strong> (water/electricity meter, gas refills) logged per property</label></li>
+      <li><input type="checkbox" id="t1-4"><label for="t1-4"><strong>Consumption-per-booking</strong> calculation with anomaly flags ("water usage 3× normal at Villa A")</label></li>
+      <li><input type="checkbox" id="t1-5"><label for="t1-5"><strong>Auto-generated restock list</strong> grouped by property, printable/WhatsApp-able for cleaner before turnover</label></li>
+    </ul>
+  </section>
+
+  <section class="priority">
+    <div class="priority-header">
+      <span class="rank">2</span>
+      <h2>Trends & forecasting widget</h2>
+    </div>
+    <p class="tagline">Directly fixes the "lack of insight" pain point. Mostly UI on data you already have.</p>
+    <ul class="tasks">
+      <li><input type="checkbox" id="t2-1"><label for="t2-1"><strong>Month-over-month sparklines</strong> on Revenue, Expenses, Net</label></li>
+      <li><input type="checkbox" id="t2-2"><label for="t2-2"><strong>Occupancy %</strong> KPI per property and portfolio-wide</label></li>
+      <li><input type="checkbox" id="t2-3"><label for="t2-3"><strong>ADR (Average Daily Rate) and RevPAR</strong> metrics</label></li>
+      <li><input type="checkbox" id="t2-4"><label for="t2-4"><strong>Average length of stay</strong> metric</label></li>
+      <li><input type="checkbox" id="t2-5"><label for="t2-5"><strong>30/60/90-day cashflow forecast</strong> = confirmed booking revenue − recurring expenses − manager fees</label></li>
+      <li><input type="checkbox" id="t2-6"><label for="t2-6"><strong>Best/worst performing property</strong> callout for the month</label></li>
+    </ul>
+  </section>
+
+  <section class="priority">
+    <div class="priority-header">
+      <span class="rank">3</span>
+      <h2>Owner statements & reports</h2>
+    </div>
+    <p class="tagline">You manage for others — this is your billable output. Justifies your management fee.</p>
+    <ul class="tasks">
+      <li><input type="checkbox" id="t3-1"><label for="t3-1"><strong>Owner-share configuration</strong> per property (80/20 split, fixed fee, tiered)</label></li>
+      <li><input type="checkbox" id="t3-2"><label for="t3-2"><strong>One-click monthly owner statement</strong>: revenue, itemized expenses, reimbursements, mgmt fee, net payout</label></li>
+      <li><input type="checkbox" id="t3-3"><label for="t3-3"><strong>PDF generation + email to owner</strong></label></li>
+      <li><input type="checkbox" id="t3-4"><label for="t3-4"><strong>Year-to-date and tax-ready CSV exports</strong></label></li>
+      <li><input type="checkbox" id="t3-5"><label for="t3-5"><strong>Read-only owner portal</strong> link so owners stop asking "how did Villa X do last month?"</label></li>
+    </ul>
+  </section>
+
+  <section class="priority">
+    <div class="priority-header">
+      <span class="rank">4</span>
+      <h2>OTA + WhatsApp automation</h2>
+    </div>
+    <p class="tagline">Push past calendar sync — kill manual data entry and improve response times.</p>
+    <ul class="tasks">
+      <li><input type="checkbox" id="t4-1"><label for="t4-1"><strong>Pull bookings + payouts</strong> from Airbnb/Booking.com (not just calendar blocks)</label></li>
+      <li><input type="checkbox" id="t4-2"><label for="t4-2"><strong>Auto-acknowledge new inquiries within 60s</strong> (response time affects Airbnb ranking)</label></li>
+      <li><input type="checkbox" id="t4-3"><label for="t4-3"><strong>WhatsApp template:</strong> check-in instructions to guest</label></li>
+      <li><input type="checkbox" id="t4-4"><label for="t4-4"><strong>WhatsApp template:</strong> review request 1 day after checkout</label></li>
+      <li><input type="checkbox" id="t4-5"><label for="t4-5"><strong>WhatsApp template:</strong> monthly statement ready notification to owner</label></li>
+      <li><input type="checkbox" id="t4-6"><label for="t4-6"><strong>WhatsApp template:</strong> low-stock alert to cleaner</label></li>
+    </ul>
+  </section>
+
+  <section class="priority">
+    <div class="priority-header">
+      <span class="rank">5</span>
+      <h2>Turnover & task command center</h2>
+    </div>
+    <p class="tagline">Property managers live or die on turnover execution. Ties inventory restocks into the same task system.</p>
+    <ul class="tasks">
+      <li><input type="checkbox" id="t5-1"><label for="t5-1"><strong>Auto-generate cleaning jobs</strong> from every checkout→checkin gap</label></li>
+      <li><input type="checkbox" id="t5-2"><label for="t5-2"><strong>Assignable staff with status</strong> (scheduled / in progress / done + photos)</label></li>
+      <li><input type="checkbox" id="t5-3"><label for="t5-3"><strong>Maintenance ticket queue</strong> (guest reports → ticket → assigned → resolved → optional charge-back)</label></li>
+      <li><input type="checkbox" id="t5-4"><label for="t5-4"><strong>Inventory restock tasks feed in</strong> so cleaner restocks during turnover</label></li>
+      <li><input type="checkbox" id="t5-5"><label for="t5-5"><strong>"Today's jobs" view</strong> for staff drives the daily workflow</label></li>
+    </ul>
+  </section>
+
+  <div class="footer">
+    <span>Progress persists in this browser via localStorage.</span>
+    <button class="reset" onclick="resetAll()">Reset all</button>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = "nyumbaops-roadmap-v1";
+  const boxes = document.querySelectorAll('input[type="checkbox"]');
+  const fill = document.getElementById("progress-fill");
+  const text = document.getElementById("progress-text");
+
+  function updateProgress() {
+    const total = boxes.length;
+    const done = [...boxes].filter(b => b.checked).length;
+    const pct = total ? (done / total) * 100 : 0;
+    fill.style.width = pct + "%";
+    text.textContent = `${done} of ${total} done (${Math.round(pct)}%)`;
+  }
+
+  function save() {
+    const state = {};
+    boxes.forEach(b => state[b.id] = b.checked);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function load() {
+    try {
+      const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      boxes.forEach(b => { if (state[b.id]) b.checked = true; });
+    } catch (e) {}
+  }
+
+  function resetAll() {
+    if (!confirm("Reset all progress?")) return;
+    boxes.forEach(b => b.checked = false);
+    localStorage.removeItem(STORAGE_KEY);
+    updateProgress();
+  }
+
+  boxes.forEach(b => b.addEventListener("change", () => { save(); updateProgress(); }));
+  load();
+  updateProgress();
+</script>
+</body>
+</html>

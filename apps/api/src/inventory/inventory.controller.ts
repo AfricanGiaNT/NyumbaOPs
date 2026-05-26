@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { BulkCreateInventoryDto } from './dto/bulk-create-inventory.dto';
 import { CreateInventoryItemDto } from './dto/create-inventory-item.dto';
 import { CreateStockMovementDto } from './dto/create-stock-movement.dto';
 import { InventoryQueryDto } from './dto/inventory-query.dto';
@@ -32,6 +33,15 @@ export class InventoryController {
   ) {
     const userId = req.user?.id ?? 'system';
     return this.inventoryService.create(dto, userId);
+  }
+
+  @Post('bulk')
+  bulkCreate(
+    @Body() dto: BulkCreateInventoryDto,
+    @Req() req: { user?: { id?: string } },
+  ) {
+    const userId = req.user?.id ?? 'system';
+    return this.inventoryService.bulkCreate(dto, userId);
   }
 
   @Get()

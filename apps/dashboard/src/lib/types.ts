@@ -303,3 +303,28 @@ export type InventoryItem = {
   updatedAt: string;
 };
 
+// ─── Utilities ───────────────────────────────────────────────────────────────
+
+export type UtilityType = "ELECTRICITY" | "WATER" | "GAS" | "INTERNET" | "OTHER";
+
+export type UtilityBill = {
+  id: string;
+  propertyId: string;
+  type: UtilityType;
+  amount: number;
+  currency: Currency;
+  billingDate: string;
+  notes: string | null;
+  property?: { id: string; name: string } | null;
+  createdAt: string;
+};
+
+export type UtilityAnomaly = {
+  propertyId: string;
+  type: UtilityType;
+  lastMonthAmount: number;
+  avgAmount: number;
+  isAnomaly: boolean;
+  percentAboveAvg: number;
+};
+

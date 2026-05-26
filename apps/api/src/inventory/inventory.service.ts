@@ -7,6 +7,7 @@ import { CategoryType, Currency, StockMovementType, TransactionType } from '@pri
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TransactionsService } from '../transactions/transactions.service';
+import { BulkCreateInventoryDto } from './dto/bulk-create-inventory.dto';
 import { CreateInventoryItemDto } from './dto/create-inventory-item.dto';
 import { CreateStockMovementDto } from './dto/create-stock-movement.dto';
 import { InventoryQueryDto } from './dto/inventory-query.dto';
@@ -64,6 +65,48 @@ export class InventoryService {
     });
 
     return item;
+  }
+
+  async bulkCreate(dto: BulkCreateInventoryDto, userId: string) {
+    const property = await this.prisma.property.findUnique({
+      where: { id: dto.propertyId },
+      select: { id: true, currency: true },
+    });
+    if (!property) throw new NotFoundException('Property not found');
+
+    // Fetch existing item names for this property to skip duplicates
+    const existing = await this.prisma.inventoryItem.findMany({
+      where: { propertyId: dto.propertyId },
+      select: { name: true },
+    });
+    const existingNames = new Set(existing.map((i) => i.name.toLowerCase()));
+
+    const newItems = dto.items.filter(
+      (item) => !existingNames.has(item.name.toLowerCase()),
+    );
+
+    if (newItems.length === 0) return { created: 0, skipped: dto.items.length, items: [] };
+
+    const created = await this.prisma.$transaction(
+      newItems.map((item) =>
+        this.prisma.inventoryItem.create({
+          data: {
+            propertyId: dto.propertyId,
+            name: item.name,
+            category: item.category,
+            unit: item.unit ?? 'unit',
+            quantity: item.quantity ?? 0,
+            minQuantity: item.minQuantity ?? 0,
+            currency: property.currency,
+            notes: item.notes,
+            createdBy: userId,
+          },
+          include: { property: { select: { id: true, name: true, location: true } } },
+        }),
+      ),
+    );
+
+    return { created: created.length, skipped: dto.items.length - created.length, items: created };
   }
 
   async findAll(query: InventoryQueryDto) {

@@ -28,7 +28,9 @@
       "Bash(Remove-Item \"C:\\\\Users\\\\Hp\\\\OneDrive\\\\NyumbaOPs\\\\apps\\\\dashboard\\\\src\\\\app\\\\favicon.ico\")",
       "Bash(pnpm prisma *)",
       "Bash(findstr /i \"database\\\\|direct\\\\|shadow\")",
-      "Bash(npx @nestjs/cli build)"
+      "Bash(npx @nestjs/cli build)",
+      "Bash(pnpm --filter api prisma migrate dev --name add_utility_bills)",
+      "Bash(findstr /i \"\\\\\"dev\\\\\"\\\\|\\\\\"start\\\\\"\")"
     ]
   }
 }

@@ -19,6 +19,7 @@ import { TelegramModule } from './telegram/telegram.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { WorksModule } from './works/works.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { UtilityBillsModule } from './utility-bills/utility-bills.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ReviewsModule } from './reviews/reviews.module';
     WorksModule,
     InventoryModule,
     ReviewsModule,
+    UtilityBillsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

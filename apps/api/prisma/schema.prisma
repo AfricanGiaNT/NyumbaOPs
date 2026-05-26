@@ -100,6 +100,14 @@ enum ReviewStatus {
   REJECTED
 }
 
+enum UtilityType {
+  ELECTRICITY
+  WATER
+  GAS
+  INTERNET
+  OTHER
+}
+
 model User {
   id           String    @id @default(uuid())
   email        String    @unique
@@ -124,6 +132,7 @@ model User {
   works          Work[]
   stockMovements StockMovement[]
   inventoryItems InventoryItem[]
+  utilityBills   UtilityBill[]
 }
 
 model Property {
@@ -181,6 +190,7 @@ model Property {
   works               Work[]
   inventoryItems      InventoryItem[]
   reviews             Review[]
+  utilityBills        UtilityBill[]
 }
 
 model Amenity {
@@ -554,5 +564,24 @@ model Review {
   @@index([propertyId])
   @@index([propertyId, status])
   @@map("reviews")
+}
+
+model UtilityBill {
+  id          String      @id @default(uuid())
+  propertyId  String      @map("property_id")
+  type        UtilityType
+  amount      Int
+  currency    Currency    @default(MWK)
+  billingDate DateTime    @map("billing_date")
+  notes       String?
+  createdBy   String      @map("created_by")
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  property    Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  creator     User        @relation(fields: [createdBy], references: [id])
+
+  @@index([propertyId])
+  @@index([billingDate])
+  @@map("utility_bills")
 }
 

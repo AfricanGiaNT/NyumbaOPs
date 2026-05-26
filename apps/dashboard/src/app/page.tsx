@@ -9,6 +9,7 @@ import {
   Property,
   Inquiry,
   Transaction,
+  InventoryItem,
 } from "../lib/types";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { useAuth } from "@/lib/AuthContext";
@@ -22,6 +23,7 @@ import { QuickActionsCard } from "../components/dashboard/QuickActionsCard";
 import { PropertyAvailabilityCard } from "../components/dashboard/PropertyAvailabilityCard";
 import { PropertyFinancialBreakdown } from "../components/dashboard/PropertyFinancialBreakdown";
 import { ReimbursementsCard } from "../components/dashboard/ReimbursementsCard";
+import { LowStockAlertCard } from "../components/dashboard/LowStockAlertCard";
 import { AddRevenueModal } from "../components/finance/AddRevenueModal";
 import { AddExpenseModal } from "../components/finance/AddExpenseModal";
 
@@ -34,6 +36,7 @@ type DashboardData = {
   properties: Property[];
   inquiries: Inquiry[];
   transactions: Transaction[];
+  lowStockItems: InventoryItem[];
 };
 
 export default function Home() {
@@ -47,6 +50,7 @@ export default function Home() {
     properties: [],
     inquiries: [],
     transactions: [],
+    lowStockItems: [],
   });
   const [loading, setLoading] = useState(true);
   const [unblockingId, setUnblockingId] = useState<string | null>(null);
@@ -67,12 +71,14 @@ export default function Home() {
         propertiesRes,
         inquiriesRes,
         transactionsRes,
+        lowStockRes,
       ] = await Promise.allSettled([
         apiGet<AnalyticsSummary>(`/analytics/summary?month=${month}`),
         apiGet<Booking[]>("/bookings"),
         apiGet<Property[]>("/properties"),
         apiGet<{ success: boolean; data: Inquiry[] }>("/inquiries"),
         apiGet<Transaction[]>(`/transactions?month=${month}`),
+        apiGet<InventoryItem[]>("/inventory?lowStock=true"),
       ]);
 
         const analytics = analyticsRes.status === "fulfilled" ? analyticsRes.value : null;
@@ -85,6 +91,7 @@ export default function Home() {
               ) || []
             : [];
         const transactions = transactionsRes.status === "fulfilled" ? transactionsRes.value : [];
+        const lowStockItems = lowStockRes.status === "fulfilled" ? lowStockRes.value : [];
 
         // Upcoming check-ins & check-outs within the next 30 days
         // Use Date objects to correctly compare Prisma ISO datetime strings
@@ -138,6 +145,7 @@ export default function Home() {
           properties,
           inquiries,
           transactions,
+          lowStockItems,
         });
       } catch (error) {
         console.error("Error loading dashboard data:", error);
@@ -288,6 +296,15 @@ export default function Home() {
               transactions={data.transactions}
               loading={loading}
               onReimbursed={loadDashboardData}
+            />
+          </div>
+
+          {/* Low Stock Alerts */}
+          <div className="mb-6">
+            <LowStockAlertCard
+              items={data.lowStockItems}
+              loading={loading}
+              onRestocked={loadDashboardData}
             />
           </div>
 

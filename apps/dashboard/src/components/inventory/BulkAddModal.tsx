@@ -115,8 +115,8 @@ export function BulkAddModal({ isOpen, properties, onClose, onSuccess }: Props) 
   const templateOptions = properties.filter((p) => p.id !== targetId);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="flex w-full max-w-4xl flex-col rounded-xl bg-white dark:bg-zinc-900 shadow-xl max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:p-4">
+      <div className="flex w-full sm:max-w-4xl flex-col rounded-t-xl sm:rounded-xl bg-white dark:bg-zinc-900 shadow-xl max-h-[92vh] sm:max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 px-6 py-4">
           <div>
@@ -160,7 +160,7 @@ export function BulkAddModal({ isOpen, properties, onClose, onSuccess }: Props) 
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
             {/* Target property + template picker */}
-            <div className="grid grid-cols-1 gap-4 px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 px-4 sm:px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   Add to property *
@@ -208,8 +208,9 @@ export function BulkAddModal({ isOpen, properties, onClose, onSuccess }: Props) 
             </div>
 
             {/* Spreadsheet */}
-            <div className="flex-1 overflow-auto px-6 py-4">
-              <table className="w-full text-sm">
+            <div className="flex-1 overflow-auto px-4 sm:px-6 py-4">
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px] text-sm">
                 <thead>
                   <tr className="border-b border-zinc-200 dark:border-zinc-700">
                     <th className="pb-2 text-left text-xs font-medium text-zinc-500 w-[28%]">Item Name *</th>
@@ -294,6 +295,7 @@ export function BulkAddModal({ isOpen, properties, onClose, onSuccess }: Props) 
                   ))}
                 </tbody>
               </table>
+              </div>
 
               <button
                 type="button"
@@ -308,7 +310,7 @@ export function BulkAddModal({ isOpen, properties, onClose, onSuccess }: Props) 
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between gap-3 border-t border-zinc-100 dark:border-zinc-800 px-6 py-4">
+            <div className="flex items-center justify-between gap-3 border-t border-zinc-100 dark:border-zinc-800 px-4 sm:px-6 py-4">
               <p className="text-xs text-zinc-400 dark:text-zinc-500">
                 {rows.filter((r) => r.name.trim()).length} of {rows.length} rows have a name · duplicates will be skipped
               </p>

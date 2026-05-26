@@ -40,15 +40,15 @@ export function PropertyChecklist({ items, properties, onAction }: Props) {
   return (
     <>
       {/* Property picker */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-1.5 overflow-x-auto sm:flex-wrap pb-1 -mx-1 px-1 scrollbar-thin">
         {properties.map((p) => (
           <button
             key={p.id}
             onClick={() => setSelectedPropertyId(p.id)}
-            className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
+            className={`shrink-0 rounded-lg border px-3 py-1.5 text-sm font-semibold transition ${
               selectedPropertyId === p.id
                 ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300"
-                : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600"
+                : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-600"
             }`}
           >
             {p.name}
@@ -95,13 +95,13 @@ export function PropertyChecklist({ items, properties, onAction }: Props) {
               return (
                 <div
                   key={item.id}
-                  className={`flex items-center gap-4 px-4 py-3.5 ${
-                    status === "out" ? "bg-red-50/40 dark:bg-red-950/20" :
-                    status === "low" ? "bg-amber-50/40 dark:bg-amber-950/10" : ""
+                  className={`flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-2.5 ${
+                    status === "out" ? "bg-red-50/60 dark:bg-red-950/20" :
+                    status === "low" ? "bg-amber-50/60 dark:bg-amber-950/10" : ""
                   }`}
                 >
                   {/* Status dot */}
-                  <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                  <div className={`h-3 w-3 shrink-0 rounded-full ${
                     status === "out"   ? "bg-red-500" :
                     status === "low"   ? "bg-amber-500" :
                     status === "ok"    ? "bg-emerald-500" :
@@ -110,37 +110,39 @@ export function PropertyChecklist({ items, properties, onAction }: Props) {
 
                   {/* Name + category */}
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">{item.name}</p>
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500 capitalize">
+                    <p className="text-base font-semibold text-zinc-900 dark:text-zinc-100 truncate leading-tight">{item.name}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-500 capitalize truncate">
                       {item.category.replace(/_/g, " ").toLowerCase()}
-                      {item.notes && ` · ${item.notes}`}
+                      {item.notes && <span className="hidden sm:inline"> · {item.notes}</span>}
                     </p>
                   </div>
 
                   {/* Qty */}
                   <div className="shrink-0 text-right">
-                    <p className={`text-sm font-semibold ${
-                      status === "out" ? "text-red-600 dark:text-red-400" :
-                      status === "low" ? "text-amber-600 dark:text-amber-400" :
-                      "text-zinc-700 dark:text-zinc-300"
-                    }`}>
-                      {item.quantity}
-                      {item.minQuantity > 0 && <span className="font-normal text-zinc-400"> / {item.minQuantity}</span>}
-                    </p>
-                    <p className="text-xs text-zinc-400">{item.unit}</p>
+                    <div className="flex items-baseline justify-end gap-0.5 tabular-nums leading-none">
+                      <span className={`text-2xl font-bold ${
+                        status === "out" ? "text-red-600 dark:text-red-400" :
+                        status === "low" ? "text-amber-600 dark:text-amber-400" :
+                        "text-emerald-600 dark:text-emerald-400"
+                      }`}>
+                        {item.quantity}
+                      </span>
+                      {item.minQuantity > 0 && <span className="text-base font-medium text-zinc-400 dark:text-zinc-500">/{item.minQuantity}</span>}
+                    </div>
+                    <p className="text-[10px] uppercase tracking-wide text-zinc-400 dark:text-zinc-500 mt-0.5">{item.unit}</p>
                   </div>
 
                   {/* Action */}
                   {needsRestock ? (
                     <button
                       onClick={() => setRestockItem(item)}
-                      className="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500 transition"
+                      className="shrink-0 rounded-md bg-zinc-900 dark:bg-zinc-100 px-2.5 py-1.5 text-xs font-semibold text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-white transition min-w-[44px] text-center"
                     >
                       {suggestedQty > 0 ? `+${suggestedQty}` : "Restock"}
                     </button>
                   ) : (
-                    <div className="shrink-0 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
-                      <svg className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="shrink-0 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
+                      <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>

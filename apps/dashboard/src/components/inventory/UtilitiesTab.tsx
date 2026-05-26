@@ -110,11 +110,11 @@ export function UtilitiesTab({ properties }: Props) {
   return (
     <div className="space-y-6">
       {/* Controls */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         <select
           value={filterProperty}
           onChange={(e) => setFilterProperty(e.target.value)}
-          className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm dark:text-zinc-100 focus:border-indigo-500 focus:outline-none"
+          className="flex-1 sm:flex-none rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm dark:text-zinc-100 focus:border-indigo-500 focus:outline-none"
         >
           <option value="">All Properties</option>
           {properties.map((p) => (
@@ -124,7 +124,7 @@ export function UtilitiesTab({ properties }: Props) {
 
         <button
           onClick={() => { setDefaultType("ELECTRICITY"); setLogOpen(true); }}
-          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition ml-auto"
+          className="shrink-0 flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 sm:px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition sm:ml-auto"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -180,14 +180,49 @@ export function UtilitiesTab({ properties }: Props) {
                   </button>
                 </div>
 
-                {/* Bills table */}
-                <table className="w-full text-sm">
+                {/* Mobile: card rows */}
+                <div className="sm:hidden divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {typeBills.map((bill) => {
+                    const anomaly = anomalyMap.get(`${bill.propertyId}::${bill.type}`);
+                    return (
+                      <div key={bill.id} className="flex items-center gap-3 px-4 py-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                            {bill.currency} {bill.amount.toLocaleString()}
+                            {anomaly && (
+                              <span className="ml-1 text-xs font-normal text-amber-600 dark:text-amber-400">
+                                +{anomaly.percentAboveAvg}%
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                            {bill.property?.name ?? "—"} ·{" "}
+                            {new Date(bill.billingDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                          </p>
+                          {bill.notes && <p className="text-xs text-zinc-400 truncate mt-0.5">{bill.notes}</p>}
+                        </div>
+                        <button
+                          onClick={() => handleDelete(bill.id)}
+                          disabled={deleting === bill.id}
+                          className="shrink-0 rounded p-1.5 text-zinc-300 hover:text-red-500 dark:hover:text-red-400 transition disabled:opacity-50"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop: table */}
+                <table className="hidden sm:table w-full text-sm">
                   <thead>
                     <tr className="border-b border-zinc-100 dark:border-zinc-800">
                       <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500">Date</th>
                       <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500">Property</th>
                       <th className="px-4 py-2.5 text-right text-xs font-medium text-zinc-500">Amount</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500 hidden sm:table-cell">Notes</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500">Notes</th>
                       <th className="px-4 py-2.5 text-right text-xs font-medium text-zinc-500">Del</th>
                     </tr>
                   </thead>
@@ -197,24 +232,14 @@ export function UtilitiesTab({ properties }: Props) {
                       return (
                         <tr key={bill.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
                           <td className="px-4 py-2.5 text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
-                            {new Date(bill.billingDate).toLocaleDateString("en-GB", {
-                              day: "numeric", month: "short", year: "numeric",
-                            })}
+                            {new Date(bill.billingDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                           </td>
-                          <td className="px-4 py-2.5 text-zinc-700 dark:text-zinc-300">
-                            {bill.property?.name ?? "—"}
-                          </td>
+                          <td className="px-4 py-2.5 text-zinc-700 dark:text-zinc-300">{bill.property?.name ?? "—"}</td>
                           <td className="px-4 py-2.5 text-right font-medium text-zinc-900 dark:text-zinc-100 whitespace-nowrap">
                             {bill.currency} {bill.amount.toLocaleString()}
-                            {anomaly && (
-                              <span className="ml-1 text-xs text-amber-600 dark:text-amber-400">
-                                (+{anomaly.percentAboveAvg}%)
-                              </span>
-                            )}
+                            {anomaly && <span className="ml-1 text-xs text-amber-600 dark:text-amber-400">(+{anomaly.percentAboveAvg}%)</span>}
                           </td>
-                          <td className="px-4 py-2.5 text-xs text-zinc-400 hidden sm:table-cell max-w-[200px] truncate">
-                            {bill.notes ?? "—"}
-                          </td>
+                          <td className="px-4 py-2.5 text-xs text-zinc-400 max-w-[200px] truncate">{bill.notes ?? "—"}</td>
                           <td className="px-4 py-2.5 text-right">
                             <button
                               onClick={() => handleDelete(bill.id)}

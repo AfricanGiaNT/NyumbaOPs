@@ -23,11 +23,13 @@
 html,
 body {
   /* Hard lock against horizontal scroll on mobile. Both elements must clip;
-     Android Chrome will scroll on whichever one is missing it. */
-  overflow-x: hidden;
+     Android Chrome will scroll on whichever one is missing it.
+     Use `clip` (not `hidden`) so neither becomes a vertical scroll container —
+     `overflow-x: hidden` forces overflow-y to compute as auto, which makes
+     html and body nested scrollers and breaks vertical scroll on mobile. */
+  overflow-x: clip;
   width: 100%;
   max-width: 100%;
-  position: relative;
 }
 
 html {

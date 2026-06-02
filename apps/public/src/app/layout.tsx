@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <div className="w-full overflow-x-hidden">
+        <div className="w-full overflow-x-clip">
           <Navbar />
           {children}
         </div>

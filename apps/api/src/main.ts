@@ -20,6 +20,9 @@ if (!admin.apps.length) {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: true });
+  // Trust the first proxy hop (Vercel/host load balancer) so per-IP rate
+  // limiting reads the real client IP from X-Forwarded-For, not the proxy's.
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
   app.use(require('express').json({ limit: '20mb' }));
   app.use(require('express').urlencoded({ limit: '20mb', extended: true }));
   // Parse comma-separated extra origins (e.g. "https://madikweapartments.com,https://www.madikweapartments.com")

@@ -45,4 +45,11 @@ export class CreateReviewDto {
   @Max(5)
   @IsOptional()
   communicationRating?: number;
+
+  // Honeypot: hidden from real users, should always be empty. Bots that fill
+  // every field will populate it, letting us silently drop the submission.
+  @ApiPropertyOptional({ description: 'Honeypot — leave empty', example: '' })
+  @IsString()
+  @IsOptional()
+  website?: string;
 }

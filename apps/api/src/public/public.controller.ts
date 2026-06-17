@@ -8,10 +8,12 @@ import {
   Query,
   Res,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
   Body,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { PublicService } from './public.service';
@@ -65,13 +67,16 @@ export class PublicController {
 
   @Post('properties/:id/reviews')
   @HttpCode(201)
+  // Per-IP rate limit: max 3 review submissions per 10 minutes.
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 3, ttl: 600_000 } })
   submitReview(@Param('id') id: string, @Body() dto: CreateReviewDto) {
     return this.reviewsService.submitReview(id, dto);
   }
 
   @Get('properties/:id/reviews')
-  getApprovedReviews(@Param('id') id: string) {
-    return this.reviewsService.getApprovedReviews(id);
+  getPublicReviews(@Param('id') id: string) {
+    return this.reviewsService.getPublicReviews(id);
   }
 
   @Post('uploads')

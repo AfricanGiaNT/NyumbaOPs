@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { HealthController } from './health.controller';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AppController } from './app.controller';
@@ -24,6 +25,9 @@ import { UtilityBillsModule } from './utility-bills/utility-bills.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // Default rate-limit config. Applied selectively per-route via ThrottlerGuard
+    // (e.g. public review submissions), not globally.
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 30 }]),
     AuthModule,
     PrismaModule,
     AuditModule,

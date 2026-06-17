@@ -175,6 +175,7 @@ export async function submitReview(
     locationRating?: number;
     valueRating?: number;
     communicationRating?: number;
+    website?: string;
   },
 ): Promise<{ success: boolean; data: PublicReview }> {
   const response = await fetch(

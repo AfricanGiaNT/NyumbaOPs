@@ -33,7 +33,22 @@
       "Bash(findstr /i \"\\\\\"dev\\\\\"\\\\|\\\\\"start\\\\\"\")",
       "Bash(git -C \".claude/worktrees/zen-neumann\" log --oneline -5)",
       "Bash(grep -rl \"Reconciliation\" \"C:\\\\Users\\\\Hp\\\\OneDrive\\\\NyumbaOPs\" --include=\"*.tsx\" 2>/dev/null | head -10; echo \"---\"; find \"C:\\\\Users\\\\Hp\" -maxdepth 3 -type d -name \"*nyumba*\" -o -name \"*Nyumba*\" 2>/dev/null | head -20)",
-      "Bash(wait)"
+      "Bash(wait)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\({...p.dependencies,...p.devDependencies},null,0\\)\\)\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\)\")",
+      "Bash(PORT=3001 npm run start:dev > /tmp/api.log 2>&1)",
+      "Bash(break)",
+      "Bash(curl -s -o /tmp/r1.txt -w 'HTTP %{http_code}\\\\n' -X POST http://localhost:3001/api/v1/public/properties/8d14ce8e-95c3-40f2-a389-8ff9714313b8/reviews -H 'Content-Type: application/json' -d '{\"reviewerName\":\"Smoke Test Clean\",\"overallRating\":5,\"comment\":\"Lovely clean stay, great host and location.\"}')",
+      "Bash(curl -s -o /tmp/r2.txt -w 'HTTP %{http_code}\\\\n' -X POST http://localhost:3001/api/v1/public/properties/8d14ce8e-95c3-40f2-a389-8ff9714313b8/reviews -H 'Content-Type: application/json' -d '{\"reviewerName\":\"Bad Mouth\",\"overallRating\":1,\"comment\":\"This place is sh1t and the host is an asshole\"}')",
+      "Bash(curl -s -o /tmp/r3.txt -w 'HTTP %{http_code}\\\\n' -X POST http://localhost:3001/api/v1/public/properties/8d14ce8e-95c3-40f2-a389-8ff9714313b8/reviews -H 'Content-Type: application/json' -d '{\"reviewerName\":\"Bot Bot\",\"overallRating\":5,\"comment\":\"buy cheap stuff\",\"website\":\"http://spam.example\"}')",
+      "Bash(curl -s -o /tmp/r4.txt -w 'HTTP %{http_code}\\\\n' -X POST http://localhost:3001/api/v1/public/properties/8d14ce8e-95c3-40f2-a389-8ff9714313b8/reviews -H 'Content-Type: application/json' -d '{\"reviewerName\":\"Grace Class\",\"overallRating\":4,\"comment\":\"The grass and the classy passage area were great.\"}')",
+      "Bash(npx ts-node -e ' *)",
+      "Bash(curl -s http://localhost:3001/api/v1/public/properties/8d14ce8e-95c3-40f2-a389-8ff9714313b8/reviews)",
+      "Bash(node -e \"const d=JSON.parse\\(require\\('fs'\\).readFileSync\\(0\\)\\);console.log\\('count:',d.data.length\\);console.log\\(d.data.slice\\(0,3\\).map\\(r=>\\({name:r.reviewerName,status:r.status}\\)\\)\\)\")",
+      "Bash(npx ts-node *)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(powershell.exe -NoProfile -Command 'Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match '\\\\''nest start'\\\\'' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force; '\\\\''stopped '\\\\'' + $_.ProcessId }')",
+      "PowerShell($c = Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue; if \\($c\\) { $c | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }; \"killed listeners on 3001\" } else { \"port 3001 free\" })"
     ]
   }
 }

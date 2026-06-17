@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { submitReview } from "@/lib/api";
 
@@ -69,6 +69,8 @@ type FormState = {
   locationRating: number;
   valueRating: number;
   communicationRating: number;
+  // Honeypot — hidden from users, only bots fill it.
+  website: string;
 };
 
 const emptyForm: FormState = {
@@ -79,6 +81,7 @@ const emptyForm: FormState = {
   locationRating: 0,
   valueRating: 0,
   communicationRating: 0,
+  website: "",
 };
 
 export function ReviewFormClient({ propertyId }: { propertyId: string; }) {
@@ -87,7 +90,26 @@ export function ReviewFormClient({ propertyId }: { propertyId: string; }) {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canSubmit = form.reviewerName.trim().length > 0 && form.overallRating > 0 && !submitting;
+  // Lightweight captcha — a small arithmetic challenge. Generated after mount
+  // so the random values don't cause an SSR/client hydration mismatch.
+  const [captcha, setCaptcha] = useState<{ a: number; b: number } | null>(null);
+  const [captchaInput, setCaptchaInput] = useState("");
+
+  useEffect(() => {
+    setCaptcha({
+      a: 1 + Math.floor(Math.random() * 9),
+      b: 1 + Math.floor(Math.random() * 9),
+    });
+  }, []);
+
+  const captchaSolved =
+    captcha !== null && Number(captchaInput) === captcha.a + captcha.b;
+
+  const canSubmit =
+    form.reviewerName.trim().length > 0 &&
+    form.overallRating > 0 &&
+    captchaSolved &&
+    !submitting;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -105,10 +127,17 @@ export function ReviewFormClient({ propertyId }: { propertyId: string; }) {
         locationRating: form.locationRating > 0 ? form.locationRating : undefined,
         valueRating: form.valueRating > 0 ? form.valueRating : undefined,
         communicationRating: form.communicationRating > 0 ? form.communicationRating : undefined,
+        website: form.website,
       });
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      // Issue a fresh challenge after a failed attempt.
+      setCaptcha({
+        a: 1 + Math.floor(Math.random() * 9),
+        b: 1 + Math.floor(Math.random() * 9),
+      });
+      setCaptchaInput("");
     } finally {
       setSubmitting(false);
     }
@@ -132,7 +161,7 @@ export function ReviewFormClient({ propertyId }: { propertyId: string; }) {
         </div>
         <h2 className="text-xl font-bold text-zinc-900">Thank you for your review!</h2>
         <p className="text-zinc-500 text-sm">
-          Your review has been submitted and is pending approval. We appreciate your feedback.
+          Your review is now live on the property page. We appreciate your feedback.
         </p>
         <Link
           href={`/properties/${propertyId}`}
@@ -151,7 +180,7 @@ export function ReviewFormClient({ propertyId }: { propertyId: string; }) {
     <form onSubmit={handleSubmit} className="rounded-2xl bg-white p-8 shadow-sm space-y-6">
       <div>
         <h2 className="text-lg font-bold text-zinc-900">Share your experience</h2>
-        <p className="mt-1 text-sm text-zinc-500">Your review will be visible after approval.</p>
+        <p className="mt-1 text-sm text-zinc-500">Your review will appear on the property page right away.</p>
       </div>
 
       {/* Reviewer name */}
@@ -220,6 +249,38 @@ export function ReviewFormClient({ propertyId }: { propertyId: string; }) {
           className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 resize-none"
         />
         <p className="mt-1 text-xs text-zinc-400 text-right">{form.comment.length}/1500</p>
+      </div>
+
+      {/* Honeypot — visually hidden and excluded from tab/AT focus. Bots fill it. */}
+      <div aria-hidden="true" className="absolute -left-[9999px] top-0 h-0 w-0 overflow-hidden">
+        <label htmlFor="website">Website</label>
+        <input
+          id="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={form.website}
+          onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))}
+        />
+      </div>
+
+      {/* Lightweight captcha */}
+      <div>
+        <label htmlFor="captcha" className="block text-sm font-medium text-zinc-700 mb-1.5">
+          Quick check: what is {captcha ? `${captcha.a} + ${captcha.b}` : "…"}?{" "}
+          <span className="text-red-500">*</span>
+        </label>
+        <input
+          id="captcha"
+          type="text"
+          inputMode="numeric"
+          value={captchaInput}
+          onChange={(e) => setCaptchaInput(e.target.value)}
+          placeholder="Enter the answer"
+          className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+          autoComplete="off"
+          required
+        />
       </div>
 
       {error && (

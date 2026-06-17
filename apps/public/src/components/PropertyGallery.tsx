@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { transformImageUrl, BLUR_DATA_URL } from "@/lib/image-utils";
@@ -17,6 +17,28 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  // Touch-swipe tracking for mobile navigation.
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const SWIPE_THRESHOLD = 40;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent, next: () => void, prev: () => void) => {
+    if (!touchStart.current) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStart.current.x;
+    const dy = t.clientY - touchStart.current.y;
+    touchStart.current = null;
+    // Only act on a mostly-horizontal swipe so vertical page scrolling is unaffected.
+    if (Math.abs(dx) > SWIPE_THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) next();
+      else prev();
+    }
+  };
 
   if (!images.length) {
     return (
@@ -47,7 +69,11 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
     <div className="space-y-8 max-w-full overflow-hidden" onKeyDown={handleKeyDown}>
       {/* Main Carousel */}
       <div className="relative mx-auto w-full max-w-4xl">
-        <div className="relative w-full rounded-2xl overflow-hidden bg-zinc-900 aspect-[4/3] sm:max-h-[600px]">
+        <div
+          className="relative w-full rounded-2xl overflow-hidden bg-zinc-900 aspect-[4/3] sm:max-h-[600px] touch-pan-y"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={(e) => handleTouchEnd(e, handleNext, handlePrev)}
+        >
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIndex}
@@ -187,8 +213,16 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
 
             {/* Image */}
             <div
-              className="relative h-[90vh] w-[95vw] max-w-4xl"
+              className="relative h-[90vh] w-[95vw] max-w-4xl touch-pan-y"
               onClick={(e) => e.stopPropagation()}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={(e) =>
+                handleTouchEnd(
+                  e,
+                  () => setLightboxIndex((lightboxIndex + 1) % images.length),
+                  () => setLightboxIndex((lightboxIndex - 1 + images.length) % images.length),
+                )
+              }
             >
               <Image
                 fill

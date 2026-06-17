@@ -2,8 +2,8 @@ import React from "react";
 import { PropertyFormData } from "@/types/property-form";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { BED_TYPES } from "@/lib/constants/policies";
+import { cn } from "@/lib/utils";
 
 export interface TabProps {
   data: PropertyFormData;
@@ -21,7 +21,7 @@ export function DetailsTab({ data, onChange, errors }: TabProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="bedrooms" className="text-zinc-900">
@@ -110,20 +110,37 @@ export function DetailsTab({ data, onChange, errors }: TabProps) {
       </div>
 
       <div>
-        <Label className="text-zinc-900 text-base mb-3 block">Bed Types</Label>
-        <div className="grid grid-cols-2 gap-3">
-          {BED_TYPES.map((bedType) => (
-            <label
-              key={bedType.id}
-              className="flex items-center gap-3 p-3 rounded-lg border border-zinc-200 hover:bg-zinc-50 cursor-pointer transition-colors"
-            >
-              <Checkbox
-                checked={data.bedTypes?.includes(bedType.id) || false}
-                onChange={() => toggleBedType(bedType.id)}
-              />
-              <span className="text-sm text-zinc-900">{bedType.label}</span>
-            </label>
-          ))}
+        <Label className="mb-2 block text-zinc-900">Bed Types</Label>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {BED_TYPES.map((bedType) => {
+            const selected = data.bedTypes?.includes(bedType.id) || false;
+            return (
+              <button
+                key={bedType.id}
+                type="button"
+                onClick={() => toggleBedType(bedType.id)}
+                aria-pressed={selected}
+                className={cn(
+                  "flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left text-sm transition-colors",
+                  selected
+                    ? "border-indigo-500 bg-indigo-50 text-indigo-900 ring-1 ring-inset ring-indigo-500"
+                    : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"
+                )}
+              >
+                <span className="truncate">{bedType.label}</span>
+                {selected && (
+                  <svg
+                    className="ml-auto h-3.5 w-3.5 flex-shrink-0 text-indigo-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

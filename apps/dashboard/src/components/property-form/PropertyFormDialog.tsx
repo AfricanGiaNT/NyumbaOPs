@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +55,7 @@ export function PropertyFormDialog({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const tabsListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -65,6 +66,14 @@ export function PropertyFormDialog({
     setActiveTab("basic");
     setErrors({});
   }, [open, initialData]);
+
+  // Keep the active tab visible in the horizontally scrolling tab bar on mobile.
+  useEffect(() => {
+    const el = tabsListRef.current?.querySelector<HTMLElement>(
+      `[data-tab="${activeTab}"]`
+    );
+    el?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }, [activeTab]);
 
   const updateFormData = (updates: Partial<PropertyFormData>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
@@ -211,7 +220,7 @@ export function PropertyFormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-3xl max-h-[95vh] sm:max-h-[90vh] flex flex-col"
+        className="sm:max-w-3xl"
         onClose={() => onOpenChange(false)}
       >
         <DialogHeader className="pb-4">
@@ -222,7 +231,7 @@ export function PropertyFormDialog({
             Fill in the details below to {mode === "add" ? "create" : "update"} your
             property listing.
           </DialogDescription>
-          <div className="mt-4 space-y-2">
+          <div className="mt-2 space-y-1.5 sm:mt-4 sm:space-y-2">
             <div className="flex items-center justify-between text-xs font-medium text-zinc-600">
               <span>Progress</span>
               <span>{Math.round(calculateProgress())}%</span>
@@ -236,7 +245,7 @@ export function PropertyFormDialog({
             setActiveTab(value);
             setErrors({});
           }} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="w-full flex-shrink-0">
+            <TabsList ref={tabsListRef} className="w-full flex-shrink-0">
               {TABS.map((tab) => {
                 const hasData = getTabCompletionStatus(tab.id);
                 return (
@@ -244,10 +253,11 @@ export function PropertyFormDialog({
                     key={tab.id}
                     value={tab.id}
                     currentValue={activeTab}
-                    className="flex items-center gap-1.5 text-xs sm:text-sm relative"
+                    data-tab={tab.id}
+                    className="relative flex items-center gap-1.5 text-xs sm:text-sm"
                   >
                     <span className="text-base">{tab.icon}</span>
-                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span>{tab.label}</span>
                     {hasData && (
                       <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-indigo-600" />
                     )}
@@ -256,7 +266,7 @@ export function PropertyFormDialog({
               })}
             </TabsList>
 
-            <div className="flex-1 overflow-y-auto px-6">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6">
               <TabsContent value="basic" currentValue={activeTab}>
                 <BasicInfoTab
                   data={formData}

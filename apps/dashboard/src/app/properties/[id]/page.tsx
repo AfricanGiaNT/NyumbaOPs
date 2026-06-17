@@ -259,16 +259,16 @@ export default function PropertyDetailPage() {
   return (
     <AppLayout>
       <div className="mx-auto flex max-w-6xl flex-col gap-8">
-        <header className="flex items-center justify-between">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold">
+            <h1 className="text-2xl font-semibold sm:text-3xl">
               {property?.name ?? "Property"}
             </h1>
             <p className="text-sm text-zinc-600">
               Track revenue, expenses, and profit.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <ActionButton
               variant="primary"
               onClick={handleOpenEdit}
@@ -278,7 +278,7 @@ export default function PropertyDetailPage() {
             </ActionButton>
             <Link
               href="/properties"
-              className="rounded-md border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="rounded-md border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-center text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               Back to Properties
             </Link>

@@ -24,12 +24,14 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-stretch justify-center sm:items-center">
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm"
         onClick={() => onOpenChange?.(false)}
       />
-      <div className="relative z-50">{children}</div>
+      <div className="relative z-50 flex h-full w-full sm:h-auto sm:w-auto">
+        {children}
+      </div>
     </div>
   );
 }
@@ -47,8 +49,11 @@ export const DialogContent = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-xl bg-white shadow-2xl mx-4",
-        "sm:mx-0",
+        "relative flex w-full flex-col overflow-hidden bg-white shadow-2xl",
+        // Mobile: full-screen sheet
+        "h-full max-h-full rounded-none",
+        // Tablet/desktop: centered card
+        "sm:mx-4 sm:h-auto sm:max-h-[90vh] sm:rounded-xl",
         className
       )}
       {...props}
@@ -57,7 +62,7 @@ export const DialogContent = React.forwardRef<
       {onClose && (
         <button
           onClick={onClose}
-          className="absolute right-6 top-6 z-10 rounded-full p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2"
+          className="absolute right-4 top-4 z-10 rounded-full p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 sm:right-6 sm:top-6"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -88,7 +93,7 @@ export const DialogHeader = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex flex-col space-y-2 px-6 py-6 border-b border-zinc-100",
+      "flex flex-col space-y-1.5 border-b border-zinc-100 px-4 py-3 pr-12 sm:space-y-2 sm:px-6 sm:py-6",
       className
     )}
     {...props}
@@ -103,7 +108,7 @@ export const DialogTitle = React.forwardRef<
   <h2
     ref={ref}
     className={cn(
-      "text-xl font-semibold text-zinc-900",
+      "text-lg font-semibold text-zinc-900 sm:text-xl",
       className
     )}
     {...props}
@@ -117,7 +122,7 @@ export const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-zinc-600", className)}
+    className={cn("hidden text-sm text-zinc-600 sm:block", className)}
     {...props}
   />
 ));
@@ -130,7 +135,7 @@ export const DialogFooter = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex items-center justify-between gap-3 px-6 py-4 border-t border-zinc-100 bg-white",
+      "flex items-center justify-between gap-3 border-t border-zinc-100 bg-white px-4 py-3 sm:px-6 sm:py-4",
       className
     )}
     {...props}

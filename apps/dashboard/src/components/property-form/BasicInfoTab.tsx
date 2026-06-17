@@ -15,7 +15,7 @@ export interface TabProps {
 
 export function BasicInfoTab({ data, onChange, errors }: TabProps) {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div>
         <Label htmlFor="name">
           Property Name <span className="text-red-500">*</span>

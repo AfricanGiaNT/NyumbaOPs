@@ -52,7 +52,8 @@
       "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('prisma scripts:', JSON.stringify\\(p.scripts\\).match\\(/[^,{]*prisma[^,}]*/g\\)\\)\")",
       "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
       "Bash(gcloud --version)",
-      "Bash(gcloud auth *)"
+      "Bash(gcloud auth *)",
+      "Bash(cd /c/Users/Hp/OneDrive/NyumbaOPs/apps/dashboard && cat package.json | sed -n '1,40p')"
     ]
   }
 }

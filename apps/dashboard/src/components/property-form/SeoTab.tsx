@@ -42,7 +42,7 @@ export function SeoTab({ data, onChange, errors }: SeoTabProps) {
   };
 
   return (
-    <div className="py-6 space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* URL Slug */}
       <div className="space-y-1.5">
         <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">

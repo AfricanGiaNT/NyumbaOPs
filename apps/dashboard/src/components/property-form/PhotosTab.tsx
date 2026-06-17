@@ -11,7 +11,7 @@ export interface TabProps {
 
 export function PhotosTab({ data, onChange, errors }: TabProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
         <Label className="text-zinc-900 text-base">
           Property Photos <span className="text-red-500">*</span>

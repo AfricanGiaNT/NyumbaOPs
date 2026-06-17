@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/AuthContext";
@@ -22,6 +22,14 @@ export const metadata: Metadata = {
   description: "Property and financial management for short-term rentals",
   robots: { index: false, follow: false },
   icons: { icon: "/icon.svg", shortcut: "/icon.svg" },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Make the on-screen keyboard resize the layout viewport instead of
+  // overlaying it, so full-screen dialogs don't get shoved out of place.
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({

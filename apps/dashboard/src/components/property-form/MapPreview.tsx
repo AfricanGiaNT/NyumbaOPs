@@ -193,7 +193,7 @@ export function MapPreview({ latitude, longitude, onLocationChange }: MapPreview
       </div>
 
       {/* Interactive map */}
-      <div className="relative h-56 overflow-hidden rounded-lg border border-zinc-200 sm:h-64">
+      <div className="relative h-44 overflow-hidden rounded-lg border border-zinc-200 sm:h-56">
         {!isLoaded && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-zinc-100">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600" />

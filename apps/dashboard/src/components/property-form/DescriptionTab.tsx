@@ -28,7 +28,7 @@ export function DescriptionTab({ data, onChange, errors }: TabProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
         <Label htmlFor="description" className="text-zinc-900">
           Property Description

@@ -1,9 +1,8 @@
 import React from "react";
 import { PropertyFormData } from "@/types/property-form";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { AMENITIES, AMENITY_CATEGORIES } from "@/lib/constants/amenities";
-import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 export interface TabProps {
   data: PropertyFormData;
@@ -20,7 +19,7 @@ export function AmenitiesTab({ data, onChange, errors }: TabProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
         <Label className="text-zinc-900 text-base">
           Select Amenities
@@ -37,25 +36,39 @@ export function AmenitiesTab({ data, onChange, errors }: TabProps) {
 
         return (
           <div key={category}>
-            <h3 className="font-semibold text-zinc-900 mb-3">{category}</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {categoryAmenities.map((amenity) => (
-                <label
-                  key={amenity.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-zinc-200 hover:bg-zinc-50 cursor-pointer transition-colors"
-                >
-                  <Checkbox
-                    checked={data.amenities.includes(amenity.id)}
-                    onChange={() => toggleAmenity(amenity.id)}
-                  />
-                  <span className="text-xl">{amenity.icon}</span>
-                  <span className="text-sm text-zinc-900">{amenity.label}</span>
-                </label>
-              ))}
+            <h3 className="mb-2 text-sm font-semibold text-zinc-900">{category}</h3>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {categoryAmenities.map((amenity) => {
+                const selected = data.amenities.includes(amenity.id);
+                return (
+                  <button
+                    key={amenity.id}
+                    type="button"
+                    onClick={() => toggleAmenity(amenity.id)}
+                    aria-pressed={selected}
+                    className={cn(
+                      "flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left text-sm transition-colors",
+                      selected
+                        ? "border-indigo-500 bg-indigo-50 text-indigo-900 ring-1 ring-inset ring-indigo-500"
+                        : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"
+                    )}
+                  >
+                    <span className="text-base leading-none">{amenity.icon}</span>
+                    <span className="truncate">{amenity.label}</span>
+                    {selected && (
+                      <svg
+                        className="ml-auto h-3.5 w-3.5 flex-shrink-0 text-indigo-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-            {category !== AMENITY_CATEGORIES[AMENITY_CATEGORIES.length - 1] && (
-              <Separator className="mt-6" />
-            )}
           </div>
         );
       })}

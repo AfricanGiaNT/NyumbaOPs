@@ -237,15 +237,38 @@ export class PropertiesService {
     propertyId: string,
     images: { url: string; alt?: string; isCover: boolean; sortOrder: number }[],
   ) {
+    // Collapse any duplicate URLs (e.g. the same photo added twice), keeping the
+    // first occurrence but preferring one flagged as cover.
+    const byUrl = new Map<string, { url: string; alt?: string; isCover: boolean }>();
+    for (const img of images) {
+      const existing = byUrl.get(img.url);
+      if (!existing) {
+        byUrl.set(img.url, { url: img.url, alt: img.alt, isCover: img.isCover });
+      } else if (img.isCover) {
+        existing.isCover = true;
+      }
+    }
+    const deduped = [...byUrl.values()];
+
+    // syncImages recreates rows from the client payload, which doesn't carry the
+    // contentHash. Look up the existing hashes by URL so they survive the rewrite
+    // and keep future uploads de-duplicatable.
+    const current = await this.prisma.propertyImage.findMany({
+      where: { propertyId },
+      select: { url: true, contentHash: true },
+    });
+    const hashByUrl = new Map(current.map((r) => [r.url, r.contentHash]));
+
     await this.prisma.$transaction([
       this.prisma.propertyImage.deleteMany({ where: { propertyId } }),
       this.prisma.propertyImage.createMany({
-        data: images.map((img) => ({
+        data: deduped.map((img, index) => ({
           propertyId,
           url: img.url,
           alt: img.alt ?? null,
           isCover: img.isCover,
-          sortOrder: img.sortOrder,
+          sortOrder: index,
+          contentHash: hashByUrl.get(img.url) ?? null,
         })),
       }),
     ]);

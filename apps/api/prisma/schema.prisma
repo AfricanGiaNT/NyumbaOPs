@@ -220,18 +220,20 @@ model PropertyAmenity {
 }
 
 model PropertyImage {
-  id         String   @id @default(uuid())
-  propertyId String
-  url        String
-  alt        String?
-  sortOrder  Int      @default(0)
-  isCover    Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  id          String   @id @default(uuid())
+  propertyId  String
+  url         String
+  alt         String?
+  sortOrder   Int      @default(0)
+  isCover     Boolean  @default(false)
+  contentHash String?
+  createdAt   DateTime @default(now())
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@index([propertyId, sortOrder])
   @@index([propertyId, isCover])
+  @@index([propertyId, contentHash])
 }
 
 model Category {

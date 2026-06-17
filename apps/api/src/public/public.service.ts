@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { createHash } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { BookingStatus, PropertyStatus, ReviewStatus } from '@prisma/client';
 import { PublicPropertiesQueryDto } from './dto/public-properties-query.dto';
@@ -290,8 +291,26 @@ export class PublicService {
       throw new BadRequestException('Storage is not configured (missing SUPABASE_SERVICE_ROLE_KEY)');
     }
 
+    // Content hash makes uploads idempotent: the same image bytes always
+    // resolve to the same stored object and the same DB row for a property,
+    // so re-uploading a photo can't create a duplicate.
+    const contentHash = createHash('sha256').update(file.buffer).digest('hex');
+
+    const existing = await this.prisma.propertyImage.findFirst({
+      where: { propertyId, contentHash },
+      select: { id: true, url: true },
+    });
+    if (existing) {
+      return {
+        success: true,
+        data: { publicUrl: existing.url, imageId: existing.id, deduped: true },
+      };
+    }
+
     const safeFilename = this.sanitizeFilename(file.originalname);
-    const key = `properties/${propertyId}/${Date.now()}-${safeFilename}`;
+    // Deterministic, content-addressed key so identical bytes overwrite the
+    // same object instead of piling up timestamped copies.
+    const key = `properties/${propertyId}/${contentHash.slice(0, 16)}-${safeFilename}`;
 
     const uploadRes = await fetch(
       `${this.storageUrl}/object/${this.storageBucket}/${key}`,
@@ -320,6 +339,7 @@ export class PublicService {
         alt: alt ?? null,
         sortOrder: sortOrder ?? 0,
         isCover: isCover ?? false,
+        contentHash,
       },
     });
 
@@ -328,6 +348,7 @@ export class PublicService {
       data: {
         publicUrl,
         imageId: image.id,
+        deduped: false,
       },
     };
   }

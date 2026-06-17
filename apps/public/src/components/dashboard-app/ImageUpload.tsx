@@ -23,6 +23,23 @@ type ImageUploadProps = {
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const DEFAULT_MAX_SIZE_MB = 5;
 
+// Mirror the server's filename sanitisation so we can compare an incoming file
+// against the original name embedded in already-uploaded image URLs.
+function sanitizeName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9.-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+// Extract the original filename from a stored image URL, dropping the
+// "<hash-or-timestamp>-" prefix the upload endpoint prepends.
+function originalNameFromUrl(url: string): string {
+  const file = decodeURIComponent(url.split("?")[0].split("/").pop() ?? "");
+  return file.replace(/^[0-9a-f]+-/i, "");
+}
+
 export function ImageUpload({
   images,
   onChange,
@@ -58,6 +75,17 @@ export function ImageUpload({
 
       const newImages: ImageFile[] = [];
       const validationErrors: string[] = [];
+      const skipped: string[] = [];
+
+      // Identifiers for images already present, so we can skip exact re-adds.
+      const existingFileKeys = new Set(
+        images.filter((i) => i.file).map((i) => `${i.file!.name}:${i.file!.size}`),
+      );
+      const existingNames = new Set(
+        images
+          .filter((i) => i.url)
+          .map((i) => originalNameFromUrl(i.url!)),
+      );
 
       Array.from(files).forEach((file) => {
         const validationError = validateFile(file);
@@ -65,6 +93,17 @@ export function ImageUpload({
           validationErrors.push(validationError);
           return;
         }
+
+        // Skip files that are already staged (same name+size) or already
+        // uploaded (same sanitised filename) — prevents duplicate photos.
+        const fileKey = `${file.name}:${file.size}`;
+        const sanitized = sanitizeName(file.name);
+        if (existingFileKeys.has(fileKey) || existingNames.has(sanitized)) {
+          skipped.push(file.name);
+          return;
+        }
+        existingFileKeys.add(fileKey);
+        existingNames.add(sanitized);
 
         // Create preview URL
         const preview = URL.createObjectURL(file);
@@ -78,8 +117,14 @@ export function ImageUpload({
         });
       });
 
-      if (validationErrors.length > 0) {
-        setError(validationErrors.join(" "));
+      const messages = [...validationErrors];
+      if (skipped.length > 0) {
+        messages.push(
+          `Skipped ${skipped.length} duplicate ${skipped.length === 1 ? "photo" : "photos"} already added: ${skipped.join(", ")}.`,
+        );
+      }
+      if (messages.length > 0) {
+        setError(messages.join(" "));
       }
 
       if (newImages.length > 0) {

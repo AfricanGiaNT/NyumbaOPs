@@ -10,6 +10,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.madikweapartments.com"),
   title: "Madikwe Apartments – Short-term Apartments in Lilongwe",
   description:
     "Book comfortable, verified apartments in Lilongwe. WiFi, parking, and local support included. No booking fees.",

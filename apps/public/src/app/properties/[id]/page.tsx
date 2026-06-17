@@ -28,9 +28,30 @@ export async function generateMetadata({ params }: PropertyPageProps): Promise<M
   try {
     const res = await fetchPublicProperty(id);
     const p = res.data;
+    const description =
+      p.description ?? `${p.bedrooms}-bedroom property in ${p.location ?? "Lilongwe, Malawi"}`;
+    const coverImage =
+      p.images.find((image) => image.isCover)?.url ?? p.images[0]?.url;
+    const url = `/properties/${id}`;
+
     return {
       title: p.name,
-      description: p.description ?? `${p.bedrooms}-bedroom property in ${p.location ?? "Lilongwe, Malawi"}`,
+      description,
+      alternates: { canonical: url },
+      openGraph: {
+        type: "website",
+        title: p.name,
+        description,
+        url,
+        siteName: "Madikwe Apartments",
+        images: coverImage ? [{ url: coverImage, alt: p.name }] : undefined,
+      },
+      twitter: {
+        card: coverImage ? "summary_large_image" : "summary",
+        title: p.name,
+        description,
+        images: coverImage ? [coverImage] : undefined,
+      },
     };
   } catch {
     return { title: "Property" };

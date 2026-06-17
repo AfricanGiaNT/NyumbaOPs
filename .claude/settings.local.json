@@ -30,7 +30,10 @@
       "Bash(findstr /i \"database\\\\|direct\\\\|shadow\")",
       "Bash(npx @nestjs/cli build)",
       "Bash(pnpm --filter api prisma migrate dev --name add_utility_bills)",
-      "Bash(findstr /i \"\\\\\"dev\\\\\"\\\\|\\\\\"start\\\\\"\")"
+      "Bash(findstr /i \"\\\\\"dev\\\\\"\\\\|\\\\\"start\\\\\"\")",
+      "Bash(git -C \".claude/worktrees/zen-neumann\" log --oneline -5)",
+      "Bash(grep -rl \"Reconciliation\" \"C:\\\\Users\\\\Hp\\\\OneDrive\\\\NyumbaOPs\" --include=\"*.tsx\" 2>/dev/null | head -10; echo \"---\"; find \"C:\\\\Users\\\\Hp\" -maxdepth 3 -type d -name \"*nyumba*\" -o -name \"*Nyumba*\" 2>/dev/null | head -20)",
+      "Bash(wait)"
     ]
   }
 }

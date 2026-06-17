@@ -50,7 +50,9 @@
       "Bash(powershell.exe -NoProfile -Command 'Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match '\\\\''nest start'\\\\'' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force; '\\\\''stopped '\\\\'' + $_.ProcessId }')",
       "PowerShell($c = Get-NetTCPConnection -LocalPort 3001 -State Listen -ErrorAction SilentlyContinue; if \\($c\\) { $c | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }; \"killed listeners on 3001\" } else { \"port 3001 free\" })",
       "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('prisma scripts:', JSON.stringify\\(p.scripts\\).match\\(/[^,{]*prisma[^,}]*/g\\)\\)\")",
-      "PowerShell(Get-Process node -ErrorAction SilentlyContinue)"
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
+      "Bash(gcloud --version)",
+      "Bash(gcloud auth *)"
     ]
   }
 }

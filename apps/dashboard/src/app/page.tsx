@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { apiGet, apiPatch, apiPost } from "../lib/api";
 import {
@@ -260,6 +261,25 @@ export default function Home() {
                 <p className="hidden sm:block text-xs text-zinc-500 dark:text-zinc-400">Record a cost or payment</p>
               </div>
             </button>
+            <Link
+              href="/inventory/shop"
+              className="relative flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 sm:px-5 py-3 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
+            >
+              <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/40">
+                <svg className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div className="text-left min-w-0">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Shopping List</p>
+                <p className="hidden sm:block text-xs text-zinc-500 dark:text-zinc-400">Stock up &amp; record</p>
+              </div>
+              {data.lowStockItems.length > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[11px] font-bold text-white">
+                  {data.lowStockItems.length}
+                </span>
+              )}
+            </Link>
           </div>
 
           {/* Financial Overview — stats + summary side by side */}

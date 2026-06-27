@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { BatchMovementDto } from './dto/batch-movement.dto';
 import { BulkCreateInventoryDto } from './dto/bulk-create-inventory.dto';
 import { CreateInventoryItemDto } from './dto/create-inventory-item.dto';
 import { CreateStockMovementDto } from './dto/create-stock-movement.dto';
@@ -71,6 +72,15 @@ export class InventoryController {
   ) {
     const userId = req.user?.id ?? 'system';
     return this.inventoryService.remove(id, userId);
+  }
+
+  @Post('movements/batch')
+  recordMovementBatch(
+    @Body() dto: BatchMovementDto,
+    @Req() req: { user?: { id?: string } },
+  ) {
+    const userId = req.user?.id ?? 'system';
+    return this.inventoryService.recordMovementBatch(dto, userId);
   }
 
   @Post(':id/movements')

@@ -42,12 +42,26 @@ export function BulkAddModal({ isOpen, properties, onClose, onSuccess }: Props) 
   const [submitting, setSubmitting]   = useState(false);
   const [result, setResult]           = useState<{ created: number; skipped: number } | null>(null);
 
+  // Fallback: if the parent passes no properties (e.g. its own load failed),
+  // fetch them here so the picker is never empty when properties exist.
+  const [fetchedProps, setFetchedProps] = useState<Property[]>([]);
+  const propList = properties.length > 0 ? properties : fetchedProps;
+
+  useEffect(() => {
+    if (isOpen && properties.length === 0) {
+      apiGet<Property[]>("/properties")
+        .then(setFetchedProps)
+        .catch((err) => console.error("Failed to load properties", err));
+    }
+  }, [isOpen, properties.length]);
+
   useEffect(() => {
     if (!isOpen) {
       setTargetId("");
       setTemplateId("");
       setRows([emptyRow()]);
       setResult(null);
+      setFetchedProps([]);
     }
   }, [isOpen]);
 
@@ -112,7 +126,7 @@ export function BulkAddModal({ isOpen, properties, onClose, onSuccess }: Props) 
     }
   };
 
-  const templateOptions = properties.filter((p) => p.id !== targetId);
+  const templateOptions = propList.filter((p) => p.id !== targetId);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 sm:p-4">
@@ -172,8 +186,13 @@ export function BulkAddModal({ isOpen, properties, onClose, onSuccess }: Props) 
                   className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:text-zinc-100"
                 >
                   <option value="">Select property…</option>
-                  {properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  {propList.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
+                {propList.length === 0 && (
+                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                    No properties found. Add a property first under <span className="font-medium">Properties</span>, then come back to bulk add items.
+                  </p>
+                )}
               </div>
 
               <div>

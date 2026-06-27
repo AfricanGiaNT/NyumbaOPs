@@ -1,6 +1,11 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { IsString, MinLength } from 'class-validator';
 import { AuthService } from './auth.service';
 
 class LoginDto {
@@ -16,6 +21,7 @@ class SetPasswordDto {
   email: string;
 
   @IsString()
+  @MinLength(6)
   password: string;
 
   @IsString()
@@ -38,7 +44,7 @@ export class AuthController {
   async setupPassword(@Body() dto: SetPasswordDto) {
     const secret = process.env.ADMIN_SETUP_SECRET ?? 'change-me-in-production';
     if (dto.adminSecret !== secret) {
-      return { error: 'Invalid admin secret' };
+      throw new UnauthorizedException('Invalid admin key');
     }
     return this.authService.setPassword(dto.email, dto.password);
   }

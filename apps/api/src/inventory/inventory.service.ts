@@ -7,6 +7,7 @@ import { CategoryType, Currency, StockMovementType, TransactionType } from '@pri
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TransactionsService } from '../transactions/transactions.service';
+import { BatchMovementDto } from './dto/batch-movement.dto';
 import { BulkCreateInventoryDto } from './dto/bulk-create-inventory.dto';
 import { CreateInventoryItemDto } from './dto/create-inventory-item.dto';
 import { CreateStockMovementDto } from './dto/create-stock-movement.dto';
@@ -278,6 +279,142 @@ export class InventoryService {
     });
 
     return this.findOne(itemId);
+  }
+
+  async recordMovementBatch(dto: BatchMovementDto, userId: string) {
+    if (!dto.items || dto.items.length === 0) {
+      throw new BadRequestException('No items to record');
+    }
+
+    const itemIds = dto.items.map((i) => i.itemId);
+    const items = await this.prisma.inventoryItem.findMany({
+      where: { id: { in: itemIds } },
+      include: { property: true },
+    });
+    const itemMap = new Map(items.map((i) => [i.id, i]));
+
+    // All batch movements are IN (restock), so no stock-underflow validation needed.
+    const resolved = dto.items.map((bi) => {
+      const item = itemMap.get(bi.itemId);
+      if (!item) {
+        throw new NotFoundException(`Inventory item not found: ${bi.itemId}`);
+      }
+      return { bi, item, currency: bi.currency ?? item.currency };
+    });
+
+    // Atomically create every movement and increment every quantity.
+    const ops = resolved.flatMap(({ bi, currency }) => [
+      this.prisma.stockMovement.create({
+        data: {
+          inventoryItemId: bi.itemId,
+          type: StockMovementType.IN,
+          quantity: bi.quantity,
+          unitCost: bi.unitCost,
+          currency,
+          createdBy: userId,
+        },
+      }),
+      this.prisma.inventoryItem.update({
+        where: { id: bi.itemId },
+        data: { quantity: { increment: bi.quantity } },
+      }),
+    ]);
+    const results = await this.prisma.$transaction(ops);
+
+    // Movements are at even indices (create, update, create, update, ...).
+    const movementIds = resolved.map((_, idx) => {
+      const movement = results[idx * 2] as { id: string };
+      return movement.id;
+    });
+
+    // Consolidate cost into one expense per (property, currency) group.
+    type CostLine = {
+      movementId: string;
+      itemId: string;
+      propertyId: string;
+      quantity: number;
+      unitCost: number;
+      currency: Currency;
+    };
+    const costLines: CostLine[] = [];
+    resolved.forEach(({ bi, item, currency }, idx) => {
+      if (bi.unitCost !== undefined && bi.unitCost > 0) {
+        costLines.push({
+          movementId: movementIds[idx],
+          itemId: bi.itemId,
+          propertyId: item.propertyId,
+          quantity: bi.quantity,
+          unitCost: bi.unitCost,
+          currency,
+        });
+      }
+    });
+
+    if (costLines.length > 0) {
+      const category = await this.getOrCreateInventoryCategory(userId);
+
+      const groups = new Map<string, CostLine[]>();
+      for (const line of costLines) {
+        const key = `${line.propertyId}::${line.currency}`;
+        const group = groups.get(key) ?? [];
+        group.push(line);
+        groups.set(key, group);
+      }
+
+      for (const group of groups.values()) {
+        const { propertyId, currency } = group[0];
+        const totalCost = group.reduce(
+          (sum, l) => sum + l.quantity * l.unitCost,
+          0,
+        );
+
+        const transaction = await this.transactionsService.createInternal(
+          TransactionType.EXPENSE,
+          {
+            amount: totalCost,
+            currency,
+            date: new Date().toISOString(),
+            propertyId,
+            categoryId: category.id,
+            notes: `Auto: Inventory restock — ${group.length} item${group.length !== 1 ? 's' : ''} (${currency} ${totalCost.toLocaleString()})`,
+          },
+          userId,
+          { createdVia: 'INVENTORY' },
+        );
+
+        // Link each movement to the consolidated expense and refresh item cost.
+        await this.prisma.$transaction([
+          ...group.map((l) =>
+            this.prisma.stockMovement.update({
+              where: { id: l.movementId },
+              data: { transactionId: transaction.id },
+            }),
+          ),
+          ...group.map((l) =>
+            this.prisma.inventoryItem.update({
+              where: { id: l.itemId },
+              data: { unitCost: l.unitCost, currency: l.currency },
+            }),
+          ),
+        ]);
+      }
+    }
+
+    await this.audit.logAction({
+      action: 'CREATE',
+      resourceType: 'StockMovement',
+      resourceId: movementIds[0],
+      userId,
+      details: { batch: true, count: resolved.length, itemIds },
+    });
+
+    return this.prisma.inventoryItem.findMany({
+      where: { id: { in: itemIds } },
+      orderBy: [{ propertyId: 'asc' }, { name: 'asc' }],
+      include: {
+        property: { select: { id: true, name: true, location: true } },
+      },
+    });
   }
 
   async getMovements(itemId: string) {

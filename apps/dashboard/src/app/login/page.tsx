@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -54,17 +56,23 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-semibold text-zinc-900">
-              Password
-            </label>
-            <input
+            <div className="flex items-center justify-between">
+              <label htmlFor="password" className="block text-sm font-semibold text-zinc-900">
+                Password
+              </label>
+              <Link
+                href="/reset-password"
+                className="text-sm font-medium text-teal-600 hover:text-teal-700"
+              >
+                Forgot password?
+              </Link>
+            </div>
+            <PasswordInput
               id="password"
-              type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={setPassword}
               required
-              aria-required="true"
-              className="mt-1.5 w-full rounded-lg border border-gray-300 px-3 py-2 text-black focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              autoComplete="current-password"
             />
           </div>
 

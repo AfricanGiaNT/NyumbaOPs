@@ -14,12 +14,6 @@ import { UpdateBookingDto } from './dto/update-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 import { isValidStatusTransition } from './bookings.utils';
 
-const ACTIVE_STATUSES: BookingStatus[] = [
-  BookingStatus.PENDING,
-  BookingStatus.CONFIRMED,
-  BookingStatus.CHECKED_IN,
-];
-
 @Injectable()
 export class BookingsService {
   constructor(
@@ -123,16 +117,27 @@ export class BookingsService {
       throw new BadRequestException('Invalid status transition');
     }
 
-    const updated = await this.prisma.booking.update({
-      where: { id },
-      data: {
+    if (dto.status === BookingStatus.CONFIRMED && booking.holdExpiresAt && booking.holdExpiresAt <= new Date()) {
+      throw new BadRequestException('Booking hold has expired');
+    }
+
+    const statusData = {
         status: dto.status,
         actualCheckIn: dto.actualCheckIn ? new Date(dto.actualCheckIn) : undefined,
         actualCheckOut: dto.actualCheckOut ? new Date(dto.actualCheckOut) : undefined,
         checkInNotes: dto.checkInNotes,
         checkOutNotes: dto.checkOutNotes,
-      },
-    });
+      };
+    if (dto.status === BookingStatus.CONFIRMED && booking.holdExpiresAt) {
+      const changed = await this.prisma.booking.updateMany({
+        where: { id, status: BookingStatus.PENDING, holdExpiresAt: { gt: new Date() } },
+        data: statusData,
+      });
+      if (changed.count !== 1) throw new BadRequestException('Booking hold has expired');
+    } else {
+      await this.prisma.booking.update({ where: { id }, data: statusData });
+    }
+    const updated = await this.prisma.booking.findUniqueOrThrow({ where: { id } });
 
     await this.audit.logAction({
       action: 'UPDATE',
@@ -198,7 +203,10 @@ export class BookingsService {
     const overlapCount = await this.prisma.booking.count({
       where: {
         propertyId,
-        status: { in: ACTIVE_STATUSES },
+        OR: [
+          { status: { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN] } },
+          { status: BookingStatus.PENDING, OR: [{ holdExpiresAt: null }, { holdExpiresAt: { gt: new Date() } }] },
+        ],
         checkInDate: { lt: checkOut },
         checkOutDate: { gt: checkIn },
         ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),

@@ -5,12 +5,8 @@ import type {
   PublicReviewsResponse,
   AvailabilityResponse,
   BlockedDatesResponse,
-  CreateBookingResponse,
-  PublicBookingDetail,
-  CancelBookingResponse,
 } from "./types";
-
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001") + "/api";
+import { API_BASE_URL } from './api-base';
 
 export async function fetchPublicProperties(params?: {
   limit?: number;
@@ -82,76 +78,6 @@ export async function fetchBlockedDates(propertyId: string): Promise<BlockedDate
   return response.json();
 }
 
-export async function initiateBooking(data: {
-  propertyId: string;
-  checkInDate: string;
-  checkOutDate: string;
-  guestName: string;
-  guestEmail: string;
-  guestPhone: string;
-  numberOfGuests: number;
-  notes?: string;
-}): Promise<{
-  success: boolean;
-  data: {
-    intentId: string;
-    checkoutUrl: string;
-    totalAmount: number;
-    currency: string;
-    expiresAt: string;
-  };
-}> {
-  const response = await fetch(`${API_BASE_URL}/v1/public/bookings/initiate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const payload = await response.json().catch(() => null);
-    throw new Error(payload?.error?.message ?? "Failed to initiate booking");
-  }
-
-  return response.json();
-}
-
-export async function createPublicBooking(data: {
-  propertyId: string;
-  checkInDate: string;
-  checkOutDate: string;
-  guestName: string;
-  guestEmail: string;
-  guestPhone: string;
-  numberOfGuests: number;
-  notes?: string;
-}): Promise<CreateBookingResponse> {
-  const response = await fetch(`${API_BASE_URL}/v1/public/bookings`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const payload = await response.json().catch(() => null);
-    throw new Error(payload?.error?.message ?? "Failed to create booking");
-  }
-
-  return response.json();
-}
-
-export async function fetchPublicBooking(bookingId: string): Promise<PublicBookingDetail> {
-  const response = await fetch(
-    `${API_BASE_URL}/v1/public/bookings/${bookingId}`,
-    { cache: "no-store" },
-  );
-
-  if (!response.ok) {
-    throw new Error("Booking not found");
-  }
-
-  return response.json();
-}
-
 export async function fetchApprovedReviews(propertyId: string): Promise<PublicReviewsResponse> {
   const response = await fetch(
     `${API_BASE_URL}/v1/public/properties/${propertyId}/reviews`,
@@ -190,28 +116,6 @@ export async function submitReview(
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
     throw new Error(payload?.message ?? "Failed to submit review");
-  }
-
-  return response.json();
-}
-
-export async function cancelPublicBooking(
-  bookingId: string,
-  guestEmail: string,
-  reason?: string,
-): Promise<CancelBookingResponse> {
-  const response = await fetch(
-    `${API_BASE_URL}/v1/public/bookings/${bookingId}/cancel`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ guestEmail, reason }),
-    },
-  );
-
-  if (!response.ok) {
-    const payload = await response.json().catch(() => null);
-    throw new Error(payload?.error?.message ?? "Failed to cancel booking");
   }
 
   return response.json();

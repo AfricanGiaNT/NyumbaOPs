@@ -1,4 +1,6 @@
-# Security Audit Report - NyumbaOps Milestone 7
+# Historical Security Audit Report - NyumbaOps Milestone 7
+
+This January 2026 audit covered the retired Firebase Functions architecture. It does not describe the current Nest/PostgreSQL application or the security changes introduced in September 2026.
 
 **Date:** January 24, 2026  
 **Auditor:** Automated + Manual Review  

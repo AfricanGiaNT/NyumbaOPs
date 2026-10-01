@@ -1,4 +1,6 @@
-# NyumbaOps Firebase Backend Setup
+# Legacy Firebase Backend Setup
+
+Firebase is retired for the active application. Use [the Nest deployment guide](docs/DEPLOY-PUBLIC-SITE.md) for the PostgreSQL API, public site, and separate dashboard. Do not deploy the Firebase Functions stack for new work.
 
 ## Prerequisites
 - Node.js 18+

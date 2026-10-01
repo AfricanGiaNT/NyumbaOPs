@@ -181,7 +181,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => item.href !== '/finance' || user?.role === 'OWNER').map((item) => {
             const active = isActive(item.href, item.exact);
             return (
               <Link

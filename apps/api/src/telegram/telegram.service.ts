@@ -53,17 +53,19 @@ export class TelegramService implements OnModuleInit {
 
   async handleUpdate(update: TelegramBot.Update, secret?: string) {
     if (!this.bot) {
-      return;
+      return false;
     }
     const expected = this.config.get<string>('TELEGRAM_WEBHOOK_SECRET');
-    if (expected && secret !== expected) {
+    if (!expected || secret !== expected) {
       this.logger.warn('Telegram webhook secret mismatch.');
-      return;
+      return false;
     }
     try {
       this.bot.processUpdate(update);
+      return true;
     } catch (error) {
       this.logger.error('Failed to process Telegram update.', error as Error);
+      return false;
     }
   }
 

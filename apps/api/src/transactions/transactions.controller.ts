@@ -2,12 +2,14 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuard
 import { ApiTags } from '@nestjs/swagger';
 import { TransactionType } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionQueryDto } from './dto/transaction-query.dto';
 import { TransactionsService } from './transactions.service';
 
 @ApiTags('Transactions')
 @Controller('transactions')
+@Roles('OWNER')
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 

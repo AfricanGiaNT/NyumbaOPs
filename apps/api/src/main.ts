@@ -3,23 +3,19 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { PrismaService } from './prisma/prisma.service';
-import * as admin from 'firebase-admin';
-
-// Initialize Firebase Admin SDK
-if (!admin.apps.length) {
-  admin.initializeApp({
-    projectId: process.env.FIREBASE_PROJECT_ID || 'nyumbaops',
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'nyumbaops.appspot.com',
-  });
-  
-  // Connect to Storage emulator if configured
-  if (process.env.FIREBASE_STORAGE_EMULATOR_HOST) {
-    process.env.FIREBASE_STORAGE_EMULATOR_HOST = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
-  }
-}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: true });
+  if (process.env.NODE_ENV === 'production') {
+    const required = ['JWT_SECRET', 'GMAIL_USER', 'GMAIL_APP_PASSWORD', 'DASHBOARD_URL'];
+    const missing = required.filter((name) => !process.env[name]);
+    if (missing.length) throw new Error(`Missing production configuration: ${missing.join(', ')}`);
+    if ((process.env.JWT_SECRET?.length ?? 0) < 32) throw new Error('JWT_SECRET must have at least 32 characters');
+    if (new URL(process.env.DASHBOARD_URL!).protocol !== 'https:') throw new Error('DASHBOARD_URL must use HTTPS');
+    if (process.env.TELEGRAM_BOT_TOKEN && !process.env.TELEGRAM_WEBHOOK_SECRET) {
+      throw new Error('TELEGRAM_WEBHOOK_SECRET is required when the bot is enabled');
+    }
+  }
   // Trust the first proxy hop (Vercel/host load balancer) so per-IP rate
   // limiting reads the real client IP from X-Forwarded-For, not the proxy's.
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
@@ -65,6 +61,7 @@ async function bootstrap() {
     }),
   );
 
+  if (process.env.NODE_ENV !== 'production') {
   const config = new DocumentBuilder()
     .setTitle('NyumbaOps API')
     .setDescription('Property and financial core endpoints')
@@ -72,6 +69,7 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
+  }
 
   const prismaService = app.get(PrismaService);
   await prismaService.enableShutdownHooks(app);

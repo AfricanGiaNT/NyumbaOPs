@@ -19,6 +19,7 @@ import { GuestsService } from './guests.service';
 
 @ApiTags('Guests')
 @Controller('guests')
+@Roles('OWNER', 'STAFF')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class GuestsController {
   constructor(private readonly guestsService: GuestsService) {}

@@ -189,7 +189,10 @@ export class PublicService {
     const bookings = await this.prisma.booking.findMany({
       where: {
         propertyId,
-        status: { not: BookingStatus.CANCELLED },
+        OR: [
+          { status: { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN] } },
+          { status: BookingStatus.PENDING, OR: [{ holdExpiresAt: null }, { holdExpiresAt: { gt: new Date() } }] },
+        ],
       },
       select: { checkInDate: true, checkOutDate: true },
       orderBy: { checkInDate: 'asc' },
@@ -243,7 +246,10 @@ export class PublicService {
     const overlapping = await this.prisma.booking.count({
       where: {
         propertyId,
-        status: { not: BookingStatus.CANCELLED },
+        OR: [
+          { status: { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN] } },
+          { status: BookingStatus.PENDING, OR: [{ holdExpiresAt: null }, { holdExpiresAt: { gt: new Date() } }] },
+        ],
         checkInDate: { lt: checkOut },
         checkOutDate: { gt: checkIn },
       },
@@ -365,7 +371,10 @@ export class PublicService {
     const bookings = await this.prisma.booking.findMany({
       where: {
         propertyId,
-        status: { not: BookingStatus.CANCELLED },
+        OR: [
+          { status: { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN] } },
+          { status: BookingStatus.PENDING, OR: [{ holdExpiresAt: null }, { holdExpiresAt: { gt: new Date() } }] },
+        ],
       },
       orderBy: { checkInDate: 'asc' },
       select: { id: true, checkInDate: true, checkOutDate: true },

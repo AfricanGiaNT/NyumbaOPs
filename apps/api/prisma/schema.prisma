@@ -44,6 +44,13 @@ enum BookingStatus {
   CANCELLED
 }
 
+enum InquiryStatus {
+  NEW
+  CONTACTED
+  CONVERTED
+  EXPIRED
+}
+
 enum LoanStatus {
   ACTIVE
   SETTLED
@@ -116,6 +123,7 @@ model User {
   telegramId   String?   @unique @map("telegram_id")
   telegramUsername String? @map("telegram_username")
   role         String    @default("OWNER")
+  tokenVersion Int       @default(0) @map("token_version")
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -133,6 +141,7 @@ model User {
   stockMovements StockMovement[]
   inventoryItems InventoryItem[]
   utilityBills   UtilityBill[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Property {
@@ -191,6 +200,7 @@ model Property {
   inventoryItems      InventoryItem[]
   reviews             Review[]
   utilityBills        UtilityBill[]
+  inquiries           Inquiry[]
 }
 
 model Amenity {
@@ -359,6 +369,7 @@ model Booking {
   guestId       String
   propertyId    String
   status        BookingStatus @default(PENDING)
+  holdExpiresAt DateTime?     @map("hold_expires_at")
   checkInDate   DateTime
   checkOutDate  DateTime
   actualCheckIn DateTime?
@@ -382,14 +393,52 @@ model Booking {
   checkedInByUser User? @relation("BookingCheckedInBy", fields: [checkedInBy], references: [id])
   checkedOutByUser User? @relation("BookingCheckedOutBy", fields: [checkedOutBy], references: [id])
   transactions Transaction[]
+  inquiry      Inquiry?
 
   @@index([guestId])
   @@index([propertyId])
   @@index([checkInDate])
   @@index([checkOutDate])
   @@index([status])
+  @@index([status, holdExpiresAt])
   @@index([source])
   @@index([externalId])
+}
+
+model Inquiry {
+  id             String        @id @default(uuid())
+  propertyId     String        @map("property_id")
+  guestName      String        @map("guest_name")
+  guestEmail     String        @map("guest_email")
+  guestPhone     String        @map("guest_phone")
+  checkInDate    DateTime      @map("check_in_date")
+  checkOutDate   DateTime      @map("check_out_date")
+  numberOfGuests Int          @map("number_of_guests")
+  message        String?
+  status         InquiryStatus @default(NEW)
+  bookingId      String?       @unique @map("booking_id")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  property Property @relation(fields: [propertyId], references: [id])
+  booking  Booking? @relation(fields: [bookingId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([propertyId])
+}
+
+model PasswordResetToken {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  tokenHash  String    @unique @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
 }
 
 model CalendarSync {

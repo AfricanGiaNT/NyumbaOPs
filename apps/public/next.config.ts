@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    const dashboardUrl = process.env.DASHBOARD_URL?.replace(/\/+$/, '');
+    const destination = dashboardUrl ?? '/properties';
+    return [
+      { source: '/dashboard', destination, permanent: false },
+      { source: '/dashboard/:path*', destination: dashboardUrl ? `${dashboardUrl}/:path*` : '/properties', permanent: false },
+    ];
+  },
   images: {
     remotePatterns: [
       {

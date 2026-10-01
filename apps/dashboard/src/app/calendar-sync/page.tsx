@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api";
+import { API_BASE_URL } from '@/lib/api-base';
 import { ActionButton } from "@/components/ActionButton";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -43,8 +44,7 @@ interface SyncResult {
   error?: string;
 }
 
-const ICAL_EXPORT_BASE =
-  (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001") + "/api";
+const ICAL_EXPORT_BASE = API_BASE_URL;
 
 export default function CalendarSyncPage() {
   const [properties, setProperties] = useState<Property[]>([]);

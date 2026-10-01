@@ -74,10 +74,8 @@ export function MobileAvailabilitySheet({
   };
 
   const handleBookNow = () => {
-    const nights = result!.nights;
-    const message = `Hi, I'd like to book ${propertyName} for ${nights} night${nights > 1 ? "s" : ""} (${checkInDate} to ${checkOutDate}). Is it still available?`;
-    const url = `https://wa.me/2650990845264?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    const query = new URLSearchParams({ checkIn: checkInDate, checkOut: checkOutDate });
+    window.location.assign(`/properties/${encodeURIComponent(propertyId)}?${query}#inquiry`);
     onClose();
   };
 
@@ -197,7 +195,7 @@ export function MobileAvailabilitySheet({
                   </span>
                 </div>
                 <div className="mt-3 flex items-baseline justify-between border-t border-zinc-200 pt-3">
-                  <span className="text-base font-bold text-zinc-900">Total</span>
+                  <span className="text-base font-bold text-zinc-900">Estimated nightly subtotal</span>
                   <span className="text-xl font-bold text-zinc-900">
                     {formatCurrency(result.totalAmount, result.currency)}
                   </span>
@@ -237,7 +235,7 @@ export function MobileAvailabilitySheet({
               className="w-full rounded-xl py-4 text-base font-semibold text-white active:opacity-90"
               style={{ backgroundColor: "#0f766e" }}
             >
-              Book now · {formatCurrency(result.totalAmount, result.currency)}
+              Request these dates
             </button>
           ) : null}
         </div>

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { API_BASE_URL } from '@/lib/api-base';
 
 type InquiryFormProps = {
   propertyId: string;
   propertyName: string;
+  maxGuests: number;
 };
 
 type InquiryFormState = {
@@ -17,10 +19,7 @@ type InquiryFormState = {
   message: string;
 };
 
-const API_BASE_URL =
-  (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001") + "/api";
-
-export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
+export function InquiryForm({ propertyId, propertyName, maxGuests }: InquiryFormProps) {
   const [formData, setFormData] = useState<InquiryFormState>({
     guestName: "",
     guestEmail: "",
@@ -33,6 +32,15 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkInDate = params.get('checkIn') ?? '';
+    const checkOutDate = params.get('checkOut') ?? '';
+    if (checkInDate || checkOutDate) {
+      setFormData((current) => ({ ...current, checkInDate, checkOutDate }));
+    }
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -48,7 +56,7 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
 
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
-        throw new Error(payload?.error?.message ?? "Failed to submit inquiry");
+        throw new Error(payload?.message ?? payload?.error?.message ?? "Failed to submit inquiry");
       }
 
       setSuccess(true);
@@ -74,8 +82,9 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-3 text-sm">
       <div>
-        <label className="mb-1 block font-medium">Full name</label>
+        <label htmlFor="inquiry-name" className="mb-1 block font-medium">Full name</label>
         <input
+          id="inquiry-name"
           className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
           required
           value={formData.guestName}
@@ -84,8 +93,9 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
         />
       </div>
       <div>
-        <label className="mb-1 block font-medium">Phone number</label>
+        <label htmlFor="inquiry-phone" className="mb-1 block font-medium">Phone number</label>
         <input
+          id="inquiry-phone"
           className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
           required
           type="tel"
@@ -95,10 +105,12 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
         />
       </div>
       <div>
-        <label className="mb-1 block font-medium">Email (optional)</label>
+        <label htmlFor="inquiry-email" className="mb-1 block font-medium">Email</label>
         <input
+          id="inquiry-email"
           className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
           type="email"
+          required
           value={formData.guestEmail}
           onChange={(event) => setFormData({ ...formData, guestEmail: event.target.value })}
           placeholder="john@example.com"
@@ -106,8 +118,9 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block font-medium">Check-in</label>
+          <label htmlFor="inquiry-check-in" className="mb-1 block font-medium">Check-in</label>
           <input
+            id="inquiry-check-in"
             className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
             required
             type="date"
@@ -117,8 +130,9 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
           />
         </div>
         <div>
-          <label className="mb-1 block font-medium">Check-out</label>
+          <label htmlFor="inquiry-check-out" className="mb-1 block font-medium">Check-out</label>
           <input
+            id="inquiry-check-out"
             className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
             required
             type="date"
@@ -129,11 +143,13 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
         </div>
       </div>
       <div>
-        <label className="mb-1 block font-medium">Guests</label>
+        <label htmlFor="inquiry-guests" className="mb-1 block font-medium">Guests</label>
         <input
+          id="inquiry-guests"
           className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
           required
           min={1}
+          max={maxGuests}
           type="number"
           value={formData.numberOfGuests}
           onChange={(event) =>
@@ -145,8 +161,9 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
         />
       </div>
       <div>
-        <label className="mb-1 block font-medium">Message (optional)</label>
+        <label htmlFor="inquiry-message" className="mb-1 block font-medium">Message (optional)</label>
         <textarea
+          id="inquiry-message"
           className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
           rows={3}
           value={formData.message}
@@ -154,7 +171,7 @@ export function InquiryForm({ propertyId, propertyName }: InquiryFormProps) {
           placeholder="Any special requests?"
         />
       </div>
-      {error && <p className="text-sm text-rose-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-rose-600">{error}</p>}
       <button
         type="submit"
         disabled={submitting}

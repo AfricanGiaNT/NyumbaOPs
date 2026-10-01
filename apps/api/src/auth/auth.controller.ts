@@ -2,11 +2,13 @@ import {
   Body,
   Controller,
   Post,
-  UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { IsString, MinLength } from 'class-validator';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { IsEmail, IsString, MinLength } from 'class-validator';
 import { AuthService } from './auth.service';
+import { Public } from './public.decorator';
 
 class LoginDto {
   @IsString()
@@ -16,16 +18,18 @@ class LoginDto {
   password: string;
 }
 
-class SetPasswordDto {
-  @IsString()
+class ResetRequestDto {
+  @IsEmail()
   email: string;
+}
+
+class ResetConfirmDto {
+  @IsString()
+  token: string;
 
   @IsString()
-  @MinLength(6)
+  @MinLength(12)
   password: string;
-
-  @IsString()
-  adminSecret: string;
 }
 
 @ApiTags('auth')
@@ -34,18 +38,27 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 900_000 } })
   @ApiOperation({ summary: 'Login with email and password' })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto.email, dto.password);
   }
 
-  @Post('setup-password')
-  @ApiOperation({ summary: 'Set or reset admin password (requires ADMIN_SETUP_SECRET)' })
-  async setupPassword(@Body() dto: SetPasswordDto) {
-    const secret = process.env.ADMIN_SETUP_SECRET ?? 'change-me-in-production';
-    if (dto.adminSecret !== secret) {
-      throw new UnauthorizedException('Invalid admin key');
-    }
-    return this.authService.setPassword(dto.email, dto.password);
+  @Post('password-reset/request')
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 3, ttl: 3_600_000 } })
+  requestPasswordReset(@Body() dto: ResetRequestDto) {
+    return this.authService.requestPasswordReset(dto.email);
+  }
+
+  @Post('password-reset/confirm')
+  @Public()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 10, ttl: 3_600_000 } })
+  confirmPasswordReset(@Body() dto: ResetConfirmDto) {
+    return this.authService.confirmPasswordReset(dto.token, dto.password);
   }
 }

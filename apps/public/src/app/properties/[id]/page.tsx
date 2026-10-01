@@ -9,6 +9,7 @@ import { HostSection } from "@/components/HostSection";
 import { LocationSection } from "@/components/LocationSection";
 import { PropertyBookingClient } from "@/components/PropertyBookingClient";
 import { ReviewsSection } from "@/components/ReviewsSection";
+import { InquiryForm } from '@/components/InquiryForm';
 
 type PropertyPageProps = {
   params: Promise<{ id: string }>;
@@ -256,6 +257,11 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
               nightlyRate={property.nightlyRate}
               currency={property.currency}
             />
+            <section id="inquiry" className="scroll-mt-24 rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
+              <h2 className="text-xl font-semibold text-zinc-900">Request these dates</h2>
+              <p className="mb-5 mt-1 text-sm text-zinc-600">Send your details and we will confirm availability and payment arrangements with you.</p>
+              <InquiryForm propertyId={property.id} propertyName={property.name} maxGuests={property.maxGuests} />
+            </section>
           </div>
         </section>
 

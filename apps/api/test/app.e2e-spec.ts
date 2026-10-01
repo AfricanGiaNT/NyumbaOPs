@@ -4,6 +4,8 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 
+process.env.JWT_SECRET ??= 'test-only-secret-do-not-use-in-production';
+
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
 
@@ -14,6 +16,10 @@ describe('AppController (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     await app.init();
+  });
+
+  afterEach(async () => {
+    await app.close();
   });
 
   it('/ (GET)', () => {

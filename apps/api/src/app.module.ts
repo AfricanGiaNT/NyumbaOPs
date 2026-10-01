@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { HealthController } from './health.controller';
@@ -6,6 +7,8 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { RolesGuard } from './auth/roles.guard';
 import { AuditModule } from './audit/audit.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { CalendarSyncModule } from './calendar-sync/calendar-sync.module';
@@ -21,6 +24,7 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { WorksModule } from './works/works.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { UtilityBillsModule } from './utility-bills/utility-bills.module';
+import { InquiriesModule } from './inquiries/inquiries.module';
 
 @Module({
   imports: [
@@ -45,8 +49,13 @@ import { UtilityBillsModule } from './utility-bills/utility-bills.module';
     InventoryModule,
     ReviewsModule,
     UtilityBillsModule,
+    InquiriesModule,
   ],
   controllers: [AppController, HealthController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
+  ],
 })
 export class AppModule {}

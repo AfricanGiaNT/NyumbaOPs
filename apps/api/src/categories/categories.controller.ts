@@ -3,9 +3,11 @@ import { ApiTags } from '@nestjs/swagger';
 import { CategoryType } from '@prisma/client';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
+import { Roles } from '../auth/roles.decorator';
 
 @ApiTags('Categories')
 @Controller('categories')
+@Roles('OWNER')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 

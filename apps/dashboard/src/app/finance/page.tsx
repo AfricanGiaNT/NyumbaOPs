@@ -12,6 +12,7 @@ import { AddRevenueModal } from "../../components/finance/AddRevenueModal";
 import { AddExpenseModal } from "../../components/finance/AddExpenseModal";
 import { TransactionsList } from "../../components/finance/TransactionsList";
 import { PeriodSelector, Period } from "../../components/finance/PeriodSelector";
+import { useAuth } from '@/lib/AuthContext';
 
 const now = new Date();
 const defaultPeriod: Period = {
@@ -48,6 +49,7 @@ function exportTransactionsCsv(transactions: Transaction[]) {
 }
 
 export default function FinancePage() {
+  const { user } = useAuth();
   const [period, setPeriod] = useState<Period>(defaultPeriod);
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -63,6 +65,7 @@ export default function FinancePage() {
   const [showRepaymentPicker, setShowRepaymentPicker] = useState(false);
 
   const loadAnalytics = useCallback(async () => {
+    if (user?.role !== 'OWNER') return;
     setStatsLoading(true);
     try {
       const params = periodToParams(period);
@@ -73,9 +76,10 @@ export default function FinancePage() {
     } finally {
       setStatsLoading(false);
     }
-  }, [period]);
+  }, [period, user?.role]);
 
   const loadLoans = useCallback(async () => {
+    if (user?.role !== 'OWNER') return;
     setLoansLoading(true);
     try {
       const result = await apiGet<Loan[]>("/loans");
@@ -85,7 +89,7 @@ export default function FinancePage() {
     } finally {
       setLoansLoading(false);
     }
-  }, []);
+  }, [user?.role]);
 
   useEffect(() => { loadAnalytics(); }, [loadAnalytics]);
   useEffect(() => { loadLoans(); }, [loadLoans]);
@@ -110,6 +114,10 @@ export default function FinancePage() {
       : period.type === "custom"
       ? `${period.from} → ${period.to}`
       : "All Time";
+
+  if (user && user.role !== 'OWNER') {
+    return <ProtectedRoute><AppLayout><p className="mx-auto max-w-3xl p-8 text-zinc-600">Finance is available to owners only.</p></AppLayout></ProtectedRoute>;
+  }
 
   return (
     <ProtectedRoute>

@@ -132,6 +132,7 @@ export type Booking = {
   guestId: string;
   propertyId: string;
   status: BookingStatus;
+  holdExpiresAt?: string | null;
   checkInDate: string;
   checkOutDate: string;
   actualCheckIn?: string | null;

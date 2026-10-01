@@ -75,7 +75,7 @@ export function InquiryList({ initialStatus }: InquiryListProps) {
       setInquiries((prev) =>
         prev.map((item) => (item.id === id ? refreshed.data : item)),
       );
-      setSuccessMessage("Booking created successfully! Guest profile was auto-created.");
+      setSuccessMessage("Pending booking created. The dates are held for 24 hours while you confirm with the guest.");
       setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err) {
       setActionError((err as Error).message);

@@ -21,6 +21,7 @@ import { SidebarForm } from "../../../components/SidebarForm";
 import { FormField } from "../../../components/FormField";
 import { ActionButton } from "../../../components/ActionButton";
 import { ImageUpload, ImageFile } from "../../../components/ImageUpload";
+import { useAuth } from '@/lib/AuthContext';
 
 type TransactionForm = {
   categoryId: string;
@@ -61,6 +62,7 @@ const initialPropertyForm: PropertyFormState = {
 };
 
 export default function PropertyDetailPage() {
+  const { user } = useAuth();
   const params = useParams();
   const propertyId = params?.id as string;
 
@@ -91,6 +93,13 @@ export default function PropertyDetailPage() {
     const now = new Date();
     const month = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
 
+    if (user?.role !== 'OWNER') {
+      apiGet<Property>(`/properties/${propertyId}`)
+        .then(setProperty)
+        .catch((err: Error) => setError(err.message))
+        .finally(() => setLoading(false));
+      return;
+    }
     Promise.all([
       apiGet<Property>(`/properties/${propertyId}`),
       apiGet<AnalyticsSummary>(`/analytics/property/${propertyId}/summary?month=${month}`),
@@ -109,7 +118,7 @@ export default function PropertyDetailPage() {
 
   useEffect(() => {
     loadProperty();
-  }, [propertyId]);
+  }, [propertyId, user?.role]);
 
   // Convert PropertyImage[] to ImageFile[] for form
   const propertyImagesToImageFiles = (images: PropertyImage[] = []): ImageFile[] => {
@@ -290,7 +299,7 @@ export default function PropertyDetailPage() {
           <EmptyState title="Unable to load property" message={error} />
         )}
 
-        {!loading && !error && summary && (
+        {user?.role === 'OWNER' && !loading && !error && summary && (
           <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {summary.totals.length === 0 ? (
               <EmptyState
@@ -305,7 +314,7 @@ export default function PropertyDetailPage() {
           </section>
         )}
 
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {user?.role === 'OWNER' && <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Add Revenue</h2>
             <div className="mt-4 grid grid-cols-1 gap-3">
@@ -437,9 +446,9 @@ export default function PropertyDetailPage() {
               </button>
             </div>
           </div>
-        </section>
+        </section>}
 
-        <section>
+        {user?.role === 'OWNER' && <section>
           <h2 className="text-lg font-semibold">Recent Transactions</h2>
           <div className="mt-3">
             {transactions.length === 0 ? (
@@ -451,7 +460,7 @@ export default function PropertyDetailPage() {
               <TransactionList transactions={transactions} />
             )}
           </div>
-        </section>
+        </section>}
       </div>
 
       {/* Edit Property Sidebar Form */}

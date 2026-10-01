@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
 import { CreateUtilityBillDto } from './dto/create-utility-bill.dto';
 import { QueryUtilityBillsDto } from './dto/query-utility-bills.dto';
 import { UtilityBillsService } from './utility-bills.service';
@@ -19,6 +20,7 @@ import { UtilityBillsService } from './utility-bills.service';
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('utility-bills')
+@Roles('OWNER')
 export class UtilityBillsController {
   constructor(private readonly utilityBillsService: UtilityBillsService) {}
 

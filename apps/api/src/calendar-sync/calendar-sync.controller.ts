@@ -20,6 +20,7 @@ import { UpdateCalendarSyncDto } from './dto/update-calendar-sync.dto';
 
 @ApiTags('Calendar Sync')
 @Controller('calendar-syncs')
+@Roles('OWNER', 'STAFF')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class CalendarSyncController {
   constructor(private readonly calendarSyncService: CalendarSyncService) {}

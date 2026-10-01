@@ -18,6 +18,7 @@ import { ReviewQueryDto } from './dto/review-query.dto';
 
 @ApiTags('Reviews')
 @Controller('reviews')
+@Roles('OWNER', 'STAFF')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}

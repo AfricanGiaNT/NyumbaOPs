@@ -7,6 +7,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 type JwtPayload = {
   sub: string;
   role: string;
+  ver?: number;
 };
 
 @Injectable()
@@ -18,7 +19,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET') ?? 'dev-secret',
+      secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
     });
   }
 
@@ -28,6 +29,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
     if (!user) {
       throw new UnauthorizedException('User not found');
+    }
+    if ((payload.ver ?? 0) !== user.tokenVersion) {
+      throw new UnauthorizedException('Session expired');
     }
     return { id: user.id, role: user.role };
   }

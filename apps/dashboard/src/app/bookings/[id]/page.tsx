@@ -5,10 +5,9 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { apiGet, apiPatch } from "../../../lib/api";
-import { Booking, BookingStatus, Payment } from "../../../lib/types";
+import { Booking, BookingStatus } from "../../../lib/types";
 import { EmptyState } from "../../../components/EmptyState";
 import { LoadingSkeleton } from "../../../components/LoadingSkeleton";
-import { PaymentModal } from "../../../components/PaymentModal";
 
 const statusOptions: BookingStatus[] = [
   "CONFIRMED",
@@ -30,11 +29,9 @@ export default function BookingDetailPage() {
   const bookingId = params?.id as string;
 
   const [booking, setBooking] = useState<Booking | null>(null);
-  const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [form, setForm] = useState<StatusForm>({
     status: "CONFIRMED",
     actualCheckIn: "",
@@ -49,10 +46,6 @@ export default function BookingDetailPage() {
         const bookingData = await apiGet<Booking>(`/bookings/${bookingId}`);
         setBooking(bookingData);
         setForm((prev) => ({ ...prev, status: bookingData.status }));
-        const paymentResponse = await apiGet<{ success: boolean; data: Payment[] }>(
-          `/bookings/${bookingId}/payments`,
-        );
-        setPayments(paymentResponse.data ?? []);
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -128,48 +121,14 @@ export default function BookingDetailPage() {
             <h2 className="text-lg font-semibold">Details</h2>
             <div className="mt-4 grid grid-cols-1 gap-3 text-sm text-zinc-600 dark:text-zinc-400 md:grid-cols-2">
               <div>Status: {booking.status}</div>
+              {booking.status === 'PENDING' && booking.holdExpiresAt && (
+                <div>Hold expires: {new Date(booking.holdExpiresAt).toLocaleString()}</div>
+              )}
               <div>
                 Dates: {new Date(booking.checkInDate).toLocaleDateString()} →{" "}
                 {new Date(booking.checkOutDate).toLocaleDateString()}
               </div>
               <div>Notes: {booking.notes ?? "None"}</div>
-            </div>
-          </section>
-        )}
-
-        {!loading && !error && booking && (
-          <section className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">Payments</h2>
-              <button
-                type="button"
-                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
-                onClick={() => setShowPaymentModal(true)}
-              >
-                Add payment
-              </button>
-            </div>
-            <div className="mt-3 grid grid-cols-1 gap-2 text-sm text-zinc-600 dark:text-zinc-400 md:grid-cols-3">
-              <div>Total: {booking.totalAmount ?? 0}</div>
-              <div>Paid: {booking.amountPaid ?? 0}</div>
-              <div>Status: {booking.paymentStatus ?? "UNPAID"}</div>
-            </div>
-            <div className="mt-4 space-y-2">
-              {payments.length === 0 ? (
-                <p className="text-sm text-zinc-500">No payments recorded yet.</p>
-              ) : (
-                payments.map((payment) => (
-                  <div
-                    key={payment.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-zinc-200 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300"
-                  >
-                    <span>
-                      {payment.amount} {payment.currency} • {payment.method}
-                    </span>
-                    <span className="text-xs text-zinc-500">{payment.status}</span>
-                  </div>
-                ))
-              )}
             </div>
           </section>
         )}
@@ -240,15 +199,6 @@ export default function BookingDetailPage() {
           </section>
         )}
 
-        {booking && showPaymentModal && (
-          <PaymentModal
-            bookingId={booking.id}
-            currency={booking.currency ?? "MWK"}
-            remainingAmount={(booking.totalAmount ?? 0) - (booking.amountPaid ?? 0)}
-            onClose={() => setShowPaymentModal(false)}
-            onPaymentAdded={(payment) => setPayments((prev) => [payment, ...prev])}
-          />
-        )}
       </div>
     </AppLayout>
   );

@@ -1,9 +1,11 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
+import { Roles } from '../auth/roles.decorator';
 
 @ApiTags('Analytics')
 @Controller('analytics')
+@Roles('OWNER')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 

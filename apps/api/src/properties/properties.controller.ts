@@ -19,6 +19,7 @@ import { UpdatePropertyDto } from './dto/update-property.dto';
 
 @ApiTags('Properties')
 @Controller('properties')
+@Roles('OWNER', 'STAFF')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class PropertiesController {
   constructor(private readonly propertiesService: PropertiesService) {}

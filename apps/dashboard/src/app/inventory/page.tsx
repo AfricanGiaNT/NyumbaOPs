@@ -11,11 +11,13 @@ import { PropertyChecklist } from "@/components/inventory/PropertyChecklist";
 import { UtilitiesTab } from "@/components/inventory/UtilitiesTab";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useAuth } from '@/lib/AuthContext';
 
 type MainTab   = "stock" | "utilities";
 type StockView = "kanban" | "checklist";
 
 function InventoryContent() {
+  const { user } = useAuth();
   const [mainTab,   setMainTab]   = useState<MainTab>("stock");
   const [stockView, setStockView] = useState<StockView>("kanban");
 
@@ -100,7 +102,7 @@ function InventoryContent() {
 
       {/* Top-level tabs: Stock | Utilities */}
       <div className="flex gap-1 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800/50 p-1 w-fit">
-        {(["stock", "utilities"] as MainTab[]).map((tab) => (
+        {(["stock", ...(user?.role === 'OWNER' ? ['utilities'] : [])] as MainTab[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setMainTab(tab)}
@@ -116,7 +118,7 @@ function InventoryContent() {
       </div>
 
       {/* Utilities tab */}
-      {mainTab === "utilities" && <UtilitiesTab properties={properties} />}
+      {mainTab === "utilities" && user?.role === 'OWNER' && <UtilitiesTab properties={properties} />}
 
       {/* Stock Items tab */}
       {mainTab === "stock" && (

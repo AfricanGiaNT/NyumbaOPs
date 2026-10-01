@@ -74,11 +74,11 @@ export default function Home() {
         transactionsRes,
         lowStockRes,
       ] = await Promise.allSettled([
-        apiGet<AnalyticsSummary>(`/analytics/summary?month=${month}`),
+        user?.role === 'OWNER' ? apiGet<AnalyticsSummary>(`/analytics/summary?month=${month}`) : Promise.resolve(null),
         apiGet<Booking[]>("/bookings"),
         apiGet<Property[]>("/properties"),
         apiGet<{ success: boolean; data: Inquiry[] }>("/inquiries"),
-        apiGet<Transaction[]>(`/transactions?month=${month}`),
+        user?.role === 'OWNER' ? apiGet<Transaction[]>(`/transactions?month=${month}`) : Promise.resolve([]),
         apiGet<InventoryItem[]>("/inventory?lowStock=true"),
       ]);
 
@@ -153,7 +153,7 @@ export default function Home() {
       } finally {
         setLoading(false);
       }
-  }, []);
+  }, [user?.role]);
 
   useEffect(() => {
     loadDashboardData();
@@ -233,7 +233,7 @@ export default function Home() {
 
           {/* Quick Log Actions */}
           <div className="mb-6 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
-            <button
+            {user?.role === 'OWNER' && <button
               onClick={() => setShowLogRevenue(true)}
               className="flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 sm:px-5 py-3 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
             >
@@ -246,8 +246,8 @@ export default function Home() {
                 <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Log Revenue</p>
                 <p className="hidden sm:block text-xs text-zinc-500 dark:text-zinc-400">Record income received</p>
               </div>
-            </button>
-            <button
+            </button>}
+            {user?.role === 'OWNER' && <button
               onClick={() => setShowLogExpense(true)}
               className="flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 sm:px-5 py-3 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
             >
@@ -260,7 +260,7 @@ export default function Home() {
                 <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Log Expense</p>
                 <p className="hidden sm:block text-xs text-zinc-500 dark:text-zinc-400">Record a cost or payment</p>
               </div>
-            </button>
+            </button>}
             <Link
               href="/inventory/shop"
               className="relative flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 sm:px-5 py-3 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
@@ -283,7 +283,7 @@ export default function Home() {
           </div>
 
           {/* Financial Overview — stats + summary side by side */}
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {user?.role === 'OWNER' && <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <StatCard
               title="Revenue (Month)"
               value={monthlyRevenue.toLocaleString()}
@@ -308,16 +308,16 @@ export default function Home() {
               summary={data.analytics}
               loading={loading}
             />
-          </div>
+          </div>}
 
           {/* Outstanding Reimbursements */}
-          <div className="mb-6">
+          {user?.role === 'OWNER' && <div className="mb-6">
             <ReimbursementsCard
               transactions={data.transactions}
               loading={loading}
               onReimbursed={loadDashboardData}
             />
-          </div>
+          </div>}
 
           {/* Low Stock Alerts */}
           <div className="mb-6">
@@ -329,13 +329,13 @@ export default function Home() {
           </div>
 
           {/* Property Financial Breakdown */}
-          <div className="mb-6">
+          {user?.role === 'OWNER' && <div className="mb-6">
             <PropertyFinancialBreakdown
               transactions={data.transactions}
               properties={data.properties}
               loading={loading}
             />
-          </div>
+          </div>}
 
           {/* Upcoming Events + Recent Activity */}
           <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -402,16 +402,16 @@ export default function Home() {
         </div>
 
         {/* Modals */}
-        <AddRevenueModal
+        {user?.role === 'OWNER' && <AddRevenueModal
           isOpen={showLogRevenue}
           onClose={() => setShowLogRevenue(false)}
           onSuccess={() => { setShowLogRevenue(false); loadDashboardData(); }}
-        />
-        <AddExpenseModal
+        />}
+        {user?.role === 'OWNER' && <AddExpenseModal
           isOpen={showLogExpense}
           onClose={() => setShowLogExpense(false)}
           onSuccess={() => { setShowLogExpense(false); loadDashboardData(); }}
-        />
+        />}
       </AppLayout>
     </ProtectedRoute>
   );

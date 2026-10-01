@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
 import { BatchMovementDto } from './dto/batch-movement.dto';
 import { BulkCreateInventoryDto } from './dto/bulk-create-inventory.dto';
 import { CreateInventoryItemDto } from './dto/create-inventory-item.dto';
@@ -24,6 +25,7 @@ import { InventoryService } from './inventory.service';
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('inventory')
+@Roles('OWNER', 'STAFF')
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 

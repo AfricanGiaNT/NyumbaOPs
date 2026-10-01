@@ -95,4 +95,16 @@ export class EmailService {
 
     this.logger.log(`Sent work order "${work.title}" to Any.do`);
   }
+
+  async sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
+    if (!this.gmailUser || !process.env.GMAIL_APP_PASSWORD) {
+      throw new Error('Password reset email is not configured');
+    }
+    await this.transporter.sendMail({
+      from: this.gmailUser,
+      to,
+      subject: 'Reset your NyumbaOps password',
+      text: `Use this link to reset your password. It expires in 30 minutes:\n\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
+    });
+  }
 }

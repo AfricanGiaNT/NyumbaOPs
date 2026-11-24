@@ -194,6 +194,11 @@ model Property {
   latitude           Float?
   longitude          Float?
   googleMapsUrl      String?        @map("google_maps_url")
+  availabilityButtonUrl   String? @map("availability_button_url")
+  availabilityButtonLabel String? @map("availability_button_label")
+  contactButtonUrl        String? @map("contact_button_url")
+  contactButtonLabel      String? @map("contact_button_label")
+  reviewButtonUrl         String? @map("review_button_url")
   slug               String?        @unique
   seoTitle           String?        @map("seo_title")
   seoDescription     String?        @map("seo_description")

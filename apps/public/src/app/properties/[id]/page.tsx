@@ -83,7 +83,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
 
   return (
     <>
-      <main className="bg-white pb-20">
+      <main className="bg-white pb-32 sm:pb-20">
         <section className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6">
           <Link
             href="/properties"
@@ -244,7 +244,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
             )}
 
             {/* Reviews */}
-            <ReviewsSection reviews={reviews} propertyId={property.id} />
+            <ReviewsSection reviews={reviews} propertyId={property.id} reviewUrl={property.reviewButtonUrl} />
 
             {/* Host Section */}
             <HostSection />
@@ -266,6 +266,12 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
                   propertyName={property.name}
                   nightlyRate={property.nightlyRate}
                   currency={property.currency}
+                  buttons={{
+                    availabilityButtonUrl: property.availabilityButtonUrl,
+                    availabilityButtonLabel: property.availabilityButtonLabel,
+                    contactButtonUrl: property.contactButtonUrl,
+                    contactButtonLabel: property.contactButtonLabel,
+                  }}
                 />
               </aside>
             </div>

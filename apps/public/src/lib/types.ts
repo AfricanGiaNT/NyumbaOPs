@@ -163,6 +163,11 @@ export type PublicPropertyDetail = {
     latitude?: number | null;
     longitude?: number | null;
     googleMapsUrl?: string | null;
+    availabilityButtonUrl?: string | null;
+    availabilityButtonLabel?: string | null;
+    contactButtonUrl?: string | null;
+    contactButtonLabel?: string | null;
+    reviewButtonUrl?: string | null;
     status: "ACTIVE" | "INACTIVE" | "MAINTENANCE";
     images: {
       url: string;

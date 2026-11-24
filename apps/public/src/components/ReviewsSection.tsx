@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { PublicReview } from "@/lib/types";
+import { safeLinkHref } from "@/lib/propertyButtons";
 
 function StarDisplay({ rating, size = "sm" }: { rating: number; size?: "sm" | "md" }) {
   const starSize = size === "md" ? "h-5 w-5" : "h-4 w-4";
@@ -43,10 +44,15 @@ const SUB_RATINGS = [
 export function ReviewsSection({
   reviews,
   propertyId,
+  reviewUrl,
 }: {
   reviews: PublicReview[];
   propertyId: string;
+  /** Custom "Leave a review" destination (e.g. Airbnb/Google); empty = built-in form */
+  reviewUrl?: string | null;
 }) {
+  const customReviewHref = safeLinkHref(reviewUrl);
+  const reviewIsExternal = !!customReviewHref && /^https?:/i.test(customReviewHref);
   // overallRating is always required — compute directly to keep type as number
   const overallAvg =
     reviews.length > 0
@@ -71,7 +77,8 @@ export function ReviewsSection({
           )}
         </div>
         <Link
-          href={`/review/${propertyId}`}
+          href={customReviewHref ?? `/review/${propertyId}`}
+          {...(reviewIsExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
           className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

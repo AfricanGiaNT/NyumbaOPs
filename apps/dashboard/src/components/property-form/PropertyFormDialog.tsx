@@ -21,6 +21,7 @@ import { DetailsTab } from "./DetailsTab";
 import { PricingTab } from "./PricingTab";
 import { RulesTab } from "./RulesTab";
 import { SeoTab } from "./SeoTab";
+import { ButtonsTab, LINK_FIELDS, validateButtonLink } from "./ButtonsTab";
 
 export interface PropertyFormDialogProps {
   open: boolean;
@@ -38,6 +39,7 @@ const TABS = [
   { id: "details", label: "Details", icon: "📊" },
   { id: "pricing", label: "Pricing", icon: "💰" },
   { id: "rules", label: "Rules", icon: "📋" },
+  { id: "buttons", label: "Links", icon: "🔗" },
   { id: "seo", label: "SEO", icon: "🔍" },
 ];
 
@@ -149,6 +151,12 @@ export function PropertyFormDialog({
       validationErrors.nightlyRate = "Nightly rate must be greater than 0";
     }
 
+    // Button links validation
+    for (const field of LINK_FIELDS) {
+      const linkError = validateButtonLink(formData[field]);
+      if (linkError) validationErrors[field] = linkError;
+    }
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       // Navigate to first tab with errors
@@ -160,6 +168,8 @@ export function PropertyFormDialog({
         setActiveTab("details");
       } else if (validationErrors.nightlyRate) {
         setActiveTab("pricing");
+      } else if (LINK_FIELDS.some((field) => validationErrors[field])) {
+        setActiveTab("buttons");
       }
       return;
     }
@@ -193,6 +203,8 @@ export function PropertyFormDialog({
         return formData.nightlyRate > 0;
       case "rules":
         return !!(formData.checkInTime || formData.checkOutTime);
+      case "buttons":
+        return LINK_FIELDS.some((field) => !!formData[field]?.trim());
       case "seo":
         return !!(formData.slug || formData.seoTitle);
       default:
@@ -317,6 +329,14 @@ export function PropertyFormDialog({
 
               <TabsContent value="rules" currentValue={activeTab}>
                 <RulesTab
+                  data={formData}
+                  onChange={updateFormData}
+                  errors={errors}
+                />
+              </TabsContent>
+
+              <TabsContent value="buttons" currentValue={activeTab}>
+                <ButtonsTab
                   data={formData}
                   onChange={updateFormData}
                   errors={errors}

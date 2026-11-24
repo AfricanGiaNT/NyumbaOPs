@@ -83,6 +83,11 @@ export type Property = {
   latitude?: number | null;
   longitude?: number | null;
   googleMapsUrl?: string | null;
+  availabilityButtonUrl?: string | null;
+  availabilityButtonLabel?: string | null;
+  contactButtonUrl?: string | null;
+  contactButtonLabel?: string | null;
+  reviewButtonUrl?: string | null;
   status: PropertyStatus;
   images?: PropertyImage[];
   amenities?: string[];

@@ -5,6 +5,10 @@ import { CreatePropertyDto } from './dto/create-property.dto';
 import { UpdatePropertyDto } from './dto/update-property.dto';
 import { PropertyStatus } from '@prisma/client';
 
+/** Treat empty strings as "clear this field"; leave undefined untouched for PATCH. */
+const blankToNull = (value: string | null | undefined) =>
+  value === undefined ? undefined : value === null || value.trim() === '' ? null : value.trim();
+
 const PROPERTY_INCLUDE = {
   amenities: {
     include: { amenity: { select: { name: true } } },
@@ -110,6 +114,11 @@ export class PropertiesService {
           latitude: dto.latitude,
           longitude: dto.longitude,
           googleMapsUrl: dto.googleMapsUrl,
+          availabilityButtonUrl: blankToNull(dto.availabilityButtonUrl),
+          availabilityButtonLabel: blankToNull(dto.availabilityButtonLabel),
+          contactButtonUrl: blankToNull(dto.contactButtonUrl),
+          contactButtonLabel: blankToNull(dto.contactButtonLabel),
+          reviewButtonUrl: blankToNull(dto.reviewButtonUrl),
           slug: dto.slug,
           seoTitle: dto.seoTitle,
           seoDescription: dto.seoDescription,
@@ -206,6 +215,11 @@ export class PropertiesService {
         latitude: dto.latitude,
         longitude: dto.longitude,
         googleMapsUrl: dto.googleMapsUrl,
+        availabilityButtonUrl: blankToNull(dto.availabilityButtonUrl),
+        availabilityButtonLabel: blankToNull(dto.availabilityButtonLabel),
+        contactButtonUrl: blankToNull(dto.contactButtonUrl),
+        contactButtonLabel: blankToNull(dto.contactButtonLabel),
+        reviewButtonUrl: blankToNull(dto.reviewButtonUrl),
         slug: dto.slug,
         seoTitle: dto.seoTitle,
         seoDescription: dto.seoDescription,

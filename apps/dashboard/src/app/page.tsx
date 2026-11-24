@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { apiGet, apiPatch, apiPost } from "../lib/api";
@@ -19,12 +20,10 @@ import { UpcomingEventsCard } from "../components/dashboard/UpcomingEventsCard";
 import { RecentActivityCard } from "../components/dashboard/RecentActivityCard";
 import { FinancialSummaryCard } from "../components/dashboard/FinancialSummaryCard";
 import { InquiriesCard } from "../components/dashboard/InquiriesCard";
-import { PropertiesOverviewCard } from "../components/dashboard/PropertiesOverviewCard";
 import { QuickActionsCard } from "../components/dashboard/QuickActionsCard";
 import { PropertyAvailabilityCard } from "../components/dashboard/PropertyAvailabilityCard";
-import { PropertyFinancialBreakdown } from "../components/dashboard/PropertyFinancialBreakdown";
 import { ReimbursementsCard } from "../components/dashboard/ReimbursementsCard";
-import { LowStockAlertCard } from "../components/dashboard/LowStockAlertCard";
+import { PropertySummaryCard } from "../components/dashboard/PropertySummaryCard";
 import { AddRevenueModal } from "../components/finance/AddRevenueModal";
 import { AddExpenseModal } from "../components/finance/AddExpenseModal";
 import { ShoppingListModal } from "../components/inventory/ShoppingListModal";
@@ -41,6 +40,7 @@ type DashboardData = {
   outstandingReimbursements: OutstandingReimbursement[];
   reimbursementsError: string | null;
   lowStockItems: InventoryItem[];
+  inventory: InventoryItem[];
 };
 
 export default function Home() {
@@ -57,6 +57,7 @@ export default function Home() {
     outstandingReimbursements: [],
     reimbursementsError: null,
     lowStockItems: [],
+    inventory: [],
   });
   const [loading, setLoading] = useState(true);
   const [unblockingId, setUnblockingId] = useState<string | null>(null);
@@ -79,7 +80,7 @@ export default function Home() {
         inquiriesRes,
         transactionsRes,
         reimbursementsRes,
-        lowStockRes,
+        inventoryRes,
       ] = await Promise.allSettled([
         user?.role === 'OWNER' ? apiGet<AnalyticsSummary>(`/analytics/summary?month=${month}`) : Promise.resolve(null),
         apiGet<Booking[]>("/bookings"),
@@ -87,7 +88,7 @@ export default function Home() {
         apiGet<{ success: boolean; data: Inquiry[] }>("/reservations"),
         user?.role === 'OWNER' ? apiGet<Transaction[]>(`/transactions?month=${month}`) : Promise.resolve([]),
         user?.role === 'OWNER' ? apiGet<OutstandingReimbursement[]>("/transactions/outstanding-reimbursements") : Promise.resolve([]),
-        apiGet<InventoryItem[]>("/inventory?lowStock=true"),
+        apiGet<InventoryItem[]>("/inventory"),
       ]);
 
         const analytics = analyticsRes.status === "fulfilled" ? analyticsRes.value : null;
@@ -106,7 +107,8 @@ export default function Home() {
             ? "Reimbursements need the updated API. Restart it after the migration is applied."
             : "Could not load outstanding reimbursements. Check the API and migration state."
           : null;
-        const lowStockItems = lowStockRes.status === "fulfilled" ? lowStockRes.value : [];
+        const inventory = inventoryRes.status === "fulfilled" ? inventoryRes.value : [];
+        const lowStockItems = inventory.filter((item) => item.minQuantity > 0 && item.quantity < item.minQuantity);
 
         // Upcoming check-ins & check-outs within the next 30 days
         // Use Date objects to correctly compare Prisma ISO datetime strings
@@ -163,6 +165,7 @@ export default function Home() {
           outstandingReimbursements,
           reimbursementsError,
           lowStockItems,
+          inventory,
         });
       } catch (error) {
         console.error("Error loading dashboard data:", error);
@@ -325,28 +328,51 @@ export default function Home() {
             />
           </div>}
 
-          <div className="mb-4 grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
-            {user?.role === 'OWNER' && <ReimbursementsCard
+          {/* Property cards */}
+          <section className="mb-4">
+            <div className="mb-2 flex items-end justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Properties</h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {data.properties.length} propert{data.properties.length === 1 ? "y" : "ies"} · stock{user?.role === 'OWNER' ? " & this month's breakdown" : ""}
+                </p>
+              </div>
+              <Link href="/properties" className="text-xs font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">View all</Link>
+            </div>
+            {loading ? (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-[34rem] animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-800" />
+                ))}
+              </div>
+            ) : data.properties.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500 dark:border-zinc-700">
+                No properties yet. <Link href="/properties" className="font-medium text-indigo-600">Add your first property</Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {data.properties.map((property) => (
+                  <PropertySummaryCard
+                    key={property.id}
+                    property={property}
+                    showFinancials={user?.role === 'OWNER'}
+                    transactions={data.transactions.filter((t) => t.propertyId === property.id)}
+                    inventory={data.inventory.filter((i) => i.propertyId === property.id)}
+                    bookings={data.upcomingActiveBookings.filter((b) => b.propertyId === property.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {user?.role === 'OWNER' && <div className="mb-4">
+            <ReimbursementsCard
               transactions={data.outstandingReimbursements}
               properties={data.properties}
               error={data.reimbursementsError}
               onRetry={loadDashboardData}
               loading={loading}
               onReimbursed={loadDashboardData}
-            />}
-            <LowStockAlertCard
-              items={data.lowStockItems}
-              loading={loading}
-              onRestocked={loadDashboardData}
-            />
-          </div>
-
-          {/* Property Financial Breakdown */}
-          {user?.role === 'OWNER' && <div className="mb-4">
-            <PropertyFinancialBreakdown
-              transactions={data.transactions}
-              properties={data.properties}
-              loading={loading}
             />
           </div>}
 
@@ -367,13 +393,6 @@ export default function Home() {
           <div className="mb-4 grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
             <InquiriesCard inquiries={data.inquiries} loading={loading} />
             <QuickActionsCard />
-          </div>
-
-          <div className="mb-4">
-            <PropertiesOverviewCard
-              properties={data.properties}
-              loading={loading}
-            />
           </div>
 
           {/* Property Availability */}

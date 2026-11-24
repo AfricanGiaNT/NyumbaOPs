@@ -9,11 +9,16 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Matches,
   Max,
+  MaxLength,
+  ValidateIf,
   Min,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+
+const BUTTON_LINK_PATTERN = /^(https?:\/\/|mailto:|tel:)\S+$/i;
 
 export class PropertyImageDto {
   @IsString()
@@ -230,6 +235,51 @@ export class CreatePropertyDto {
   @IsString()
   @IsOptional()
   googleMapsUrl?: string;
+
+  @ApiProperty({
+    example: 'https://www.airbnb.com/rooms/12345',
+    required: false,
+    description: 'Where the "Check availability" button sends guests. Empty = built-in availability checker.',
+  })
+  @ValidateIf((_, v) => v !== undefined && v !== null && v !== '')
+  @IsString()
+  @Matches(BUTTON_LINK_PATTERN, { message: 'availabilityButtonUrl must start with https://, http://, mailto: or tel:' })
+  @MaxLength(2000)
+  availabilityButtonUrl?: string | null;
+
+  @ApiProperty({ example: 'Book on Airbnb', required: false })
+  @ValidateIf((_, v) => v !== undefined && v !== null && v !== '')
+  @IsString()
+  @MaxLength(40)
+  availabilityButtonLabel?: string | null;
+
+  @ApiProperty({
+    example: 'https://wa.me/265990000000',
+    required: false,
+    description: 'Where the "Contact us" button sends guests. Empty = WhatsApp with a prefilled message.',
+  })
+  @ValidateIf((_, v) => v !== undefined && v !== null && v !== '')
+  @IsString()
+  @Matches(BUTTON_LINK_PATTERN, { message: 'contactButtonUrl must start with https://, http://, mailto: or tel:' })
+  @MaxLength(2000)
+  contactButtonUrl?: string | null;
+
+  @ApiProperty({ example: 'Contact us', required: false })
+  @ValidateIf((_, v) => v !== undefined && v !== null && v !== '')
+  @IsString()
+  @MaxLength(40)
+  contactButtonLabel?: string | null;
+
+  @ApiProperty({
+    example: 'https://www.airbnb.com/rooms/12345/reviews',
+    required: false,
+    description: 'Where the "Leave a review" button sends guests. Empty = built-in review form.',
+  })
+  @ValidateIf((_, v) => v !== undefined && v !== null && v !== '')
+  @IsString()
+  @Matches(BUTTON_LINK_PATTERN, { message: 'reviewButtonUrl must start with https://, http://, mailto: or tel:' })
+  @MaxLength(2000)
+  reviewButtonUrl?: string | null;
 
   @ApiProperty({ enum: PropertyStatus, required: false, default: PropertyStatus.ACTIVE })
   @IsEnum(PropertyStatus)

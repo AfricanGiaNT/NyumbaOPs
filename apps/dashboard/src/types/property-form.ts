@@ -13,6 +13,13 @@ export interface PropertyFormData {
   longitude?: number;
   googleMapsUrl?: string;
 
+  // Public page buttons (empty = default behaviour)
+  availabilityButtonUrl?: string;
+  availabilityButtonLabel?: string;
+  contactButtonUrl?: string;
+  contactButtonLabel?: string;
+  reviewButtonUrl?: string;
+
   // Description & Highlights
   description?: string;
   spaceDescription?: string;
@@ -74,6 +81,11 @@ export const DEFAULT_FORM_DATA: PropertyFormData = {
   latitude: undefined,
   longitude: undefined,
   googleMapsUrl: "",
+  availabilityButtonUrl: "",
+  availabilityButtonLabel: "",
+  contactButtonUrl: "",
+  contactButtonLabel: "",
+  reviewButtonUrl: "",
   description: "",
   spaceDescription: "",
   guestAccess: "",

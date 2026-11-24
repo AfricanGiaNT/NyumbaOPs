@@ -1,15 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PropertyActionButton } from "./PropertyActionButtons";
+import type { ResolvedButton } from "@/lib/propertyButtons";
 
 type StickyCheckAvailabilityProps = {
   price: string;
+  showPerNight?: boolean;
+  availability: ResolvedButton;
+  contact: ResolvedButton;
   onCheckAvailability: () => void;
 };
 
-export function StickyCheckAvailability({ 
-  price, 
-  onCheckAvailability 
+export function StickyCheckAvailability({
+  price,
+  showPerNight = true,
+  availability,
+  contact,
+  onCheckAvailability,
 }: StickyCheckAvailabilityProps) {
   const [bottomOffset, setBottomOffset] = useState(0);
   const [inquiryVisible, setInquiryVisible] = useState(false);
@@ -56,24 +64,32 @@ export function StickyCheckAvailability({
 
   return (
     <div
-      className="fixed left-0 right-0 z-50 flex items-center justify-between gap-3 border-t border-zinc-200 bg-white px-4 py-2 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden"
+      className="fixed left-0 right-0 z-50 flex flex-col gap-2 border-t border-zinc-200/80 bg-white/95 px-4 pt-2.5 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:gap-3 lg:hidden"
       style={{
         bottom: `${bottomOffset}px`,
-        paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
+        paddingBottom: "max(0.625rem, env(safe-area-inset-bottom))",
         transition: "bottom 0.2s ease-out"
       }}
     >
-      <div className="min-w-0">
-        <div className="truncate text-sm font-semibold text-zinc-900">{price}</div>
-        <div className="text-xs text-zinc-600">per night</div>
+      <div className="flex min-w-0 items-baseline gap-1.5 sm:flex-col sm:gap-0">
+        <span className="truncate text-sm font-semibold text-zinc-900">{price}</span>
+        {showPerNight ? <span className="text-xs text-zinc-600">per night</span> : null}
       </div>
 
-      <button
-        onClick={onCheckAvailability}
-        className="min-h-10 shrink-0 whitespace-nowrap rounded-lg bg-[#FF8F35] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-      >
-        Check availability
-      </button>
+      <div className="grid grid-cols-[1fr_1.35fr] gap-2 sm:flex sm:shrink-0">
+        <PropertyActionButton
+          button={contact}
+          variant="secondary"
+          icon="chat"
+          className="min-w-0 px-3 sm:px-4"
+        />
+        <PropertyActionButton
+          button={availability}
+          variant="primary"
+          onClick={onCheckAvailability}
+          className="min-w-0 px-3 sm:px-5"
+        />
+      </div>
     </div>
   );
 }

@@ -177,6 +177,11 @@ export class PublicService {
       latitude: property.latitude,
       longitude: property.longitude,
       googleMapsUrl: property.googleMapsUrl,
+      availabilityButtonUrl: property.availabilityButtonUrl,
+      availabilityButtonLabel: property.availabilityButtonLabel,
+      contactButtonUrl: property.contactButtonUrl,
+      contactButtonLabel: property.contactButtonLabel,
+      reviewButtonUrl: property.reviewButtonUrl,
       status: property.status,
       images: property.images.map((image) => ({
         url: this.normalizeImageUrl(image.url),

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Inquiry } from "../../lib/types";
 import { DashboardCard } from "./DashboardCard";
 
@@ -13,7 +12,7 @@ export function InquiriesCard({
 }: InquiriesCardProps) {
   if (loading) {
     return (
-      <DashboardCard title="New Inquiries">
+      <DashboardCard title="Reservation Requests">
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-16 animate-pulse rounded bg-zinc-100" />
@@ -25,16 +24,16 @@ export function InquiriesCard({
 
   return (
     <DashboardCard
-      title="New Inquiries"
+      title="Reservation Requests"
       subtitle="Pending responses"
       action={{
         label: "View all",
-        onClick: () => (window.location.href = "/inquiries"),
+        onClick: () => (window.location.href = "/reservations"),
       }}
     >
       {inquiries.length === 0 ? (
-        <div className="py-8 text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+        <div className="py-2 text-center">
+          <div className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100">
             <svg
               className="h-6 w-6 text-emerald-600"
               fill="none"
@@ -50,16 +49,16 @@ export function InquiriesCard({
             </svg>
           </div>
           <p className="text-sm font-medium text-zinc-900">All caught up!</p>
-          <p className="text-xs text-zinc-500">No new inquiries to review</p>
+          <p className="text-xs text-zinc-500">No reservation requests to review</p>
         </div>
       ) : (
         <div className="space-y-2">
-          {inquiries.slice(0, 5).map((inquiry) => {
-            const isNew = inquiry.status === "NEW";
+          {inquiries.slice(0, 3).map((inquiry) => {
+            const isNew = inquiry.status === "PENDING_REVIEW" || inquiry.status === "NEW";
             return (
               <div
                 key={inquiry.id}
-                className="flex items-start gap-3 rounded-lg border border-zinc-100 p-3 transition hover:border-indigo-200 hover:bg-indigo-50/50"
+                className="flex items-start gap-2 rounded-lg border border-zinc-100 p-2 transition hover:border-indigo-200 hover:bg-indigo-50/50"
               >
                 <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-medium text-blue-700">
                   {inquiry.guestName?.[0] || "I"}
@@ -91,9 +90,9 @@ export function InquiriesCard({
               </div>
             );
           })}
-          {inquiries.length > 5 && (
+          {inquiries.length > 3 && (
             <p className="text-center text-xs text-zinc-500">
-              +{inquiries.length - 5} more inquiries
+              +{inquiries.length - 3} more requests
             </p>
           )}
         </div>

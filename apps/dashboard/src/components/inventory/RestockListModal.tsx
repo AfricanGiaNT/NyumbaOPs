@@ -44,15 +44,24 @@ export function RestockListModal({ items, onClose }: Props) {
         }
       `}</style>
 
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 no-print">
-        <div id="restock-print-area" className="w-full max-w-lg rounded-xl bg-white dark:bg-zinc-900 shadow-xl max-h-[90vh] flex flex-col">
+      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4 no-print" onKeyDown={(event) => {
+        if (event.key === "Escape") { event.stopPropagation(); onClose(); }
+        if (event.key === "Tab") {
+          event.stopPropagation();
+          const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not([disabled]), [href]')).filter((element) => element.getClientRects().length > 0);
+          if (!controls.length) return;
+          if (event.shiftKey && document.activeElement === controls[0]) { event.preventDefault(); controls[controls.length - 1].focus(); }
+          else if (!event.shiftKey && document.activeElement === controls[controls.length - 1]) { event.preventDefault(); controls[0].focus(); }
+        }
+      }}>
+        <div id="restock-print-area" role="dialog" aria-modal="true" aria-labelledby="restock-list-title" className="w-full max-w-lg rounded-xl bg-white dark:bg-zinc-900 shadow-xl max-h-[90vh] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 px-6 py-4 no-print">
             <div>
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Restock List</h2>
+              <h2 id="restock-list-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Restock List</h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">{items.length} item{items.length !== 1 ? "s" : ""} below par</p>
             </div>
-            <button onClick={onClose} className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+            <button type="button" autoFocus aria-label="Close restock list" onClick={onClose} className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>

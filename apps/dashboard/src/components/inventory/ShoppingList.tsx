@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { apiPost } from "@/lib/api";
 import { InventoryItem, Property } from "@/lib/types";
 import { RestockListModal } from "./RestockListModal";
@@ -29,13 +28,13 @@ type Props = {
   items: InventoryItem[];
   properties: Property[];
   onComplete: () => void;
+  contained?: boolean;
 };
 
 const isLow = (i: InventoryItem) => i.minQuantity > 0 && i.quantity < i.minQuantity;
 const suggestedQty = (i: InventoryItem) => Math.max(1, i.minQuantity - i.quantity);
 
-export function ShoppingList({ items, properties, onComplete }: Props) {
-  const router = useRouter();
+export function ShoppingList({ items, properties, onComplete, contained = false }: Props) {
 
   // Auto-populate with everything below par.
   const [lines, setLines] = useState<Line[]>(() =>
@@ -87,6 +86,7 @@ export function ShoppingList({ items, properties, onComplete }: Props) {
   const extras = lines.filter((l): l is ExtraLine => l.kind === "extra");
 
   const checkedCount = lines.filter((l) => l.checked).length;
+  const checkedTrackedCount = lines.filter((l) => l.kind === "tracked" && l.checked).length;
 
   // Estimated cost of checked tracked items, grouped by currency.
   const totals = useMemo(() => {
@@ -154,7 +154,6 @@ export function ShoppingList({ items, properties, onComplete }: Props) {
         })),
       });
       onComplete();
-      router.push("/inventory");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to record purchases");
     } finally {
@@ -174,8 +173,8 @@ export function ShoppingList({ items, properties, onComplete }: Props) {
   const hasAnyCost = Object.keys(totals).length > 0;
 
   return (
-    <>
-      <div className="space-y-4 pb-32">
+    <div className={contained ? "flex h-full min-h-0 flex-col" : ""}>
+      <div className={contained ? "min-h-0 flex-1 space-y-3 overflow-y-auto pr-1" : "space-y-4 pb-32"}>
         {/* Add controls */}
         <div className="flex flex-wrap gap-2">
           <button
@@ -256,7 +255,7 @@ export function ShoppingList({ items, properties, onComplete }: Props) {
         {/* Tracked groups by property */}
         {[...grouped.entries()].map(([property, propLines]) => (
           <div key={property} className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
-            <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-800/60 px-4 py-2.5">
+            <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-800/60 px-4 py-2">
               <svg className="h-4 w-4 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
               </svg>
@@ -287,9 +286,9 @@ export function ShoppingList({ items, properties, onComplete }: Props) {
             </div>
             <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {extras.map((l) => (
-                <div key={l.key} className={`flex items-center gap-3 px-3 sm:px-4 py-3 ${l.checked ? "opacity-50" : ""}`}>
+                <div key={l.key} className={`flex items-center gap-3 px-3 sm:px-4 py-2 ${l.checked ? "opacity-50" : ""}`}>
                   <CheckButton checked={l.checked} onClick={() => patchLine(l.key, { checked: !l.checked })} />
-                  <span className={`min-w-0 flex-1 truncate text-base font-medium text-zinc-900 dark:text-zinc-100 ${l.checked ? "line-through" : ""}`}>
+                  <span className={`min-w-0 flex-1 truncate text-sm font-medium text-zinc-900 dark:text-zinc-100 ${l.checked ? "line-through" : ""}`}>
                     {l.name}
                   </span>
                   <QtyStepper value={l.buyQty} onChange={(v) => patchLine(l.key, { buyQty: v })} />
@@ -302,7 +301,7 @@ export function ShoppingList({ items, properties, onComplete }: Props) {
       </div>
 
       {/* Sticky footer */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur px-4 py-3 lg:left-60">
+      <div className={contained ? "shrink-0 border-t border-zinc-200 bg-white px-1 py-3 dark:border-zinc-800 dark:bg-zinc-900" : "fixed bottom-0 left-0 right-0 z-20 border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur px-4 py-3 lg:left-60"}>
         <div className="mx-auto max-w-3xl flex items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
@@ -313,11 +312,11 @@ export function ShoppingList({ items, properties, onComplete }: Props) {
                 ≈ {Object.entries(totals).map(([cur, amt]) => `${cur} ${amt.toLocaleString()}`).join(" · ")}
               </p>
             )}
-            {error && <p className="text-xs text-red-500">{error}</p>}
+            {error && <p role="alert" className="text-xs text-red-500">{error}</p>}
           </div>
           <button
             onClick={handleRecord}
-            disabled={submitting || checkedCount === 0}
+            disabled={submitting || checkedTrackedCount === 0}
             className="shrink-0 rounded-lg bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-500 transition disabled:opacity-40"
           >
             {submitting ? "Recording…" : "Record purchases"}
@@ -326,7 +325,7 @@ export function ShoppingList({ items, properties, onComplete }: Props) {
       </div>
 
       {shareOpen && <RestockListModal items={shareItems} onClose={() => setShareOpen(false)} />}
-    </>
+    </div>
   );
 }
 
@@ -347,11 +346,11 @@ function ShoppingRow({
   const out = item.quantity === 0;
 
   return (
-    <div className={`px-3 sm:px-4 py-3 ${checked ? "opacity-50" : ""}`}>
+    <div className={`px-3 py-2 sm:px-4 ${checked ? "opacity-50" : ""}`}>
       <div className="flex items-center gap-3">
         <CheckButton checked={checked} onClick={onToggle} />
         <div className="min-w-0 flex-1">
-          <p className={`text-base font-semibold text-zinc-900 dark:text-zinc-100 truncate leading-tight ${checked ? "line-through" : ""}`}>
+          <p className={`truncate text-sm font-semibold leading-tight text-zinc-900 dark:text-zinc-100 ${checked ? "line-through" : ""}`}>
             {item.name}
           </p>
           <p className="text-xs text-zinc-500 dark:text-zinc-500">

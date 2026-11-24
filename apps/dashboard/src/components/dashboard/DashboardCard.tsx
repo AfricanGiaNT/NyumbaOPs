@@ -20,22 +20,22 @@ export function DashboardCard({
 }: DashboardCardProps) {
   return (
     <div
-      className={`rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-6 shadow-sm transition hover:shadow-md ${className}`}
+      className={`rounded-xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-4 ${className}`}
     >
       {(title || action) && (
-        <div className="mb-3 sm:mb-4 flex items-center justify-between">
+        <div className="mb-2 flex items-start justify-between gap-3">
           <div>
             {title && (
-              <h3 className="text-base sm:text-lg font-semibold text-zinc-800 dark:text-zinc-100">{title}</h3>
+              <h3 className="text-sm sm:text-base font-semibold text-zinc-800 dark:text-zinc-100">{title}</h3>
             )}
             {subtitle && (
-              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{subtitle}</p>
+              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{subtitle}</p>
             )}
           </div>
           {action && (
             <button
               onClick={action.onClick}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+              className="shrink-0 text-xs font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
             >
               {action.label}
             </button>

@@ -165,6 +165,18 @@ export function InquiryList({ initialStatus }: InquiryListProps) {
                   </button>
                   <button
                     type="button"
+                    className="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50"
+                    onClick={() => {
+                      if (window.confirm('Mark this inquiry as expired? It cannot be converted afterward.')) {
+                        void updateStatus(inquiry.id, 'EXPIRED');
+                      }
+                    }}
+                    disabled={inquiry.status !== 'NEW' && inquiry.status !== 'CONTACTED'}
+                  >
+                    Mark expired
+                  </button>
+                  <button
+                    type="button"
                     className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-semibold text-white disabled:opacity-60 flex items-center gap-1"
                     onClick={() => convertInquiry(inquiry.id)}
                     disabled={

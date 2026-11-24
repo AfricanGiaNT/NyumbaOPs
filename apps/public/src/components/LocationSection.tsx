@@ -29,15 +29,15 @@ export function LocationSection({
   const directionsUrl = getDirectionsUrl(latitude, longitude, googleMapsUrl, location);
 
   return (
-    <div className="space-y-4 border-b border-zinc-200 py-8">
-      <h2 className="text-2xl font-bold text-zinc-900">Where you&apos;ll be</h2>
-      <p className="text-base text-zinc-700">{location}</p>
+    <section className="space-y-3 border-b border-zinc-200 py-6">
+      <h2 className="text-lg font-semibold text-zinc-900">Where you&apos;ll be</h2>
+      <p className="text-sm text-zinc-600">{location}</p>
 
       <GoogleMap
         latitude={latitude}
         longitude={longitude}
         location={location}
-        className="aspect-[16/9] w-full"
+        className="aspect-[16/9] max-h-64 w-full"
         markerTitle={location}
       />
 
@@ -45,7 +45,7 @@ export function LocationSection({
         href={directionsUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800"
+        className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-50"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -61,8 +61,8 @@ export function LocationSection({
             d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
           />
         </svg>
-        Get Directions
+        Get directions
       </a>
-    </div>
+    </section>
   );
 }

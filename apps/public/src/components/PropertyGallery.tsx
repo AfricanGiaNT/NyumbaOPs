@@ -42,7 +42,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
 
   if (!images.length) {
     return (
-      <div className="flex aspect-[4/3] w-full items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-50 text-sm text-zinc-500">
+      <div className="flex aspect-[16/9] max-h-[380px] w-full items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-sm text-zinc-500">
         No photos available
       </div>
     );
@@ -66,11 +66,11 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
   };
 
   return (
-    <div className="space-y-8 max-w-full overflow-hidden" onKeyDown={handleKeyDown}>
+    <div className="min-w-0 space-y-3" onKeyDown={handleKeyDown}>
       {/* Main Carousel */}
-      <div className="relative mx-auto w-full max-w-4xl">
+      <div className="relative w-full">
         <div
-          className="relative w-full rounded-2xl overflow-hidden bg-zinc-900 aspect-[4/3] sm:max-h-[600px] touch-pan-y"
+          className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-zinc-900 sm:aspect-[16/9] lg:aspect-[2.2/1] lg:max-h-[380px] touch-pan-y"
           onTouchStart={handleTouchStart}
           onTouchEnd={(e) => handleTouchEnd(e, handleNext, handlePrev)}
         >
@@ -102,7 +102,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
             <>
               <button
                 onClick={handlePrev}
-                className="absolute left-2 sm:left-4 top-1/2 z-10 -translate-y-1/2 flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-lg transition-all hover:bg-white hover:scale-110 active:scale-95"
+                className="absolute left-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 shadow-sm transition-colors hover:bg-white sm:left-4"
                 aria-label="Previous image"
               >
                 <svg className="h-5 w-5 text-zinc-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -111,7 +111,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
               </button>
               <button
                 onClick={handleNext}
-                className="absolute right-2 sm:right-4 top-1/2 z-10 -translate-y-1/2 flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-lg transition-all hover:bg-white hover:scale-110 active:scale-95"
+                className="absolute right-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 shadow-sm transition-colors hover:bg-white sm:right-4"
                 aria-label="Next image"
               >
                 <svg className="h-5 w-5 text-zinc-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -123,54 +123,38 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
 
           {/* Image counter */}
           {images.length > 1 && (
-            <div className="absolute bottom-4 right-4 z-10 rounded-full bg-black/60 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
+            <div className="absolute bottom-3 right-3 z-10 rounded-md bg-black/65 px-2.5 py-1 text-xs font-medium text-white sm:bottom-4 sm:right-4">
               {currentIndex + 1} / {images.length}
             </div>
           )}
         </div>
       </div>
 
-      {/* Dots indicator */}
-      {images.length > 1 && (
-        <div className="flex justify-center gap-2">
-          {images.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => handleThumbnailClick(index)}
-              className={`h-2 w-2 rounded-full transition-all ${
-                index === currentIndex
-                  ? "bg-zinc-900 w-8"
-                  : "bg-zinc-300 hover:bg-zinc-400"
-              }`}
-              aria-label={`Go to image ${index + 1}`}
-            />
-          ))}
-        </div>
-      )}
-
       {/* Thumbnail strip */}
       {images.length > 1 && (
-        <div className="space-y-4">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-zinc-900">Photos</h3>
+            <p className="text-xs font-medium text-zinc-500">{images.length} photos</p>
             {images.length > 6 && (
               <button
                 onClick={() => setShowAllPhotos(true)}
-                className="text-sm font-medium text-[var(--accent)] hover:underline"
+                className="text-xs font-semibold text-[var(--accent)] hover:underline"
               >
                 Show all photos
               </button>
             )}
           </div>
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
-            {images.slice(0, 10).map((image, index) => (
+          <div className="property-gallery-thumbnails flex gap-2 overflow-x-auto pb-1">
+            {images.slice(0, 8).map((image, index) => (
               <button
                 key={image.url}
                 onClick={() => handleThumbnailClick(index)}
-                className={`relative aspect-square overflow-hidden rounded-lg transition-all bg-zinc-100 ${
+                aria-label={`View photo ${index + 1}`}
+                aria-current={index === currentIndex ? "true" : undefined}
+                className={`relative h-14 w-16 shrink-0 overflow-hidden rounded-md bg-zinc-100 transition-opacity sm:h-16 sm:w-20 ${
                   index === currentIndex
-                    ? "ring-2 ring-zinc-900 ring-offset-1"
-                    : "opacity-70 hover:opacity-100 active:opacity-100"
+                    ? "ring-2 ring-[var(--accent)] ring-inset"
+                    : "opacity-70 hover:opacity-100"
                 }`}
               >
                 <Image
@@ -178,7 +162,7 @@ export function PropertyGallery({ images, title }: PropertyGalleryProps) {
                   src={transformImageUrl(image.url)}
                   alt={image.alt ?? `${title} thumbnail ${index + 1}`}
                   className="object-cover"
-                  sizes="(max-width: 640px) 25vw, (max-width: 768px) 17vw, (max-width: 1024px) 12vw, 96px"
+                  sizes="80px"
                   loading="lazy"
                   quality={70}
                   placeholder="blur"

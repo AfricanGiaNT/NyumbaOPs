@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Transaction, Property, Currency } from "../../lib/types";
 import { DashboardCard } from "./DashboardCard";
 
@@ -23,6 +24,7 @@ function emptyCurrencyMap(): Record<string, CurrencyTotals> {
 }
 
 export function PropertyFinancialBreakdown({ transactions, properties, loading = false }: Props) {
+  const [expanded, setExpanded] = useState(false);
   if (loading) {
     return (
       <DashboardCard title="Property Breakdown (This Month)">
@@ -68,13 +70,14 @@ export function PropertyFinancialBreakdown({ transactions, properties, loading =
     (c) => unassignedRow.byCurrency[c].revenue > 0 || unassignedRow.byCurrency[c].expense > 0,
   );
   const displayRows = [...propertyRows, ...(unassignedHasData ? [unassignedRow] : [])];
+  const visibleRows = expanded ? displayRows : displayRows.slice(0, 5);
 
   return (
     <DashboardCard title="Property Breakdown (This Month)">
       {displayRows.length === 0 ? (
-        <p className="py-6 text-center text-sm text-zinc-500 dark:text-zinc-400">No transactions recorded this month</p>
+        <p className="py-2 text-sm text-zinc-500 dark:text-zinc-400">No transactions recorded this month</p>
       ) : (
-        <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+        <div className="-mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-zinc-100 dark:border-zinc-800">
@@ -85,7 +88,7 @@ export function PropertyFinancialBreakdown({ transactions, properties, loading =
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800/50">
-              {displayRows.map((row) => {
+              {visibleRows.map((row) => {
                 const activeCurrencies = CURRENCIES.filter(
                   (c) => row.byCurrency[c].revenue > 0 || row.byCurrency[c].expense > 0,
                 );
@@ -134,6 +137,7 @@ export function PropertyFinancialBreakdown({ transactions, properties, loading =
               })}
             </tbody>
           </table>
+          {displayRows.length > 5 && <button type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)} className="mt-2 w-full rounded-lg py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/20">{expanded ? "Show less" : `Show all ${displayRows.length} properties`}</button>}
         </div>
       )}
     </DashboardCard>

@@ -117,6 +117,20 @@ export type Transaction = {
   property?: { id: string; name: string } | null;
 };
 
+export type ReimbursementPayment = {
+  id: string;
+  amount: number;
+  paidAt: string;
+  notes?: string | null;
+  createdAt: string;
+};
+
+export type OutstandingReimbursement = Transaction & {
+  reimbursedAmount: number;
+  remainingAmount: number;
+  reimbursementPayments: ReimbursementPayment[];
+};
+
 export type Guest = {
   id: string;
   name: string;
@@ -150,7 +164,10 @@ export type Booking = {
   property?: Property;
 };
 
-export type InquiryStatus = "NEW" | "CONTACTED" | "CONVERTED" | "EXPIRED";
+export type InquiryStatus =
+  | "NEW" | "CONTACTED" | "CONVERTED" | "EXPIRED"
+  | "QUEUED" | "PENDING_REVIEW" | "AWAITING_CONFIRMATION"
+  | "CONFIRMED" | "REJECTED" | "CANCELLED";
 
 export type Inquiry = {
   id: string;
@@ -166,6 +183,13 @@ export type Inquiry = {
   bookingId?: string | null;
   expiresAt?: string;
   createdAt?: string;
+};
+
+export type Reservation = Inquiry & {
+  property?: { id: string; name: string };
+  booking?: { id: string; status: BookingStatus; holdExpiresAt?: string | null } | null;
+  reviewedAt?: string | null;
+  confirmedAt?: string | null;
 };
 
 export type Payment = {

@@ -13,9 +13,8 @@ export function FinancialSummaryCard({
   if (loading) {
     return (
       <DashboardCard title="Financial Summary">
-        <div className="space-y-4">
-          <div className="h-20 animate-pulse rounded bg-zinc-100" />
-          <div className="h-20 animate-pulse rounded bg-zinc-100" />
+        <div className="space-y-2">
+          <div className="h-10 animate-pulse rounded bg-zinc-100 dark:bg-zinc-800" />
         </div>
       </DashboardCard>
     );
@@ -29,13 +28,13 @@ export function FinancialSummaryCard({
       subtitle={summary?.month ? `Month: ${summary.month}` : "Current month"}
     >
       {!hasData ? (
-        <div className="py-8 text-center">
+        <div className="py-2 text-sm">
           <p className="text-sm text-zinc-500">
             No financial data available yet
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {summary.totals.map((item) => {
             const profitColor =
               item.profit > 0
@@ -53,14 +52,14 @@ export function FinancialSummaryCard({
             return (
               <div
                 key={item.currency}
-                className="rounded-lg border border-zinc-200 p-4"
+                className="rounded-lg border border-zinc-200 p-2.5 dark:border-zinc-800"
               >
-                <div className="mb-3 flex items-center justify-between">
+                <div className="mb-1.5 flex items-center justify-between">
                   <span className="text-sm font-semibold text-zinc-700">
                     {item.currency}
                   </span>
                   <span
-                    className={`rounded-full px-3 py-1 text-sm font-bold ${profitBg} ${profitColor}`}
+                    className={`rounded-full px-2 py-0.5 text-xs font-bold ${profitBg} ${profitColor}`}
                   >
                     {item.profit > 0 ? "+" : ""}
                     {item.profit.toLocaleString()}
@@ -80,8 +79,7 @@ export function FinancialSummaryCard({
                     </p>
                   </div>
                 </div>
-                {/* Progress bar */}
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-100">
+                <div className="mt-2 h-1 overflow-hidden rounded-full bg-zinc-100">
                   <div
                     className="h-full bg-emerald-500"
                     style={{

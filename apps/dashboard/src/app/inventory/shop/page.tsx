@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { apiGet } from "@/lib/api";
 import { InventoryItem, Property } from "@/lib/types";
@@ -9,6 +10,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 function ShopContent() {
+  const router = useRouter();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +58,7 @@ function ShopContent() {
           ))}
         </div>
       ) : (
-        <ShoppingList items={items} properties={properties} onComplete={loadData} />
+        <ShoppingList items={items} properties={properties} onComplete={() => { router.push("/inventory"); }} />
       )}
     </div>
   );

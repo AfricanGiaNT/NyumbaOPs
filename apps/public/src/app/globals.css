@@ -64,6 +64,14 @@ button {
   touch-action: manipulation;
 }
 
+.property-gallery-thumbnails {
+  scrollbar-width: none;
+}
+
+.property-gallery-thumbnails::-webkit-scrollbar {
+  display: none;
+}
+
 input,
 textarea,
 select {

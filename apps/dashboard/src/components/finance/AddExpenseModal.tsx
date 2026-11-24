@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { apiGet, apiPost } from "../../lib/api";
 import { Property, Currency } from "../../lib/types";
+import { ModalFrame } from "../ModalFrame";
 
 type AddExpenseModalProps = {
   isOpen: boolean;
@@ -14,6 +15,8 @@ export function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalP
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -28,19 +31,22 @@ export function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalP
 
   useEffect(() => {
     if (isOpen) {
+      let active = true;
       setLoading(true);
       apiGet<Property[]>("/properties")
         .then((props) => {
-          setProperties(props);
+          if (active) setProperties(props);
         })
-        .catch(console.error)
-        .finally(() => setLoading(false));
+        .catch(() => { if (active) setError("Could not load properties. You can still enter a general expense."); })
+        .finally(() => { if (active) setLoading(false); });
+      return () => { active = false; };
     }
   }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setError(null);
     try {
       await apiPost("/transactions/expense", {
         name: form.name || undefined,
@@ -52,11 +58,11 @@ export function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalP
         paidBy: form.paidBy || undefined,
         requiresReimbursement: form.paidBy ? form.requiresReimbursement : false,
       });
-      onSuccess?.();
       handleClose();
+      onSuccess?.();
     } catch (err) {
       console.error(err);
-      alert("Failed to save expense");
+      setError(err instanceof Error ? err.message : "Failed to save expense");
     } finally {
       setSubmitting(false);
     }
@@ -73,33 +79,26 @@ export function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalP
       paidBy: "",
       requiresReimbursement: false,
     });
+    setDetailsOpen(false);
+    setError(null);
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-lg rounded-xl bg-white dark:bg-zinc-900 shadow-xl">
-        <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 px-6 py-4">
-          <div>
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Add Expense</h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">Record a business expense or cost</p>
-          </div>
-          <button onClick={handleClose} className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-600">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+    <ModalFrame open={isOpen} onClose={handleClose} busy={submitting} title="Log Expense" description="Record a business expense or cost" footer={<div className="flex gap-2">
+      <button type="button" onClick={handleClose} disabled={submitting} className="flex-1 rounded-lg border border-zinc-300 dark:border-zinc-700 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">Cancel</button>
+      <button type="submit" form="log-expense-form" disabled={submitting} className="flex-1 rounded-lg bg-rose-600 py-2 text-sm font-medium text-white hover:bg-rose-500 disabled:opacity-50">{submitting ? "Saving..." : "Save Expense"}</button>
+    </div>}>
+        <form id="log-expense-form" onSubmit={handleSubmit} className="flex flex-col gap-3">
+            {error && <p role="alert" className="order-first rounded-lg bg-rose-50 dark:bg-rose-950/30 px-3 py-2 text-xs text-rose-700 dark:text-rose-300">{error}</p>}
             {/* Name */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <label htmlFor="expense-name" className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Name <span className="text-zinc-400 dark:text-zinc-500 font-normal">(optional)</span>
               </label>
               <input
+                data-initial-focus
+                id="expense-name"
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -110,8 +109,9 @@ export function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalP
 
             {/* Property */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Property</label>
+              <label htmlFor="expense-property" className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Property</label>
               <select
+                id="expense-property"
                 value={form.propertyId}
                 onChange={(e) => setForm({ ...form, propertyId: e.target.value })}
                 disabled={loading}
@@ -124,11 +124,12 @@ export function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalP
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               {/* Amount */}
               <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Amount *</label>
+                <label htmlFor="expense-amount" className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Amount *</label>
                 <input
+                  id="expense-amount"
                   type="number"
                   value={form.amount}
                   onChange={(e) => setForm({ ...form, amount: e.target.value })}
@@ -142,11 +143,12 @@ export function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalP
               {/* Currency */}
               <div>
                 <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Currency</label>
-                <div className="flex gap-2">
+                <div className="flex gap-2" role="group" aria-label="Currency">
                   {(["MWK", "USD"] as Currency[]).map((c) => (
                     <button
                       key={c}
                       type="button"
+                      aria-pressed={form.currency === c}
                       onClick={() => setForm({ ...form, currency: c })}
                       className={`flex-1 rounded-lg border py-2 text-sm font-medium transition ${
                         form.currency === c
@@ -163,8 +165,9 @@ export function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalP
 
             {/* Date */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Date *</label>
+              <label htmlFor="expense-date" className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Date *</label>
               <input
+                id="expense-date"
                 type="date"
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
@@ -173,12 +176,15 @@ export function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalP
               />
             </div>
 
+            <button type="button" aria-expanded={detailsOpen} onClick={() => setDetailsOpen(!detailsOpen)} className="flex w-full items-center justify-between rounded-lg border border-zinc-200 dark:border-zinc-700 px-3 py-2 text-left text-sm font-medium text-zinc-700 dark:text-zinc-200"><span>Payment and notes{form.paidBy ? " · employee" : ""}</span><span aria-hidden="true">{detailsOpen ? "−" : "+"}</span></button>
+
             {/* Notes */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <div className={detailsOpen ? "" : "hidden"}>
+              <label htmlFor="expense-notes" className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Notes <span className="text-zinc-400 dark:text-zinc-500 font-normal">(optional)</span>
               </label>
               <textarea
+                id="expense-notes"
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
                 rows={2}
@@ -188,11 +194,12 @@ export function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalP
             </div>
 
             {/* Paid by employee */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <div className={detailsOpen ? "" : "hidden"}>
+              <label htmlFor="expense-paid-by" className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Paid by <span className="text-zinc-400 dark:text-zinc-500 font-normal">(if employee paid out of pocket)</span>
               </label>
               <input
+                id="expense-paid-by"
                 type="text"
                 value={form.paidBy}
                 onChange={(e) => setForm({
@@ -206,7 +213,7 @@ export function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalP
             </div>
 
             {/* Reimbursement toggle — only shown when paidBy is set */}
-            {form.paidBy.trim() && (
+            {form.paidBy.trim() && detailsOpen && (
               <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3">
                 <input
                   type="checkbox"
@@ -221,24 +228,7 @@ export function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpenseModalP
               </label>
             )}
 
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={handleClose}
-                className="flex-1 rounded-lg border border-zinc-300 dark:border-zinc-700 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex-1 rounded-lg bg-rose-600 py-2.5 text-sm font-medium text-white hover:bg-rose-500 disabled:opacity-50"
-              >
-                {submitting ? "Saving..." : "Save Expense"}
-              </button>
-            </div>
           </form>
-      </div>
-    </div>
+    </ModalFrame>
   );
 }

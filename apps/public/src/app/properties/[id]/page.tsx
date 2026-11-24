@@ -10,6 +10,8 @@ import { LocationSection } from "@/components/LocationSection";
 import { PropertyBookingClient } from "@/components/PropertyBookingClient";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { InquiryForm } from '@/components/InquiryForm';
+import { Badge } from "@/components/dashboard-app/ui/badge";
+import { Card } from "@/components/dashboard-app/ui/card";
 
 type PropertyPageProps = {
   params: Promise<{ id: string }>;
@@ -81,11 +83,11 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
 
   return (
     <>
-      <main className="bg-white pb-32" style={{ scrollBehavior: "smooth" }}>
-        <section className="mx-auto max-w-5xl px-4 pb-20 pt-8 sm:px-6 lg:px-8">
+      <main className="bg-white pb-20">
+        <section className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6">
           <Link
             href="/properties"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-900 transition-all hover:gap-3 active:scale-95"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 hover:text-zinc-900"
           >
             <svg className="h-4 w-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -93,7 +95,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
             Back to properties
           </Link>
 
-          <div className="mt-8 space-y-8">
+          <div className="mt-5 space-y-6">
             <script
               type="application/ld+json"
               dangerouslySetInnerHTML={{
@@ -109,18 +111,17 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
               }}
             />
 
-            <PropertyGallery images={property.images} title={property.name} />
-
-            {/* Property Header */}
-            <div className="space-y-3">
-              <h1 className="text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl">
+            <header className="space-y-2">
+              <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
                 {property.name}
               </h1>
-              {/* Reviews jump link */}
+              <p className="text-sm text-zinc-600">
+                Entire rental unit in {property.location ?? "Lilongwe, Malawi"}
+              </p>
               {reviews.length > 0 ? (
                 <a
                   href="#reviews"
-                  className="inline-flex items-center gap-2 text-sm font-medium text-zinc-700 underline-offset-2 hover:underline"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-700 underline-offset-2 hover:underline"
                 >
                   <div className="flex gap-0.5">
                     {[1,2,3,4,5].map((s) => (
@@ -137,7 +138,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
               ) : (
                 <a
                   href="#reviews"
-                  className="inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-600 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-700"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
@@ -145,51 +146,49 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
                   No reviews yet — be the first
                 </a>
               )}
-            </div>
+            </header>
 
-            {/* Property Type + Stats */}
-            <div className="space-y-2 border-b border-zinc-200 pb-4">
-              <p className="text-base text-zinc-700">
-                Entire rental unit in {property.location ?? "Lilongwe, Malawi"}
-              </p>
-              <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-700">
-                <span className="flex items-center gap-1.5">
+            <PropertyGallery images={property.images} title={property.name} />
+
+            <div className="grid items-start gap-8 pt-2 lg:grid-cols-[minmax(0,1fr)_260px] lg:gap-8">
+              <div className="min-w-0 space-y-0">
+
+            <section className="border-b border-zinc-200 pb-6">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium text-zinc-700">
                   <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                   {property.maxGuests} guests
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="text-base leading-none">🛏️</span>
+                </Badge>
+                <Badge variant="outline" className="rounded-md px-2.5 py-1 text-xs font-medium text-zinc-700">
                   {property.bedrooms} {property.bedrooms === 1 ? "bedroom" : "bedrooms"}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="text-base leading-none">🛏️</span>
+                </Badge>
+                <Badge variant="outline" className="rounded-md px-2.5 py-1 text-xs font-medium text-zinc-700">
                   {property.beds ?? property.bedrooms} {(property.beds ?? property.bedrooms) === 1 ? "bed" : "beds"}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="text-base leading-none">🚿</span>
+                </Badge>
+                <Badge variant="outline" className="rounded-md px-2.5 py-1 text-xs font-medium text-zinc-700">
                   {property.bathrooms} {property.bathrooms === 1 ? "bathroom" : "bathrooms"}
-                </span>
+                </Badge>
               </div>
-            </div>
+            </section>
 
             {/* Description */}
-            <div className="space-y-4 border-b border-zinc-200 py-8">
-              <h2 className="text-2xl font-bold text-zinc-900">About this place</h2>
-              <p className="text-base leading-relaxed text-zinc-700">
+            <section className="space-y-3 border-b border-zinc-200 py-6">
+              <h2 className="text-lg font-semibold text-zinc-900">About this place</h2>
+              <p className="text-sm leading-6 text-zinc-700">
                 {property.description ?? "Enjoy a stylish experience at this centrally-located space fitted fully fitted with all amenities, air conditioning, and WIFI."}
               </p>
               {property.spaceDescription && (
-                <p className="text-base leading-relaxed text-zinc-700">{property.spaceDescription}</p>
+                <p className="text-sm leading-6 text-zinc-700">{property.spaceDescription}</p>
               )}
-            </div>
+            </section>
 
             {/* Amenities */}
-            <div className="space-y-4 border-b border-zinc-200 py-4">
-              <h2 className="text-2xl font-bold text-zinc-900">What this place offers</h2>
+            <section className="space-y-4 border-b border-zinc-200 py-6">
+              <h2 className="text-lg font-semibold text-zinc-900">What this place offers</h2>
               <AmenitiesList amenities={property.amenities} />
-            </div>
+            </section>
 
             {/* Location */}
             <LocationSection
@@ -201,9 +200,9 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
 
             {/* House Rules */}
             {(property.checkInTime || property.checkOutTime || property.cancellationPolicy || property.additionalRules) && (
-              <div className="space-y-4 border-b border-zinc-200 py-8">
-                <h2 className="text-2xl font-bold text-zinc-900">House rules</h2>
-                <dl className="grid gap-3 text-sm text-zinc-700 sm:grid-cols-2">
+              <section className="space-y-4 border-b border-zinc-200 py-6">
+                <h2 className="text-lg font-semibold text-zinc-900">House rules</h2>
+                <dl className="grid gap-x-6 gap-y-3 text-sm text-zinc-700 sm:grid-cols-2">
                   {property.checkInTime && (
                     <div>
                       <dt className="font-semibold text-zinc-900">Check-in</dt>
@@ -241,7 +240,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
                     </div>
                   )}
                 </dl>
-              </div>
+              </section>
             )}
 
             {/* Reviews */}
@@ -250,18 +249,26 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
             {/* Host Section */}
             <HostSection />
 
-            {/* Booking card (mobile + desktop) and availability modal */}
-            <PropertyBookingClient
-              propertyId={property.id}
-              propertyName={property.name}
-              nightlyRate={property.nightlyRate}
-              currency={property.currency}
-            />
-            <section id="inquiry" className="scroll-mt-24 rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
-              <h2 className="text-xl font-semibold text-zinc-900">Request these dates</h2>
-              <p className="mb-5 mt-1 text-sm text-zinc-600">Send your details and we will confirm availability and payment arrangements with you.</p>
-              <InquiryForm propertyId={property.id} propertyName={property.name} maxGuests={property.maxGuests} />
+            <section id="inquiry" className="scroll-mt-24 pt-6">
+              <Card className="rounded-xl border-zinc-200 bg-zinc-50/60">
+                <div className="p-5 sm:p-6">
+                  <h2 className="text-lg font-semibold text-zinc-900">Request these dates</h2>
+                  <p className="mb-5 mt-1 text-sm leading-5 text-zinc-600">Send your details to request a temporary hold, or join the queue if the dates are taken. The owner will review your request before any stay is confirmed.</p>
+                  <InquiryForm propertyId={property.id} propertyName={property.name} maxGuests={property.maxGuests} />
+                </div>
+              </Card>
             </section>
+              </div>
+
+              <aside className="contents lg:order-last lg:block lg:min-w-0 lg:self-stretch" aria-label="Booking options">
+                <PropertyBookingClient
+                  propertyId={property.id}
+                  propertyName={property.name}
+                  nightlyRate={property.nightlyRate}
+                  currency={property.currency}
+                />
+              </aside>
+            </div>
           </div>
         </section>
 

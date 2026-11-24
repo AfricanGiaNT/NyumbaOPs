@@ -21,6 +21,7 @@ import { SidebarForm } from "../../../components/SidebarForm";
 import { FormField } from "../../../components/FormField";
 import { ActionButton } from "../../../components/ActionButton";
 import { ImageUpload, ImageFile } from "../../../components/ImageUpload";
+import { DownloadPhotosButton } from "../../../components/DownloadPhotosButton";
 import { useAuth } from '@/lib/AuthContext';
 
 type TransactionForm = {
@@ -285,6 +286,9 @@ export default function PropertyDetailPage() {
             >
               Edit Property
             </ActionButton>
+            {property?.images && property.images.length > 0 && (
+              <DownloadPhotosButton propertyName={property.name} images={property.images} />
+            )}
             <Link
               href="/properties"
               className="rounded-md border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-center text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"

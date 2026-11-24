@@ -21,7 +21,7 @@ export function RecentActivityCard({
 }: RecentActivityCardProps) {
   if (loading) {
     return (
-      <DashboardCard title="Recent Bookings">
+      <DashboardCard title="Recent Stays">
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-16 animate-pulse rounded bg-zinc-100" />
@@ -33,24 +33,24 @@ export function RecentActivityCard({
 
   return (
     <DashboardCard
-      title="Recent Bookings"
+      title="Recent Stays"
       subtitle="Latest booking activity"
       action={{
         label: "View all",
-        onClick: () => (window.location.href = "/bookings"),
+        onClick: () => (window.location.href = "/stays"),
       }}
     >
       {bookings.length === 0 ? (
-        <div className="py-8 text-center">
-          <p className="text-sm text-zinc-500">No recent bookings</p>
+        <div className="py-2 text-sm">
+          <p className="text-sm text-zinc-500">No recent stays</p>
         </div>
       ) : (
         <div className="space-y-2">
-          {bookings.map((booking) => (
+          {bookings.slice(0, 4).map((booking) => (
             <Link
               key={booking.id}
-              href={`/bookings/${booking.id}`}
-              className="flex items-center gap-3 rounded-lg border border-zinc-100 p-3 transition hover:border-indigo-200 hover:bg-indigo-50/50"
+              href={`/stays/${booking.id}`}
+              className="flex items-center gap-2 rounded-lg border border-zinc-100 p-2 transition hover:border-indigo-200 hover:bg-indigo-50/50"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-sm font-medium text-indigo-700">
                 {booking.guest?.name?.[0] || "G"}
@@ -72,6 +72,7 @@ export function RecentActivityCard({
               </span>
             </Link>
           ))}
+          {bookings.length > 4 && <p className="text-right text-xs text-zinc-500">+{bookings.length - 4} more bookings</p>}
         </div>
       )}
     </DashboardCard>

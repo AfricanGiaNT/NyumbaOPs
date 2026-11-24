@@ -20,6 +20,7 @@ export class WorksScheduler {
     timeZone: 'Africa/Blantyre',
   })
   async handleDailyWorkReminders() {
+    if (process.env.DISABLE_BACKGROUND_JOBS === 'true') return;
     this.logger.log('Running daily works & inventory reminder...');
 
     try {

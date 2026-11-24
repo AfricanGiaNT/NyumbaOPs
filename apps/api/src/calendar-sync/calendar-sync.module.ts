@@ -6,9 +6,10 @@ import { CalendarSyncService } from './calendar-sync.service';
 import { ICalParserService } from './ical-parser.service';
 import { SyncEngineService } from './sync-engine.service';
 import { CalendarSyncScheduler } from './calendar-sync.scheduler';
+import { ReservationsModule } from '../reservations/reservations.module';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), AuditModule],
+  imports: [ScheduleModule.forRoot(), AuditModule, ReservationsModule],
   controllers: [CalendarSyncController],
   providers: [
     CalendarSyncService,

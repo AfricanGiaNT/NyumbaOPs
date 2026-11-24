@@ -54,13 +54,13 @@ export function ReviewsSection({
       : 0;
 
   return (
-    <div id="reviews" className="scroll-mt-6 space-y-6 border-b border-zinc-200 py-8">
+    <section id="reviews" className="scroll-mt-24 space-y-4 border-b border-zinc-200 py-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-bold text-zinc-900">Reviews</h2>
+          <h2 className="text-lg font-semibold text-zinc-900">Reviews</h2>
           {reviews.length > 0 && (
             <div className="flex items-center gap-1.5">
-              <StarDisplay rating={Math.round(overallAvg)} size="md" />
+              <StarDisplay rating={Math.round(overallAvg)} />
               <span className="text-sm font-semibold text-zinc-900">
                 {overallAvg.toFixed(1)}
               </span>
@@ -87,7 +87,7 @@ export function ReviewsSection({
         <>
           {/* Sub-rating averages — only show categories where at least one review has data */}
           {SUB_RATINGS.some(({ key }) => avg(reviews.map((r) => r[key])) !== null) && (
-            <div className="grid grid-cols-2 gap-x-8 gap-y-3 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
               {SUB_RATINGS.map(({ key, label }) => {
                 const subAvg = avg(reviews.map((r) => r[key]));
                 if (subAvg === null) return null;
@@ -105,9 +105,9 @@ export function ReviewsSection({
           )}
 
           {/* Individual reviews */}
-          <div className="space-y-6 mt-2">
+          <div className="mt-2 space-y-3">
             {reviews.map((review) => (
-              <div key={review.id} className="rounded-xl border border-zinc-100 bg-zinc-50 p-5">
+              <div key={review.id} className="rounded-lg border border-zinc-200 bg-zinc-50/60 p-4">
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700 flex-shrink-0">
@@ -128,6 +128,6 @@ export function ReviewsSection({
           </div>
         </>
       )}
-    </div>
+    </section>
   );
 }

@@ -32,6 +32,7 @@ export type AvailabilityResponse = {
   success: boolean;
   data: {
     available: boolean;
+    status: "AVAILABLE" | "HELD" | "BOOKED";
     propertyId: string;
     propertyName: string;
     checkInDate: string;
@@ -93,6 +94,7 @@ export type CancelBookingResponse = {
 export type BlockedDateRange = {
   checkInDate: string;
   checkOutDate: string;
+  status: "HELD" | "BOOKED";
 };
 
 export type BlockedDatesResponse = {

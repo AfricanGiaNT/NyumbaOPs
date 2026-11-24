@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { Button } from "./dashboard-app/ui/button";
 
 const amenityIcons: Record<string, React.ReactElement> = {
   Kitchen: (
@@ -119,25 +120,22 @@ export function AmenitiesList({ amenities }: { amenities: AmenityItem[] }) {
   const hasMore = amenities.length > displayLimit;
 
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {displayed.map((amenity, index) => (
           <div
             key={`${amenity.name}-${index}`}
-            className="group flex items-center gap-3 rounded-2xl border border-[#1B2E4B] bg-[#1B2E4B] px-4 py-3 transition-all duration-200 hover:bg-[#22395c]"
+            className="flex min-h-12 items-center gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-2"
           >
-            {/* Icon */}
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white/20 ring-1 ring-white/20 text-white">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-zinc-100 text-[var(--accent)] [&_svg]:h-4 [&_svg]:w-4">
               {getAmenityIcon(amenity.name)}
             </div>
-
-            {/* Text */}
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-white leading-tight">
+              <p className="text-sm font-medium leading-tight text-zinc-800">
                 {formatName(amenity.name)}
               </p>
               {amenity.description && (
-                <p className="mt-0.5 text-xs leading-snug text-white/70 line-clamp-1">
+                <p className="mt-0.5 line-clamp-1 text-xs leading-snug text-zinc-500">
                   {amenity.description}
                 </p>
               )}
@@ -147,9 +145,11 @@ export function AmenitiesList({ amenities }: { amenities: AmenityItem[] }) {
       </div>
 
       {hasMore && (
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => setShowAll(!showAll)}
-          className="group inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-700 shadow-sm transition-all hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900 active:scale-[0.98]"
+          className="gap-2 rounded-lg"
         >
           <span>{showAll ? "Show less" : `Show all ${amenities.length} amenities`}</span>
           <svg
@@ -161,7 +161,7 @@ export function AmenitiesList({ amenities }: { amenities: AmenityItem[] }) {
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
-        </button>
+        </Button>
       )}
     </div>
   );

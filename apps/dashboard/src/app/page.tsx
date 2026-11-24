@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { apiGet, apiPatch, apiPost } from "../lib/api";
 import {
@@ -11,6 +10,7 @@ import {
   Inquiry,
   Transaction,
   InventoryItem,
+  OutstandingReimbursement,
 } from "../lib/types";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 import { useAuth } from "@/lib/AuthContext";
@@ -27,6 +27,7 @@ import { ReimbursementsCard } from "../components/dashboard/ReimbursementsCard";
 import { LowStockAlertCard } from "../components/dashboard/LowStockAlertCard";
 import { AddRevenueModal } from "../components/finance/AddRevenueModal";
 import { AddExpenseModal } from "../components/finance/AddExpenseModal";
+import { ShoppingListModal } from "../components/inventory/ShoppingListModal";
 
 type DashboardData = {
   analytics: AnalyticsSummary | null;
@@ -37,6 +38,8 @@ type DashboardData = {
   properties: Property[];
   inquiries: Inquiry[];
   transactions: Transaction[];
+  outstandingReimbursements: OutstandingReimbursement[];
+  reimbursementsError: string | null;
   lowStockItems: InventoryItem[];
 };
 
@@ -51,6 +54,8 @@ export default function Home() {
     properties: [],
     inquiries: [],
     transactions: [],
+    outstandingReimbursements: [],
+    reimbursementsError: null,
     lowStockItems: [],
   });
   const [loading, setLoading] = useState(true);
@@ -59,6 +64,7 @@ export default function Home() {
   const [cancelSuccessMsg, setCancelSuccessMsg] = useState<string | null>(null);
   const [showLogRevenue, setShowLogRevenue] = useState(false);
   const [showLogExpense, setShowLogExpense] = useState(false);
+  const [showShoppingList, setShowShoppingList] = useState(false);
 
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
@@ -72,13 +78,15 @@ export default function Home() {
         propertiesRes,
         inquiriesRes,
         transactionsRes,
+        reimbursementsRes,
         lowStockRes,
       ] = await Promise.allSettled([
         user?.role === 'OWNER' ? apiGet<AnalyticsSummary>(`/analytics/summary?month=${month}`) : Promise.resolve(null),
         apiGet<Booking[]>("/bookings"),
         apiGet<Property[]>("/properties"),
-        apiGet<{ success: boolean; data: Inquiry[] }>("/inquiries"),
+        apiGet<{ success: boolean; data: Inquiry[] }>("/reservations"),
         user?.role === 'OWNER' ? apiGet<Transaction[]>(`/transactions?month=${month}`) : Promise.resolve([]),
+        user?.role === 'OWNER' ? apiGet<OutstandingReimbursement[]>("/transactions/outstanding-reimbursements") : Promise.resolve([]),
         apiGet<InventoryItem[]>("/inventory?lowStock=true"),
       ]);
 
@@ -88,10 +96,16 @@ export default function Home() {
         const inquiries =
           inquiriesRes.status === "fulfilled"
             ? inquiriesRes.value.data?.filter(
-                (i) => i.status === "NEW" || i.status === "CONTACTED",
+                (i) => i.status === "PENDING_REVIEW" || i.status === "AWAITING_CONFIRMATION" || i.status === "NEW" || i.status === "CONTACTED",
               ) || []
             : [];
         const transactions = transactionsRes.status === "fulfilled" ? transactionsRes.value : [];
+        const outstandingReimbursements = reimbursementsRes.status === "fulfilled" ? reimbursementsRes.value : [];
+        const reimbursementsError = reimbursementsRes.status === "rejected"
+          ? reimbursementsRes.reason instanceof Error && reimbursementsRes.reason.message.includes("404")
+            ? "Reimbursements need the updated API. Restart it after the migration is applied."
+            : "Could not load outstanding reimbursements. Check the API and migration state."
+          : null;
         const lowStockItems = lowStockRes.status === "fulfilled" ? lowStockRes.value : [];
 
         // Upcoming check-ins & check-outs within the next 30 days
@@ -105,7 +119,7 @@ export default function Home() {
           return (
             d >= todayDate &&
             d <= cutoff &&
-            (b.status === "CONFIRMED" || b.status === "PENDING")
+            b.status === "CONFIRMED"
           );
         });
 
@@ -129,7 +143,7 @@ export default function Home() {
         });
 
         // Get recent bookings (sort by latest first)
-        const recentBookings = [...allBookings]
+        const recentBookings = allBookings.filter((b) => b.source !== "RESERVATION" || ["CONFIRMED", "CHECKED_IN", "COMPLETED"].includes(b.status))
           .sort((a, b) => {
             const dateA = new Date(a.checkInDate).getTime();
             const dateB = new Date(b.checkInDate).getTime();
@@ -146,6 +160,8 @@ export default function Home() {
           properties,
           inquiries,
           transactions,
+          outstandingReimbursements,
+          reimbursementsError,
           lowStockItems,
         });
       } catch (error) {
@@ -213,16 +229,12 @@ export default function Home() {
     (sum, item) => sum + item.expense,
     0,
   ) || 0;
-  const activeProperties = data.properties.filter(
-    (p) => p.status === "ACTIVE",
-  ).length;
-
   return (
     <ProtectedRoute>
       <AppLayout>
         <div className="mx-auto max-w-7xl">
           {/* Header */}
-          <header className="mb-6">
+          <header className="mb-4">
             <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-100">
               Dashboard Overview
             </h1>
@@ -232,10 +244,10 @@ export default function Home() {
           </header>
 
           {/* Quick Log Actions */}
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+          <div className="mb-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             {user?.role === 'OWNER' && <button
               onClick={() => setShowLogRevenue(true)}
-              className="flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 sm:px-5 py-3 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
+              className="flex items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 shadow-sm hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
             >
               <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
                 <svg className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -249,7 +261,7 @@ export default function Home() {
             </button>}
             {user?.role === 'OWNER' && <button
               onClick={() => setShowLogExpense(true)}
-              className="flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 sm:px-5 py-3 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
+              className="flex items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 shadow-sm hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
             >
               <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-900/40">
                 <svg className="h-4 w-4 sm:h-5 sm:w-5 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -261,9 +273,10 @@ export default function Home() {
                 <p className="hidden sm:block text-xs text-zinc-500 dark:text-zinc-400">Record a cost or payment</p>
               </div>
             </button>}
-            <Link
-              href="/inventory/shop"
-              className="relative flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 sm:px-5 py-3 shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-600 transition-all"
+            <button
+              type="button"
+              onClick={() => setShowShoppingList(true)}
+              className="relative flex items-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 shadow-sm hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
             >
               <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/40">
                 <svg className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -279,12 +292,13 @@ export default function Home() {
                   {data.lowStockItems.length}
                 </span>
               )}
-            </Link>
+            </button>
           </div>
 
           {/* Financial Overview — stats + summary side by side */}
-          {user?.role === 'OWNER' && <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {user?.role === 'OWNER' && <div className="mb-4 grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <StatCard
+              compact
               title="Revenue (Month)"
               value={monthlyRevenue.toLocaleString()}
               subtitle="Current month"
@@ -295,6 +309,7 @@ export default function Home() {
               }
             />
             <StatCard
+              compact
               title="Expenses (Month)"
               value={monthlyExpenses.toLocaleString()}
               subtitle="Current month"
@@ -310,17 +325,15 @@ export default function Home() {
             />
           </div>}
 
-          {/* Outstanding Reimbursements */}
-          {user?.role === 'OWNER' && <div className="mb-6">
-            <ReimbursementsCard
-              transactions={data.transactions}
+          <div className="mb-4 grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
+            {user?.role === 'OWNER' && <ReimbursementsCard
+              transactions={data.outstandingReimbursements}
+              properties={data.properties}
+              error={data.reimbursementsError}
+              onRetry={loadDashboardData}
               loading={loading}
               onReimbursed={loadDashboardData}
-            />
-          </div>}
-
-          {/* Low Stock Alerts */}
-          <div className="mb-6">
+            />}
             <LowStockAlertCard
               items={data.lowStockItems}
               loading={loading}
@@ -329,7 +342,7 @@ export default function Home() {
           </div>
 
           {/* Property Financial Breakdown */}
-          {user?.role === 'OWNER' && <div className="mb-6">
+          {user?.role === 'OWNER' && <div className="mb-4">
             <PropertyFinancialBreakdown
               transactions={data.transactions}
               properties={data.properties}
@@ -338,7 +351,7 @@ export default function Home() {
           </div>}
 
           {/* Upcoming Events + Recent Activity */}
-          <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="mb-4 grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
             <UpcomingEventsCard
               checkIns={data.upcomingCheckIns}
               checkOuts={data.upcomingCheckOuts}
@@ -351,12 +364,12 @@ export default function Home() {
           </div>
 
           {/* Inquiries + Properties Overview + Quick Actions */}
-          <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="mb-4 grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
             <InquiriesCard inquiries={data.inquiries} loading={loading} />
             <QuickActionsCard />
           </div>
 
-          <div className="mb-6">
+          <div className="mb-4">
             <PropertiesOverviewCard
               properties={data.properties}
               loading={loading}
@@ -364,7 +377,7 @@ export default function Home() {
           </div>
 
           {/* Property Availability */}
-          <div className="mb-6">
+          <div className="mb-4">
             <PropertyAvailabilityCard
               bookings={data.upcomingActiveBookings}
               properties={data.properties}
@@ -377,9 +390,10 @@ export default function Home() {
           </div>
 
           {/* Operational stats — moved below financial content */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
             <StatCard
-              title="Total Bookings"
+              compact
+              title="Total Stays"
               value={totalBookings}
               subtitle="All time"
               icon={
@@ -389,6 +403,7 @@ export default function Home() {
               }
             />
             <StatCard
+              compact
               title="Active Guests"
               value={activeGuests}
               subtitle="Currently staying"
@@ -412,6 +427,11 @@ export default function Home() {
           onClose={() => setShowLogExpense(false)}
           onSuccess={() => { setShowLogExpense(false); loadDashboardData(); }}
         />}
+        <ShoppingListModal
+          isOpen={showShoppingList}
+          onClose={() => setShowShoppingList(false)}
+          onRecorded={loadDashboardData}
+        />
       </AppLayout>
     </ProtectedRoute>
   );

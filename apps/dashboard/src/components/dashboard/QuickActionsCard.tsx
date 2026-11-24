@@ -23,7 +23,7 @@ export function QuickActionsCard() {
           />
         </svg>
       ),
-      onClick: () => router.push("/bookings"),
+      onClick: () => router.push("/stays"),
       variant: "primary" as const,
     },
     {
@@ -47,7 +47,7 @@ export function QuickActionsCard() {
       variant: "secondary" as const,
     },
     {
-      label: "View Inquiries",
+      label: "View Reservations",
       icon: (
         <svg
           className="h-5 w-5"
@@ -63,7 +63,7 @@ export function QuickActionsCard() {
           />
         </svg>
       ),
-      onClick: () => router.push("/inquiries"),
+      onClick: () => router.push("/reservations"),
       variant: "secondary" as const,
     },
     {
@@ -90,13 +90,14 @@ export function QuickActionsCard() {
 
   return (
     <DashboardCard title="Quick Actions" subtitle="Common tasks">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         {actions.map((action) => (
           <ActionButton
             key={action.label}
             variant={action.variant}
+            size="sm"
             onClick={action.onClick}
-            className="flex items-center justify-center gap-2 py-4"
+            className="flex items-center justify-center gap-1.5 py-2"
           >
             {action.icon}
             <span className="text-sm font-medium">{action.label}</span>

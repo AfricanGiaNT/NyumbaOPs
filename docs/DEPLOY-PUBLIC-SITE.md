@@ -10,7 +10,7 @@ The active stack is `apps/api` (Nest/PostgreSQL), `apps/public` (guest website),
 
 ## API configuration
 
-Set `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `DASHBOARD_URL`, and `PUBLIC_URL` on the API host. `JWT_SECRET` must be a strong random value. The API refuses to start in production if a required reset-email setting is absent. Set `TELEGRAM_WEBHOOK_SECRET` when the Telegram bot is enabled. The API route prefix is `/api`.
+Set `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `DASHBOARD_URL`, `PUBLIC_URL`, and `RESERVATIONS_ADMIN_EMAIL` on the API host. `RESERVATIONS_ADMIN_EMAIL` is the single inbox for new and promoted reservation alerts. `JWT_SECRET` must be a strong random value. The API refuses to start in production if a required email setting is absent. Set `TELEGRAM_WEBHOOK_SECRET` when the Telegram bot is enabled. The API route prefix is `/api`.
 
 The removed `POST /api/auth/setup-password` endpoint has no replacement public bootstrap route. For a new database only, set `BOOTSTRAP_OWNER_EMAIL` and `BOOTSTRAP_OWNER_PASSWORD` (12 or more characters) in a trusted shell and run `npm run bootstrap:owner --workspace api`. Once an owner password exists, use the email reset flow from the dashboard.
 

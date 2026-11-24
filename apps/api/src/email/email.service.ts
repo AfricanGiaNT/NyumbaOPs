@@ -51,13 +51,16 @@ export class EmailService {
       : 'Unknown';
 
     const scheduled = work.scheduledDate
-      ? new Date(work.scheduledDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+      ? new Date(work.scheduledDate).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        })
       : 'Not set';
 
-    const cost =
-      work.estimatedCost
-        ? `${work.currency ?? 'MWK'} ${work.estimatedCost.toLocaleString()}`
-        : 'Not set';
+    const cost = work.estimatedCost
+      ? `${work.currency ?? 'MWK'} ${work.estimatedCost.toLocaleString()}`
+      : 'Not set';
 
     const body = [
       `Property: ${propertyLine}`,
@@ -74,7 +77,15 @@ export class EmailService {
     ].join('\n');
 
     const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('SMTP connection timed out after 12s — port 587 on smtp.gmail.com may be blocked by the host')), 12000),
+      setTimeout(
+        () =>
+          reject(
+            new Error(
+              'SMTP connection timed out after 12s — port 587 on smtp.gmail.com may be blocked by the host',
+            ),
+          ),
+        12000,
+      ),
     );
 
     try {
@@ -105,6 +116,22 @@ export class EmailService {
       to,
       subject: 'Reset your NyumbaOps password',
       text: `Use this link to reset your password. It expires in 30 minutes:\n\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
+    });
+  }
+
+  async sendReservationEmail(
+    to: string,
+    subject: string,
+    body: string,
+  ): Promise<void> {
+    if (!this.gmailUser || !process.env.GMAIL_APP_PASSWORD) {
+      throw new Error('Reservation email is not configured');
+    }
+    await this.transporter.sendMail({
+      from: this.gmailUser,
+      to,
+      subject,
+      text: body,
     });
   }
 }

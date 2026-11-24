@@ -69,17 +69,17 @@ export function UpcomingEventsCard({
       subtitle="Next 30 days"
       action={{
         label: "View all",
-        onClick: () => (window.location.href = "/bookings"),
+        onClick: () => (window.location.href = "/stays"),
       }}
     >
       {!hasEvents ? (
-        <div className="py-8 text-center">
+        <div className="py-2 text-sm">
           <p className="text-sm text-zinc-500">
             No upcoming check-ins or check-outs in the next 30 days
           </p>
         </div>
       ) : (
-        <div className="max-h-72 space-y-5 overflow-y-auto pr-1">
+        <div className="max-h-64 space-y-3 overflow-y-auto pr-1">
           {sortedDates.map((dateKey) => {
             const { checkIns: dayIns, checkOuts: dayOuts } =
               eventsByDate.get(dateKey)!;
@@ -95,8 +95,8 @@ export function UpcomingEventsCard({
                   {dayIns.map((booking) => (
                     <Link
                       key={`in-${booking.id}`}
-                      href={`/bookings/${booking.id}`}
-                      className="flex items-center gap-3 rounded-lg border border-zinc-100 p-3 transition hover:border-indigo-200 hover:bg-indigo-50/50"
+                      href={`/stays/${booking.id}`}
+                      className="flex items-center gap-2 rounded-lg border border-zinc-100 p-2 transition hover:border-indigo-200 hover:bg-indigo-50/50"
                     >
                       <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-medium text-emerald-700">
                         {booking.guest?.name?.[0]?.toUpperCase() || "G"}
@@ -119,8 +119,8 @@ export function UpcomingEventsCard({
                   {dayOuts.map((booking) => (
                     <Link
                       key={`out-${booking.id}`}
-                      href={`/bookings/${booking.id}`}
-                      className="flex items-center gap-3 rounded-lg border border-zinc-100 p-3 transition hover:border-indigo-200 hover:bg-indigo-50/50"
+                      href={`/stays/${booking.id}`}
+                      className="flex items-center gap-2 rounded-lg border border-zinc-100 p-2 transition hover:border-indigo-200 hover:bg-indigo-50/50"
                     >
                       <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-medium text-amber-700">
                         {booking.guest?.name?.[0]?.toUpperCase() || "G"}

@@ -22,8 +22,8 @@ export function DateRangePicker({
 }: DateRangePickerProps) {
   const [viewMonth, setViewMonth] = useState(() => {
     if (checkInDate) {
-      const date = new Date(checkInDate);
-      return new Date(date.getFullYear(), date.getMonth(), 1);
+      const [year, month] = checkInDate.split("-").map(Number);
+      return new Date(year, month - 1, 1);
     }
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
@@ -51,10 +51,10 @@ export function DateRangePicker({
   };
 
   const handleDateSelect = (date: Date) => {
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     
     // If no check-in or selecting before current check-in, set as check-in
-    if (!checkInDate || dateStr < checkInDate) {
+    if (!checkInDate || dateStr <= checkInDate) {
       onCheckInChange(dateStr);
       onCheckOutChange("");
     }
@@ -69,43 +69,43 @@ export function DateRangePicker({
     }
   };
 
-  const blockedSet = useMemo(() => {
-    const set = new Set<string>();
+  const blockedMap = useMemo(() => {
+    const map = new Map<string, "HELD" | "BOOKED">();
     for (const range of blockedDates) {
       const start = new Date(range.checkInDate);
       const end = new Date(range.checkOutDate);
       const cursor = new Date(start);
       while (cursor < end) {
-        set.add(cursor.toISOString().split("T")[0]);
-        cursor.setDate(cursor.getDate() + 1);
+        const day = cursor.toISOString().split("T")[0];
+        if (range.status === "BOOKED" || !map.has(day)) map.set(day, range.status);
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
       }
     }
-    return set;
+    return map;
   }, [blockedDates]);
 
-  const isDateBlocked = (date: Date) => {
-    const dateStr = date.toISOString().split("T")[0];
-    return blockedSet.has(dateStr);
+  const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  const dateStatus = (date: Date) => {
+    return blockedMap.get(dateKey(date));
   };
 
   const isDateDisabled = (date: Date) => {
-    const dateStr = date.toISOString().split("T")[0];
-    return dateStr < minDate || blockedSet.has(dateStr);
+    return dateKey(date) < minDate;
   };
 
   const isCheckIn = (date: Date) => {
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = dateKey(date);
     return dateStr === checkInDate;
   };
 
   const isCheckOut = (date: Date) => {
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = dateKey(date);
     return dateStr === checkOutDate;
   };
 
   const isInRange = (date: Date) => {
     if (!checkInDate || !checkOutDate) return false;
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = dateKey(date);
     return dateStr > checkInDate && dateStr < checkOutDate;
   };
 
@@ -123,7 +123,7 @@ export function DateRangePicker({
 
   const formatDisplayDate = (dateStr: string) => {
     if (!dateStr) return "Add date";
-    return new Date(dateStr).toLocaleDateString("en-GB", {
+    return new Date(`${dateStr}T12:00:00.000Z`).toLocaleDateString("en-GB", {
       day: "numeric",
       month: "short",
     });
@@ -185,7 +185,7 @@ export function DateRangePicker({
             }
 
             const disabled = isDateDisabled(date);
-            const blocked = isDateBlocked(date);
+            const status = dateStatus(date);
             const checkIn = isCheckIn(date);
             const checkOut = isCheckOut(date);
             const inRange = isInRange(date);
@@ -194,11 +194,7 @@ export function DateRangePicker({
             let color = "#18181b";
             let textDecoration = "none";
             
-            if (blocked) {
-              backgroundColor = "#fef2f2";
-              color = "#ef4444";
-              textDecoration = "line-through";
-            } else if (disabled) {
+            if (disabled) {
               backgroundColor = "transparent";
               color = "#d4d4d8";
             } else if (checkIn || checkOut) {
@@ -207,6 +203,12 @@ export function DateRangePicker({
             } else if (inRange) {
               backgroundColor = "#ccfbf1";
               color = "#18181b";
+            } else if (status === "BOOKED") {
+              backgroundColor = "#fef2f2";
+              color = "#be123c";
+            } else if (status === "HELD") {
+              backgroundColor = "#fffbeb";
+              color = "#a16207";
             }
 
             return (
@@ -221,7 +223,7 @@ export function DateRangePicker({
                   color,
                   textDecoration,
                 }}
-                title={blocked ? "Not available" : undefined}
+                title={status === "HELD" ? "Temporarily held; you can join the queue" : status === "BOOKED" ? "Booked; you can join the queue if dates open" : undefined}
               >
                 {date.getDate()}
               </button>
@@ -229,6 +231,7 @@ export function DateRangePicker({
           })}
         </div>
       </div>
+      <p className="mt-2 text-xs text-zinc-600">Amber dates are temporarily held. Rose dates are booked. You can select either to join the queue if they open up.</p>
     </div>
   );
 }

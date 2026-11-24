@@ -1,5 +1,16 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { BookingStatus, GuestSource, InquiryStatus, Prisma, PropertyStatus } from '@prisma/client';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  BookingStatus,
+  GuestSource,
+  InquiryStatus,
+  Prisma,
+  PropertyStatus,
+} from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
 
@@ -8,17 +19,27 @@ export class InquiriesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateInquiryDto) {
-    const property = await this.prisma.property.findUnique({ where: { id: dto.propertyId } });
-    if (!property || property.status !== PropertyStatus.ACTIVE) throw new NotFoundException('Property not available');
+    const property = await this.prisma.property.findUnique({
+      where: { id: dto.propertyId },
+    });
+    if (!property || property.status !== PropertyStatus.ACTIVE)
+      throw new NotFoundException('Property not available');
     const checkInDate = new Date(dto.checkInDate);
     const checkOutDate = new Date(dto.checkOutDate);
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
-    if (!Number.isFinite(checkInDate.getTime()) || !Number.isFinite(checkOutDate.getTime()) || checkInDate < today || checkOutDate <= checkInDate) {
+    if (
+      !Number.isFinite(checkInDate.getTime()) ||
+      !Number.isFinite(checkOutDate.getTime()) ||
+      checkInDate < today ||
+      checkOutDate <= checkInDate
+    ) {
       throw new BadRequestException('Choose a valid future stay');
     }
-    if (dto.numberOfGuests > property.maxGuests) throw new BadRequestException('Guest count exceeds property capacity');
-    if (!dto.guestName.trim() || !dto.guestPhone.trim()) throw new BadRequestException('Name and phone are required');
+    if (dto.numberOfGuests > property.maxGuests)
+      throw new BadRequestException('Guest count exceeds property capacity');
+    if (!dto.guestName.trim() || !dto.guestPhone.trim())
+      throw new BadRequestException('Name and phone are required');
 
     const inquiry = await this.prisma.inquiry.create({
       data: {
@@ -36,7 +57,9 @@ export class InquiriesService {
   }
 
   async findAll() {
-    const data = await this.prisma.inquiry.findMany({ orderBy: { createdAt: 'desc' } });
+    const data = await this.prisma.inquiry.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
     return { success: true, data };
   }
 
@@ -47,78 +70,132 @@ export class InquiriesService {
   }
 
   async updateStatus(id: string, status: InquiryStatus) {
-    if (status !== InquiryStatus.CONTACTED && status !== InquiryStatus.EXPIRED) {
+    if (
+      status !== InquiryStatus.CONTACTED &&
+      status !== InquiryStatus.EXPIRED
+    ) {
       throw new BadRequestException('Use conversion to create a booking');
     }
     const current = await this.prisma.inquiry.findUnique({ where: { id } });
     if (!current) throw new NotFoundException('Inquiry not found');
-    if (current.status === InquiryStatus.CONVERTED || current.status === InquiryStatus.EXPIRED) {
-      throw new BadRequestException('Inquiry is already closed');
+    if (
+      !([InquiryStatus.NEW, InquiryStatus.CONTACTED] as InquiryStatus[]).includes(current.status)
+    ) {
+      throw new BadRequestException(
+        'Use reservation decisions for this request',
+      );
     }
-    const data = await this.prisma.inquiry.update({ where: { id }, data: { status } });
+    const data = await this.prisma.inquiry.update({
+      where: { id },
+      data: { status },
+    });
     return { success: true, data };
   }
 
   async convert(id: string, userId: string) {
+    const initial = await this.prisma.inquiry.findUnique({
+      where: { id },
+      select: { propertyId: true },
+    });
+    if (!initial) throw new NotFoundException('Inquiry not found');
     try {
-    return await this.prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM "Inquiry" WHERE id = ${id} FOR UPDATE`;
-      const inquiry = await tx.inquiry.findUnique({ where: { id } });
-      if (!inquiry) throw new NotFoundException('Inquiry not found');
-      if (inquiry.bookingId) return { success: true, data: inquiry };
-      if (inquiry.status === InquiryStatus.EXPIRED) throw new BadRequestException('Inquiry is expired');
+      return await this.prisma.$transaction(
+        async (tx) => {
+          await tx.$queryRaw`SELECT id FROM "Property" WHERE id = ${initial.propertyId} FOR UPDATE`;
+          await tx.$queryRaw`SELECT id FROM "Inquiry" WHERE id = ${id} FOR UPDATE`;
+          const inquiry = await tx.inquiry.findUnique({ where: { id } });
+          if (!inquiry) throw new NotFoundException('Inquiry not found');
+          if (
+            !([
+              InquiryStatus.NEW,
+              InquiryStatus.CONTACTED,
+              InquiryStatus.CONVERTED,
+            ] as InquiryStatus[]).includes(inquiry.status)
+          ) {
+            throw new BadRequestException(
+              'Use reservation decisions for this request',
+            );
+          }
+          if (inquiry.bookingId) return { success: true, data: inquiry };
+          if (inquiry.status === InquiryStatus.EXPIRED)
+            throw new BadRequestException('Inquiry is expired');
 
-      const now = new Date();
-      const today = new Date(now);
-      today.setUTCHours(0, 0, 0, 0);
-      const property = await tx.property.findUnique({ where: { id: inquiry.propertyId } });
-      if (!property || property.status !== PropertyStatus.ACTIVE || inquiry.checkInDate < today) {
-        throw new BadRequestException('Property or dates are no longer available');
-      }
-      const overlap = await tx.booking.count({
-        where: {
-          propertyId: inquiry.propertyId,
-          checkInDate: { lt: inquiry.checkOutDate },
-          checkOutDate: { gt: inquiry.checkInDate },
-          OR: [
-            { status: { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN] } },
-            { status: BookingStatus.PENDING, OR: [{ holdExpiresAt: null }, { holdExpiresAt: { gt: now } }] },
-          ],
-        },
-      });
-      if (overlap) throw new ConflictException('Property is no longer available for these dates');
+          const now = new Date();
+          const today = new Date(now);
+          today.setUTCHours(0, 0, 0, 0);
+          const property = await tx.property.findUnique({
+            where: { id: inquiry.propertyId },
+          });
+          if (
+            !property ||
+            property.status !== PropertyStatus.ACTIVE ||
+            inquiry.checkInDate < today
+          ) {
+            throw new BadRequestException(
+              'Property or dates are no longer available',
+            );
+          }
+          const overlap = await tx.booking.count({
+            where: {
+              propertyId: inquiry.propertyId,
+              checkInDate: { lt: inquiry.checkOutDate },
+              checkOutDate: { gt: inquiry.checkInDate },
+              OR: [
+                {
+                  status: {
+                    in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN],
+                  },
+                },
+                {
+                  status: BookingStatus.PENDING,
+                  OR: [{ holdExpiresAt: null }, { holdExpiresAt: { gt: now } }],
+                },
+              ],
+            },
+          });
+          if (overlap)
+            throw new ConflictException(
+              'Property is no longer available for these dates',
+            );
 
-      const guest = await tx.guest.create({
-        data: {
-          name: inquiry.guestName,
-          email: inquiry.guestEmail,
-          phone: inquiry.guestPhone,
-          source: GuestSource.LOCAL,
-          createdBy: userId,
+          const guest = await tx.guest.create({
+            data: {
+              name: inquiry.guestName,
+              email: inquiry.guestEmail,
+              phone: inquiry.guestPhone,
+              source: GuestSource.LOCAL,
+              createdBy: userId,
+            },
+          });
+          const booking = await tx.booking.create({
+            data: {
+              guestId: guest.id,
+              propertyId: inquiry.propertyId,
+              status: BookingStatus.PENDING,
+              holdExpiresAt: new Date(now.getTime() + 24 * 60 * 60_000),
+              checkInDate: inquiry.checkInDate,
+              checkOutDate: inquiry.checkOutDate,
+              notes: inquiry.message,
+              source: 'INQUIRY',
+              createdBy: userId,
+            },
+          });
+          const data = await tx.inquiry.update({
+            where: { id },
+            data: { status: InquiryStatus.CONVERTED, bookingId: booking.id },
+          });
+          return { success: true, data };
         },
-      });
-      const booking = await tx.booking.create({
-        data: {
-          guestId: guest.id,
-          propertyId: inquiry.propertyId,
-          status: BookingStatus.PENDING,
-          holdExpiresAt: new Date(now.getTime() + 24 * 60 * 60_000),
-          checkInDate: inquiry.checkInDate,
-          checkOutDate: inquiry.checkOutDate,
-          notes: inquiry.message,
-          source: 'INQUIRY',
-          createdBy: userId,
-        },
-      });
-      const data = await tx.inquiry.update({
-        where: { id },
-        data: { status: InquiryStatus.CONVERTED, bookingId: booking.id },
-      });
-      return { success: true, data };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') {
-        throw new ConflictException('Dates changed while creating the hold. Please try again.');
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2034'
+      ) {
+        throw new ConflictException(
+          'Dates changed while creating the hold. Please try again.',
+        );
       }
       throw error;
     }

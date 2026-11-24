@@ -25,6 +25,7 @@ import { WorksModule } from './works/works.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { UtilityBillsModule } from './utility-bills/utility-bills.module';
 import { InquiriesModule } from './inquiries/inquiries.module';
+import { ReservationsModule } from './reservations/reservations.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { InquiriesModule } from './inquiries/inquiries.module';
     ReviewsModule,
     UtilityBillsModule,
     InquiriesModule,
+    ReservationsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [

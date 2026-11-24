@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { API_BASE_URL } from '@/lib/api-base';
+import { propertyToday } from '@/lib/property-date';
+import { Button } from './dashboard-app/ui/button';
+import { Input } from './dashboard-app/ui/input';
+import { Label } from './dashboard-app/ui/label';
+import { Textarea } from './dashboard-app/ui/textarea';
 
 type InquiryFormProps = {
   propertyId: string;
@@ -30,7 +35,7 @@ export function InquiryForm({ propertyId, propertyName, maxGuests }: InquiryForm
     message: "",
   });
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [requestStatus, setRequestStatus] = useState<"PENDING_REVIEW" | "QUEUED" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,7 +53,7 @@ export function InquiryForm({ propertyId, propertyName, maxGuests }: InquiryForm
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/v1/public/inquiries`, {
+      const response = await fetch(`${API_BASE_URL}/v1/public/reservations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...formData, propertyId }),
@@ -56,10 +61,11 @@ export function InquiryForm({ propertyId, propertyName, maxGuests }: InquiryForm
 
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
-        throw new Error(payload?.message ?? payload?.error?.message ?? "Failed to submit inquiry");
+        throw new Error(payload?.message ?? payload?.error?.message ?? "Failed to submit reservation request");
       }
 
-      setSuccess(true);
+      const payload = await response.json();
+      setRequestStatus(payload.data.status);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -67,48 +73,48 @@ export function InquiryForm({ propertyId, propertyName, maxGuests }: InquiryForm
     }
   };
 
-  if (success) {
+  if (requestStatus) {
     return (
       <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-        <p className="font-semibold">Inquiry submitted.</p>
+        <p className="font-semibold">{requestStatus === "QUEUED" ? "Added to the queue." : "Reservation request received."}</p>
         <p className="mt-1 text-emerald-800">
-          Thanks for your interest in {propertyName}. We will contact you within 24 hours with
-          availability and payment details.
+          {requestStatus === "QUEUED"
+            ? `The dates for ${propertyName} are currently held or booked. We will email you if they open up.`
+            : `The dates for ${propertyName} are held for up to 24 hours while the owner reviews your request. Your stay is not confirmed yet.`}
         </p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 text-sm">
-      <div>
-        <label htmlFor="inquiry-name" className="mb-1 block font-medium">Full name</label>
-        <input
-          id="inquiry-name"
-          className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
-          required
-          value={formData.guestName}
-          onChange={(event) => setFormData({ ...formData, guestName: event.target.value })}
-          placeholder="John Banda"
-        />
+    <form onSubmit={handleSubmit} className="max-w-xl space-y-4 text-sm">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <Label htmlFor="inquiry-name">Full name</Label>
+          <Input
+            id="inquiry-name"
+            required
+            value={formData.guestName}
+            onChange={(event) => setFormData({ ...formData, guestName: event.target.value })}
+            placeholder="John Banda"
+          />
+        </div>
+        <div>
+          <Label htmlFor="inquiry-phone">Phone number</Label>
+          <Input
+            id="inquiry-phone"
+            required
+            type="tel"
+            value={formData.guestPhone}
+            onChange={(event) => setFormData({ ...formData, guestPhone: event.target.value })}
+            placeholder="0991234567"
+          />
+        </div>
       </div>
       <div>
-        <label htmlFor="inquiry-phone" className="mb-1 block font-medium">Phone number</label>
-        <input
-          id="inquiry-phone"
-          className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
-          required
-          type="tel"
-          value={formData.guestPhone}
-          onChange={(event) => setFormData({ ...formData, guestPhone: event.target.value })}
-          placeholder="0991234567"
-        />
-      </div>
-      <div>
-        <label htmlFor="inquiry-email" className="mb-1 block font-medium">Email</label>
-        <input
+        <Label htmlFor="inquiry-email">Email</Label>
+        <Input
           id="inquiry-email"
-          className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
           type="email"
           required
           value={formData.guestEmail}
@@ -116,37 +122,34 @@ export function InquiryForm({ propertyId, propertyName, maxGuests }: InquiryForm
           placeholder="john@example.com"
         />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label htmlFor="inquiry-check-in" className="mb-1 block font-medium">Check-in</label>
-          <input
+          <Label htmlFor="inquiry-check-in">Check-in</Label>
+          <Input
             id="inquiry-check-in"
-            className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
             required
             type="date"
-            min={new Date().toISOString().split("T")[0]}
+            min={propertyToday()}
             value={formData.checkInDate}
             onChange={(event) => setFormData({ ...formData, checkInDate: event.target.value })}
           />
         </div>
         <div>
-          <label htmlFor="inquiry-check-out" className="mb-1 block font-medium">Check-out</label>
-          <input
+          <Label htmlFor="inquiry-check-out">Check-out</Label>
+          <Input
             id="inquiry-check-out"
-            className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
             required
             type="date"
-            min={formData.checkInDate || new Date().toISOString().split("T")[0]}
+            min={formData.checkInDate || propertyToday()}
             value={formData.checkOutDate}
             onChange={(event) => setFormData({ ...formData, checkOutDate: event.target.value })}
           />
         </div>
       </div>
       <div>
-        <label htmlFor="inquiry-guests" className="mb-1 block font-medium">Guests</label>
-        <input
+        <Label htmlFor="inquiry-guests">Guests</Label>
+        <Input
           id="inquiry-guests"
-          className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
           required
           min={1}
           max={maxGuests}
@@ -161,10 +164,9 @@ export function InquiryForm({ propertyId, propertyName, maxGuests }: InquiryForm
         />
       </div>
       <div>
-        <label htmlFor="inquiry-message" className="mb-1 block font-medium">Message (optional)</label>
-        <textarea
+        <Label htmlFor="inquiry-message">Message (optional)</Label>
+        <Textarea
           id="inquiry-message"
-          className="w-full min-h-[44px] rounded-lg border border-[var(--border)] px-3 py-2.5"
           rows={3}
           value={formData.message}
           onChange={(event) => setFormData({ ...formData, message: event.target.value })}
@@ -172,15 +174,16 @@ export function InquiryForm({ propertyId, propertyName, maxGuests }: InquiryForm
         />
       </div>
       {error && <p role="alert" className="text-sm text-rose-600">{error}</p>}
-      <button
+      <Button
         type="submit"
+        variant="brand"
         disabled={submitting}
-        className="w-full min-h-[44px] rounded-full bg-[var(--accent)] px-4 py-3 text-center text-sm font-semibold text-white disabled:opacity-60"
+        className="w-full rounded-lg"
       >
-        {submitting ? "Submitting..." : "Submit inquiry"}
-      </button>
+        {submitting ? "Submitting..." : "Request reservation"}
+      </Button>
       <p className="text-xs text-[var(--muted)]">
-        We respond within 24 hours with availability and payment instructions.
+        We will email you when your request is reviewed or your queue status changes. A request is confirmed only after the owner completes the final confirmation.
       </p>
     </form>
   );

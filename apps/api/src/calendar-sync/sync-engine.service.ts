@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ICalParserService, ParsedEvent } from './ical-parser.service';
-import { BookingStatus } from '@prisma/client';
+import { BookingStatus, Prisma } from '@prisma/client';
 import fetch from 'node-fetch';
+import { ReservationsService } from '../reservations/reservations.service';
 
 export interface SyncResult {
   success: boolean;
@@ -21,6 +22,7 @@ export class SyncEngineService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly icalParser: ICalParserService,
+    private readonly reservations: ReservationsService,
   ) {}
 
   /**
@@ -44,7 +46,9 @@ export class SyncEngineService {
       }
 
       if (!calendarSync.isEnabled) {
-        this.logger.log(`Calendar sync ${calendarSyncId} is disabled, skipping`);
+        this.logger.log(
+          `Calendar sync ${calendarSyncId} is disabled, skipping`,
+        );
         return {
           success: true,
           eventsImported: 0,
@@ -54,17 +58,19 @@ export class SyncEngineService {
         };
       }
 
-      this.logger.log(`Syncing calendar for property: ${calendarSync.property.name}`);
+      this.logger.log(
+        `Syncing calendar for property: ${calendarSync.property.name}`,
+      );
 
       // Fetch iCal data
       const icalData = await this.fetchICalData(calendarSync.icalUrl);
 
       // Parse events
       const allEvents = this.icalParser.parseICalData(icalData);
-      
+
       // Filter to only future events
       const futureEvents = this.icalParser.filterFutureEvents(allEvents);
-      
+
       this.logger.log(`Found ${futureEvents.length} future events to process`);
 
       // Get or create system user for synced bookings
@@ -123,10 +129,14 @@ export class SyncEngineService {
             notes: `Auto-cancelled: no longer present in ${calendarSync.platform} calendar feed`,
           },
         });
-        this.logger.log(`Auto-cancelled stale booking ${stale.id} (no longer in ${calendarSync.platform} feed)`);
+        this.logger.log(
+          `Auto-cancelled stale booking ${stale.id} (no longer in ${calendarSync.platform} feed)`,
+        );
       }
 
       const autoCancelled = staleBookings.length;
+      if (eventsImported || conflictsResolved || autoCancelled)
+        await this.reservations.maintain(calendarSync.propertyId);
 
       // Update calendar sync status
       await this.prisma.calendarSync.update({
@@ -206,66 +216,102 @@ export class SyncEngineService {
     platform: string,
     userId: string,
   ): Promise<{ imported: boolean; conflictResolved: boolean }> {
-    // Check if booking already exists (by external ID)
-    const existingBooking = await this.prisma.booking.findFirst({
-      where: {
-        externalId: event.uid,
-        propertyId,
-      },
-    });
-
-    if (existingBooking) {
-      // Update existing booking if dates changed
-      const datesChanged =
-        existingBooking.checkInDate.getTime() !== event.startDate.getTime() ||
-        existingBooking.checkOutDate.getTime() !== event.endDate.getTime();
-
-      if (datesChanged) {
-        await this.prisma.booking.update({
-          where: { id: existingBooking.id },
-          data: {
-            checkInDate: event.startDate,
-            checkOutDate: event.endDate,
-            updatedAt: new Date(),
+    return this.prisma.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT id FROM "Property" WHERE id = ${propertyId} FOR UPDATE`;
+        // Check if booking already exists (by external ID)
+        const existingBooking = await tx.booking.findFirst({
+          where: {
+            externalId: event.uid,
+            propertyId,
           },
         });
-        this.logger.log(`Updated booking ${existingBooking.id} with new dates`);
-        return { imported: true, conflictResolved: false };
-      }
+        const datesChanged =
+          existingBooking &&
+          (existingBooking.checkInDate.getTime() !==
+            event.startDate.getTime() ||
+            existingBooking.checkOutDate.getTime() !== event.endDate.getTime());
+        if (
+          existingBooking &&
+          !datesChanged &&
+          existingBooking.status !== BookingStatus.CANCELLED
+        ) {
+          return { imported: false, conflictResolved: false };
+        }
 
-      // No changes needed
-      return { imported: false, conflictResolved: false };
-    }
+        const protectedConflict = await tx.booking.count({
+          where: {
+            propertyId,
+            ...(existingBooking ? { id: { not: existingBooking.id } } : {}),
+            checkInDate: { lt: event.endDate },
+            checkOutDate: { gt: event.startDate },
+            OR: [
+              { status: BookingStatus.CHECKED_IN },
+              { isSyncedBooking: true, status: BookingStatus.CONFIRMED },
+            ],
+          },
+        });
+        if (protectedConflict)
+          throw new Error(
+            `External event ${event.uid} conflicts with an active or synced stay`,
+          );
 
-    // Check for conflicts with local bookings
-    const conflictResolved = await this.resolveConflicts(
-      propertyId,
-      event.startDate,
-      event.endDate,
-      event.uid,
-    );
+        if (existingBooking) {
+          const conflictResolved = await this.resolveConflicts(
+            tx,
+            propertyId,
+            event.startDate,
+            event.endDate,
+            event.uid,
+          );
+          await tx.booking.update({
+            where: { id: existingBooking.id },
+            data: {
+              status: BookingStatus.CONFIRMED,
+              checkInDate: event.startDate,
+              checkOutDate: event.endDate,
+              updatedAt: new Date(),
+            },
+          });
+          this.logger.log(
+            `Updated booking ${existingBooking.id} with new dates`,
+          );
+          return { imported: true, conflictResolved };
+        }
 
-    // Create or get guest
-    const guest = await this.getOrCreateGuest(event, platform, userId);
+        // Check for conflicts with local bookings
+        const conflictResolved = await this.resolveConflicts(
+          tx,
+          propertyId,
+          event.startDate,
+          event.endDate,
+          event.uid,
+        );
 
-    // Create new booking
-    await this.prisma.booking.create({
-      data: {
-        guestId: guest.id,
-        propertyId,
-        status: BookingStatus.CONFIRMED,
-        checkInDate: event.startDate,
-        checkOutDate: event.endDate,
-        source: platform,
-        externalId: event.uid,
-        isSyncedBooking: true,
-        notes: `Synced from ${platform}. ${event.description || ''}`,
-        createdBy: userId,
+        // Create or get guest
+        const guest = await this.getOrCreateGuest(tx, event, platform, userId);
+
+        // Create new booking
+        await tx.booking.create({
+          data: {
+            guestId: guest.id,
+            propertyId,
+            status: BookingStatus.CONFIRMED,
+            checkInDate: event.startDate,
+            checkOutDate: event.endDate,
+            source: platform,
+            externalId: event.uid,
+            isSyncedBooking: true,
+            notes: `Synced from ${platform}. ${event.description || ''}`,
+            createdBy: userId,
+          },
+        });
+
+        this.logger.log(`Created new booking from ${platform}: ${event.uid}`);
+        return { imported: true, conflictResolved };
       },
-    });
-
-    this.logger.log(`Created new booking from ${platform}: ${event.uid}`);
-    return { imported: true, conflictResolved };
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
   }
 
   /**
@@ -273,13 +319,14 @@ export class SyncEngineService {
    * Airbnb bookings always take priority
    */
   private async resolveConflicts(
+    tx: Prisma.TransactionClient,
     propertyId: string,
     checkInDate: Date,
     checkOutDate: Date,
     externalId: string,
   ): Promise<boolean> {
     // Find overlapping local (non-synced) bookings
-    const conflictingBookings = await this.prisma.booking.findMany({
+    const conflictingBookings = await tx.booking.findMany({
       where: {
         propertyId,
         isSyncedBooking: false, // Only local bookings
@@ -297,7 +344,7 @@ export class SyncEngineService {
 
     // Cancel conflicting local bookings
     for (const booking of conflictingBookings) {
-      await this.prisma.booking.update({
+      await tx.booking.update({
         where: { id: booking.id },
         data: {
           status: BookingStatus.CANCELLED,
@@ -318,6 +365,7 @@ export class SyncEngineService {
    * Get or create guest for synced booking
    */
   private async getOrCreateGuest(
+    tx: Prisma.TransactionClient,
     event: ParsedEvent,
     platform: string,
     userId: string,
@@ -325,7 +373,7 @@ export class SyncEngineService {
     const guestName = `Airbnb Guest - ${event.confirmationCode || event.uid.substring(0, 8)}`;
 
     // Try to find existing guest by name
-    let guest = await this.prisma.guest.findFirst({
+    let guest = await tx.guest.findFirst({
       where: {
         name: guestName,
         source: 'AIRBNB',
@@ -334,7 +382,7 @@ export class SyncEngineService {
 
     if (!guest) {
       // Create new guest
-      guest = await this.prisma.guest.create({
+      guest = await tx.guest.create({
         data: {
           name: guestName,
           source: 'AIRBNB',
@@ -352,20 +400,10 @@ export class SyncEngineService {
    * Get or create system user for synced bookings
    */
   private async getOrCreateSystemUser() {
-    let systemUser = await this.prisma.user.findFirst({
+    return this.prisma.user.upsert({
       where: { email: 'system@nyumbaops.com' },
+      create: { email: 'system@nyumbaops.com', name: 'System', role: 'OWNER' },
+      update: {},
     });
-
-    if (!systemUser) {
-      systemUser = await this.prisma.user.create({
-        data: {
-          email: 'system@nyumbaops.com',
-          name: 'System',
-          role: 'OWNER',
-        },
-      });
-    }
-
-    return systemUser;
   }
 }

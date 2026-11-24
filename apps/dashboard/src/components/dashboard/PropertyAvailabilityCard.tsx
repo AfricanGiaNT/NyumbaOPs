@@ -26,6 +26,7 @@ const sourceBadge: Record<string, string> = {
   AIRBNB: "bg-orange-100 text-orange-700",
   BOOKING_COM: "bg-cyan-100 text-cyan-700",
   MANUAL: "bg-indigo-100 text-indigo-700",
+  RESERVATION: "bg-amber-100 text-amber-700",
 };
 
 function formatDate(dateStr: string) {
@@ -45,6 +46,7 @@ export function PropertyAvailabilityCard({
   loading = false,
 }: PropertyAvailabilityCardProps) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [expandedProperty, setExpandedProperty] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -69,9 +71,9 @@ export function PropertyAvailabilityCard({
     return (
       <DashboardCard
         title="Property Availability"
-        subtitle="Upcoming bookings & blocks"
+        subtitle="Upcoming stays & holds"
       >
-        <p className="py-6 text-center text-sm text-zinc-500">
+        <p className="py-2 text-sm text-zinc-500">
           No active properties configured.
         </p>
       </DashboardCard>
@@ -90,10 +92,10 @@ export function PropertyAvailabilityCard({
   return (
     <DashboardCard
       title="Property Availability"
-      subtitle="Upcoming bookings & blocks"
+      subtitle="Upcoming stays & holds"
       action={{
         label: "View all",
-        onClick: () => (window.location.href = "/bookings"),
+        onClick: () => (window.location.href = "/stays"),
       }}
     >
       {localError && (
@@ -118,18 +120,18 @@ export function PropertyAvailabilityCard({
       )}
 
       {allAvailable ? (
-        <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-3">
+        <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2">
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
           <p className="text-sm font-medium text-emerald-700">
             All properties are currently available
           </p>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-2">
           {grouped.map(({ property, bookings: propBookings }) => (
-            <div key={property.id}>
+            <div key={property.id} className="rounded-lg border border-zinc-100 px-3 py-2 dark:border-zinc-800">
               {/* Property header */}
-              <div className="mb-2 flex items-center gap-2">
+              <button type="button" disabled={propBookings.length === 0} aria-expanded={expandedProperty === property.id} onClick={() => setExpandedProperty(expandedProperty === property.id ? null : property.id)} className="flex w-full items-center gap-2 text-left disabled:cursor-default">
                 <span
                   className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${
                     propBookings.length === 0
@@ -137,7 +139,7 @@ export function PropertyAvailabilityCard({
                       : "bg-amber-400"
                   }`}
                 />
-                <span className="text-sm font-semibold text-zinc-800">
+                <span className="min-w-0 truncate text-sm font-semibold text-zinc-800 dark:text-zinc-200">
                   {property.name}
                 </span>
                 {propBookings.length === 0 && (
@@ -149,11 +151,12 @@ export function PropertyAvailabilityCard({
                     {propBookings.length === 1 ? "booking" : "bookings"}
                   </span>
                 )}
-              </div>
+                {propBookings.length > 0 && <span aria-hidden="true" className="ml-auto text-xs text-zinc-500">{expandedProperty === property.id ? "−" : "+"}</span>}
+              </button>
 
               {/* Booking rows */}
-              {propBookings.length > 0 && (
-                <div className="space-y-2 pl-4">
+              {propBookings.length > 0 && expandedProperty === property.id && (
+                <div className="mt-2 space-y-2 pl-4">
                   {propBookings.map((booking) => {
                     const source = booking.source ?? "MANUAL";
                     const guestName =
@@ -162,8 +165,7 @@ export function PropertyAvailabilityCard({
                     const isConfirming = confirmingId === booking.id;
                     const isLoading = unblockingId === booking.id;
                     const canCancel =
-                      booking.status === "PENDING" ||
-                      booking.status === "CONFIRMED";
+                      (booking.status === "PENDING" || booking.status === "CONFIRMED") && source !== "RESERVATION" && !booking.isSyncedBooking;
 
                     return (
                       <div

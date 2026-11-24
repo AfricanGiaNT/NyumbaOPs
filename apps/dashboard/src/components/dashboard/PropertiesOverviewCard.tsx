@@ -61,7 +61,7 @@ export function PropertiesOverviewCard({
       }}
     >
       {properties.length === 0 ? (
-        <div className="py-8 text-center">
+        <div className="py-2 text-center">
           <p className="text-sm text-zinc-500">No properties yet</p>
           <Link
             href="/properties"
@@ -71,13 +71,13 @@ export function PropertiesOverviewCard({
           </Link>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-1.5">
           {statusConfig.map(({ status, label, color, dotColor }) => {
             const count = statusCounts[status] || 0;
             return (
               <div
                 key={status}
-                className="flex items-center justify-between rounded-lg border border-zinc-100 p-3"
+                className="flex items-center justify-between rounded-lg border border-zinc-100 px-3 py-1.5 dark:border-zinc-800"
               >
                 <div className="flex items-center gap-3">
                   <div className={`h-3 w-3 rounded-full ${dotColor}`} />
@@ -86,7 +86,7 @@ export function PropertiesOverviewCard({
                   </span>
                 </div>
                 <span
-                  className={`rounded-full px-3 py-1 text-sm font-semibold ${color}`}
+                  className={`rounded-full px-2 py-0.5 text-xs font-semibold ${color}`}
                 >
                   {count}
                 </span>
@@ -94,17 +94,6 @@ export function PropertiesOverviewCard({
             );
           })}
 
-          {/* Total summary */}
-          <div className="mt-4 rounded-lg bg-indigo-50 p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-indigo-900">
-                Total Properties
-              </span>
-              <span className="text-2xl font-bold text-indigo-900">
-                {properties.length}
-              </span>
-            </div>
-          </div>
         </div>
       )}
     </DashboardCard>

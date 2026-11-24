@@ -23,13 +23,13 @@ export function NotificationBell() {
   const fetchNotifs = async () => {
     try {
       const [inquiriesRes, bookingsRes] = await Promise.allSettled([
-        apiGet<{ success: boolean; data: Inquiry[] }>("/inquiries"),
+        apiGet<{ success: boolean; data: Inquiry[] }>("/reservations"),
         apiGet<Booking[]>("/bookings"),
       ]);
 
       const newInquiries =
         inquiriesRes.status === "fulfilled"
-          ? (inquiriesRes.value.data ?? []).filter((i) => i.status === "NEW").length
+          ? (inquiriesRes.value.data ?? []).filter((i) => i.status === "PENDING_REVIEW" || i.status === "AWAITING_CONFIRMATION" || i.status === "NEW" || i.status === "CONTACTED").length
           : 0;
 
       const now = new Date();
@@ -41,7 +41,7 @@ export function NotificationBell() {
               return (
                 d >= now &&
                 d <= in24h &&
-                (b.status === "CONFIRMED" || b.status === "PENDING")
+                b.status === "CONFIRMED"
               );
             }).length
           : 0;
@@ -119,7 +119,7 @@ export function NotificationBell() {
               {notifs.newInquiries > 0 && (
                 <li>
                   <Link
-                    href="/inquiries"
+                    href="/reservations"
                     onClick={() => setOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
                   >
@@ -127,9 +127,9 @@ export function NotificationBell() {
                     <span className="text-zinc-700 dark:text-zinc-300">
                       <span className="font-semibold text-zinc-900 dark:text-zinc-100">
                         {notifs.newInquiries} new{" "}
-                        {notifs.newInquiries === 1 ? "inquiry" : "inquiries"}
+                        {notifs.newInquiries === 1 ? "reservation request" : "reservation requests"}
                       </span>{" "}
-                      awaiting response
+                      requiring action
                     </span>
                   </Link>
                 </li>
@@ -137,7 +137,7 @@ export function NotificationBell() {
               {notifs.upcomingCheckIns > 0 && (
                 <li>
                   <Link
-                    href="/bookings"
+                    href="/stays"
                     onClick={() => setOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
                   >

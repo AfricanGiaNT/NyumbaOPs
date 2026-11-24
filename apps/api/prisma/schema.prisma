@@ -49,6 +49,17 @@ enum InquiryStatus {
   CONTACTED
   CONVERTED
   EXPIRED
+  QUEUED
+  PENDING_REVIEW
+  AWAITING_CONFIRMATION
+  CONFIRMED
+  REJECTED
+  CANCELLED
+}
+
+enum ReservationEmailStatus {
+  PENDING
+  SENT
 }
 
 enum LoanStatus {
@@ -129,6 +140,7 @@ model User {
 
   categories   Category[]
   transactions Transaction[]
+  reimbursementPayments ReimbursementPayment[]
   guests       Guest[]
   bookings     Booking[]
   checkedInBookings  Booking[] @relation("BookingCheckedInBy")
@@ -288,6 +300,7 @@ model Transaction {
   transactionMappings TransactionProperty[]
   work                Work?
   stockMovement       StockMovement?
+  reimbursementPayments ReimbursementPayment[]
 
   @@index([propertyId])
   @@index([bookingId])
@@ -307,6 +320,22 @@ model TransactionProperty {
   property    Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@unique([transactionId, propertyId])
+}
+
+model ReimbursementPayment {
+  id            String   @id @default(uuid())
+  transactionId String   @map("transaction_id")
+  amount        Int
+  paidAt        DateTime @map("paid_at")
+  notes         String?
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+  creator     User        @relation(fields: [createdBy], references: [id])
+
+  @@index([transactionId, paidAt])
+  @@index([createdBy])
 }
 
 model AuditLog {
@@ -417,14 +446,39 @@ model Inquiry {
   message        String?
   status         InquiryStatus @default(NEW)
   bookingId      String?       @unique @map("booking_id")
+  reviewedBy     String?       @map("reviewed_by")
+  reviewedAt     DateTime?     @map("reviewed_at")
+  confirmedBy    String?       @map("confirmed_by")
+  confirmedAt    DateTime?     @map("confirmed_at")
   createdAt      DateTime      @default(now()) @map("created_at")
   updatedAt      DateTime      @updatedAt @map("updated_at")
 
   property Property @relation(fields: [propertyId], references: [id])
   booking  Booking? @relation(fields: [bookingId], references: [id])
+  emails   ReservationEmail[]
 
   @@index([status, createdAt])
   @@index([propertyId])
+  @@index([propertyId, status, createdAt])
+}
+
+model ReservationEmail {
+  id            String                 @id @default(uuid())
+  inquiryId     String                 @map("inquiry_id")
+  eventKey      String                 @unique @map("event_key")
+  recipient     String
+  subject       String
+  body          String
+  status        ReservationEmailStatus @default(PENDING)
+  attempts      Int                    @default(0)
+  nextAttemptAt DateTime               @default(now()) @map("next_attempt_at")
+  sentAt        DateTime?              @map("sent_at")
+  createdAt     DateTime               @default(now()) @map("created_at")
+
+  inquiry Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+  @@index([inquiryId])
 }
 
 model PasswordResetToken {

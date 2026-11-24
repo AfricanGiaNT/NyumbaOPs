@@ -21,6 +21,7 @@ export class CalendarSyncScheduler {
     timeZone: 'Africa/Blantyre', // Malawi timezone
   })
   async handleCalendarSync() {
+    if (process.env.DISABLE_BACKGROUND_JOBS === 'true') return;
     if (this.isSyncing) {
       this.logger.warn('Sync already in progress, skipping this run');
       return;
@@ -123,6 +124,7 @@ export class CalendarSyncScheduler {
     name: 'cleanup-sync-logs',
   })
   async cleanupOldLogs() {
+    if (process.env.DISABLE_BACKGROUND_JOBS === 'true') return;
     try {
       // Keep only last 100 logs per calendar sync
       const calendarSyncs = await this.prisma.calendarSync.findMany({

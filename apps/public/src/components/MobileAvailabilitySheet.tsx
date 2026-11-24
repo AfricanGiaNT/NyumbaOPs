@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { checkAvailability, fetchBlockedDates } from "@/lib/api";
 import type { AvailabilityResponse, BlockedDateRange } from "@/lib/types";
 import { DateRangePicker } from "./DateRangePicker";
+import { propertyToday } from "@/lib/property-date";
 
 type MobileAvailabilitySheetProps = {
   isOpen: boolean;
@@ -86,8 +87,8 @@ export function MobileAvailabilitySheet({
 
   if (!isOpen) return null;
 
-  const todayStr = new Date().toISOString().split("T")[0];
-  const hasAvailResult = result && result.available;
+  const todayStr = propertyToday();
+  const hasAvailResult = result && result.status === "AVAILABLE";
 
   return (
     <div
@@ -162,9 +163,9 @@ export function MobileAvailabilitySheet({
           {result && !result.available && (
             <div className="mt-4 space-y-3">
               <div className="rounded-xl bg-rose-50 px-4 py-4 text-center">
-                <p className="text-base font-semibold text-rose-900">Not available</p>
+                <p className="text-base font-semibold text-rose-900">{result.status === "HELD" ? "Temporarily held" : "Currently booked"}</p>
                 <p className="mt-1 text-sm text-rose-700">
-                  Try different dates for {propertyName}.
+                  You can join the queue for {propertyName}. We will email you if these dates open up.
                 </p>
               </div>
               <button
@@ -228,14 +229,14 @@ export function MobileAvailabilitySheet({
             >
               {checking ? "Checking..." : "Check availability"}
             </button>
-          ) : hasAvailResult ? (
+          ) : result ? (
             <button
               type="button"
               onClick={handleBookNow}
               className="w-full rounded-xl py-4 text-base font-semibold text-white active:opacity-90"
               style={{ backgroundColor: "#0f766e" }}
             >
-              Request these dates
+              {hasAvailResult ? "Request these dates" : "Join the queue"}
             </button>
           ) : null}
         </div>

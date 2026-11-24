@@ -9,6 +9,7 @@ export class InquiryHoldsScheduler {
 
   @Cron('*/5 * * * *')
   async expireHolds() {
+    if (process.env.DISABLE_BACKGROUND_JOBS === 'true') return;
     const now = new Date();
     const expired = await this.prisma.booking.findMany({
       where: { source: 'INQUIRY', status: BookingStatus.PENDING, holdExpiresAt: { lte: now } },

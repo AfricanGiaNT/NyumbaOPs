@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { createHash } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { BookingStatus, PropertyStatus, ReviewStatus } from '@prisma/client';
@@ -17,9 +21,11 @@ export class PublicService {
   private readonly canonicalStorageUrl: string;
 
   constructor(private readonly prisma: PrismaService) {
-    const projectRef = process.env.SUPABASE_PROJECT_REF ?? 'xtfpppcqscwsnpdfrzmw';
+    const projectRef =
+      process.env.SUPABASE_PROJECT_REF ?? 'xtfpppcqscwsnpdfrzmw';
     this.serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
-    this.storageBucket = process.env.SUPABASE_STORAGE_BUCKET ?? 'property-images';
+    this.storageBucket =
+      process.env.SUPABASE_STORAGE_BUCKET ?? 'property-images';
     this.storageUrl = `https://${projectRef}.supabase.co/storage/v1`;
     this.canonicalStorageUrl = `https://${projectRef}.supabase.co/storage/v1`;
   }
@@ -36,12 +42,15 @@ export class PublicService {
       console.log('[ImageURL] Normalized:', url, '->', normalized);
       return normalized;
     }
-    console.warn('[ImageURL] Could not normalize (no /storage/v1/object/public/ pattern):', url);
+    console.warn(
+      '[ImageURL] Could not normalize (no /storage/v1/object/public/ pattern):',
+      url,
+    );
     return url;
   }
 
   async getPublicProperties(query: PublicPropertiesQueryDto) {
-    const limit = query.featured ? 6 : query.limit ?? 10;
+    const limit = query.featured ? 6 : (query.limit ?? 10);
     const offset = query.offset ?? 0;
 
     const [total, properties] = await Promise.all([
@@ -74,11 +83,15 @@ export class PublicService {
       _avg: { overallRating: true },
     });
     const reviewMap = new Map(
-      reviewStats.map((r) => [r.propertyId, { count: r._count.id, avg: r._avg.overallRating }]),
+      reviewStats.map((r) => [
+        r.propertyId,
+        { count: r._count.id, avg: r._avg.overallRating },
+      ]),
     );
 
     const data: PublicPropertyListItemDto[] = properties.map((property) => {
-      const coverImage = property.images.find((image) => image.isCover) ?? property.images[0];
+      const coverImage =
+        property.images.find((image) => image.isCover) ?? property.images[0];
       const stats = reviewMap.get(property.id);
       return {
         id: property.id,
@@ -90,11 +103,14 @@ export class PublicService {
         nightlyRate: property.nightlyRate,
         currency: property.currency,
         status: property.status,
-        coverImageUrl: coverImage?.url ? this.normalizeImageUrl(coverImage.url) : null,
+        coverImageUrl: coverImage?.url
+          ? this.normalizeImageUrl(coverImage.url)
+          : null,
         coverImageAlt: coverImage?.alt ?? null,
         amenities: property.amenities.map((amenity) => amenity.amenity.name),
         reviewCount: stats?.count ?? 0,
-        averageRating: stats?.avg != null ? Math.round(stats.avg * 10) / 10 : null,
+        averageRating:
+          stats?.avg != null ? Math.round(stats.avg * 10) / 10 : null,
       };
     });
 
@@ -190,11 +206,24 @@ export class PublicService {
       where: {
         propertyId,
         OR: [
-          { status: { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN] } },
-          { status: BookingStatus.PENDING, OR: [{ holdExpiresAt: null }, { holdExpiresAt: { gt: new Date() } }] },
+          {
+            status: { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN] },
+          },
+          {
+            status: BookingStatus.PENDING,
+            OR: [
+              { holdExpiresAt: null },
+              { holdExpiresAt: { gt: new Date() } },
+            ],
+          },
         ],
       },
-      select: { checkInDate: true, checkOutDate: true },
+      select: {
+        checkInDate: true,
+        checkOutDate: true,
+        status: true,
+        holdExpiresAt: true,
+      },
       orderBy: { checkInDate: 'asc' },
     });
 
@@ -205,6 +234,10 @@ export class PublicService {
         blockedRanges: bookings.map((b) => ({
           checkInDate: b.checkInDate.toISOString().slice(0, 10),
           checkOutDate: b.checkOutDate.toISOString().slice(0, 10),
+          status:
+            b.status === BookingStatus.PENDING && b.holdExpiresAt
+              ? 'HELD'
+              : 'BOOKED',
         })),
       },
     };
@@ -216,7 +249,9 @@ export class PublicService {
     checkOutDate: string,
   ) {
     if (!checkInDate || !checkOutDate) {
-      throw new BadRequestException('checkInDate and checkOutDate are required');
+      throw new BadRequestException(
+        'checkInDate and checkOutDate are required',
+      );
     }
 
     const property = await this.prisma.property.findFirst({
@@ -233,26 +268,46 @@ export class PublicService {
       throw new NotFoundException('Property not found');
     }
 
-    const checkIn = new Date(checkInDate);
-    const checkOut = new Date(checkOutDate);
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(checkInDate) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(checkOutDate)
+    ) {
+      throw new BadRequestException('Invalid date format. Use YYYY-MM-DD.');
+    }
+    const checkIn = new Date(`${checkInDate}T00:00:00.000Z`);
+    const checkOut = new Date(`${checkOutDate}T00:00:00.000Z`);
 
-    if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+    if (
+      isNaN(checkIn.getTime()) ||
+      isNaN(checkOut.getTime()) ||
+      checkIn.toISOString().slice(0, 10) !== checkInDate ||
+      checkOut.toISOString().slice(0, 10) !== checkOutDate
+    ) {
       throw new BadRequestException('Invalid date format. Use YYYY-MM-DD.');
     }
     if (checkIn >= checkOut) {
       throw new BadRequestException('checkOutDate must be after checkInDate');
     }
 
-    const overlapping = await this.prisma.booking.count({
+    const overlapping = await this.prisma.booking.findMany({
       where: {
         propertyId,
         OR: [
-          { status: { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN] } },
-          { status: BookingStatus.PENDING, OR: [{ holdExpiresAt: null }, { holdExpiresAt: { gt: new Date() } }] },
+          {
+            status: { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN] },
+          },
+          {
+            status: BookingStatus.PENDING,
+            OR: [
+              { holdExpiresAt: null },
+              { holdExpiresAt: { gt: new Date() } },
+            ],
+          },
         ],
         checkInDate: { lt: checkOut },
         checkOutDate: { gt: checkIn },
       },
+      select: { status: true, holdExpiresAt: true },
     });
 
     const nights = Math.round(
@@ -264,7 +319,15 @@ export class PublicService {
     return {
       success: true,
       data: {
-        available: overlapping === 0,
+        available: overlapping.length === 0,
+        status: overlapping.some(
+          (booking) =>
+            booking.status !== BookingStatus.PENDING || !booking.holdExpiresAt,
+        )
+          ? 'BOOKED'
+          : overlapping.length > 0
+            ? 'HELD'
+            : 'AVAILABLE',
         propertyId,
         propertyName: property.name,
         checkInDate,
@@ -294,7 +357,9 @@ export class PublicService {
     }
 
     if (!this.serviceRoleKey) {
-      throw new BadRequestException('Storage is not configured (missing SUPABASE_SERVICE_ROLE_KEY)');
+      throw new BadRequestException(
+        'Storage is not configured (missing SUPABASE_SERVICE_ROLE_KEY)',
+      );
     }
 
     // Content hash makes uploads idempotent: the same image bytes always
@@ -372,8 +437,16 @@ export class PublicService {
       where: {
         propertyId,
         OR: [
-          { status: { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN] } },
-          { status: BookingStatus.PENDING, OR: [{ holdExpiresAt: null }, { holdExpiresAt: { gt: new Date() } }] },
+          {
+            status: { in: [BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN] },
+          },
+          {
+            status: BookingStatus.PENDING,
+            OR: [
+              { holdExpiresAt: null },
+              { holdExpiresAt: { gt: new Date() } },
+            ],
+          },
         ],
       },
       orderBy: { checkInDate: 'asc' },
@@ -383,7 +456,10 @@ export class PublicService {
     const toDateStr = (d: Date): string =>
       d.toISOString().slice(0, 10).replace(/-/g, '');
 
-    const now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+    const now = new Date()
+      .toISOString()
+      .replace(/[-:]/g, '')
+      .replace(/\.\d+/, '');
 
     const vevents = bookings
       .map((b) =>
@@ -396,7 +472,7 @@ export class PublicService {
           'SUMMARY:Reserved',
           'STATUS:CONFIRMED',
           'END:VEVENT',
-        ].join('\r\n')
+        ].join('\r\n'),
       )
       .join('\r\n');
 

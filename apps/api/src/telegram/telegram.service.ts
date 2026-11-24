@@ -39,6 +39,10 @@ export class TelegramService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
+    if (process.env.DISABLE_BACKGROUND_JOBS === 'true') {
+      this.logger.log('Background jobs disabled for this process.');
+      return;
+    }
     const token = this.config.get<string>('TELEGRAM_BOT_TOKEN');
     if (!token) {
       this.logger.warn('TELEGRAM_BOT_TOKEN not set; bot is disabled.');

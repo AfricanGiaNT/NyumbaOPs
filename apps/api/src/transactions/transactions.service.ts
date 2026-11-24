@@ -1,8 +1,13 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { TransactionType } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { CreateReimbursementPaymentDto } from './dto/create-reimbursement-payment.dto';
 import { TransactionQueryDto } from './dto/transaction-query.dto';
 
 @Injectable()
@@ -12,7 +17,10 @@ export class TransactionsService {
     private readonly audit: AuditService,
   ) {}
 
-  private async getOrCreateDefaultCategory(type: TransactionType, userId: string) {
+  private async getOrCreateDefaultCategory(
+    type: TransactionType,
+    userId: string,
+  ) {
     const name = type === 'REVENUE' ? 'Rental Income' : 'General Expense';
     const existing = await this.prisma.category.findFirst({
       where: { name, type },
@@ -44,10 +52,15 @@ export class TransactionsService {
         throw new NotFoundException('Category not found');
       }
       if (category.type !== type) {
-        throw new BadRequestException('Category type does not match transaction type');
+        throw new BadRequestException(
+          'Category type does not match transaction type',
+        );
       }
     } else {
-      const defaultCategory = await this.getOrCreateDefaultCategory(type, userId);
+      const defaultCategory = await this.getOrCreateDefaultCategory(
+        type,
+        userId,
+      );
       categoryId = defaultCategory.id;
     }
 
@@ -74,7 +87,11 @@ export class TransactionsService {
       resourceType: 'Transaction',
       resourceId: transaction.id,
       userId,
-      details: { type, amount: transaction.amount, currency: transaction.currency },
+      details: {
+        type,
+        amount: transaction.amount,
+        currency: transaction.currency,
+      },
     });
 
     return transaction;
@@ -96,10 +113,15 @@ export class TransactionsService {
         throw new NotFoundException('Category not found');
       }
       if (category.type !== type) {
-        throw new BadRequestException('Category type does not match transaction type');
+        throw new BadRequestException(
+          'Category type does not match transaction type',
+        );
       }
     } else {
-      const defaultCategory = await this.getOrCreateDefaultCategory(type, userId);
+      const defaultCategory = await this.getOrCreateDefaultCategory(
+        type,
+        userId,
+      );
       categoryId = defaultCategory.id;
     }
 
@@ -141,7 +163,11 @@ export class TransactionsService {
       resourceType: 'Transaction',
       resourceId: transaction.id,
       userId,
-      details: { type, amount: transaction.amount, currency: transaction.currency },
+      details: {
+        type,
+        amount: transaction.amount,
+        currency: transaction.currency,
+      },
     });
 
     return transaction;
@@ -162,7 +188,12 @@ export class TransactionsService {
       where.categoryId = query.categoryId;
     }
 
-    const dateRange = this.getDateRange(query.month, query.year, query.from, query.to);
+    const dateRange = this.getDateRange(
+      query.month,
+      query.year,
+      query.from,
+      query.to,
+    );
     if (dateRange) {
       where.date = dateRange;
     }
@@ -177,24 +208,163 @@ export class TransactionsService {
     });
   }
 
-  async markReimbursed(id: string, userId: string) {
-    const transaction = await this.prisma.transaction.update({
-      where: { id },
-      data: { reimbursedAt: new Date() },
+  async findOutstandingReimbursements() {
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        type: TransactionType.EXPENSE,
+        requiresReimbursement: true,
+        reimbursedAt: null,
+        paidBy: { not: null },
+      },
+      orderBy: { date: 'desc' },
+      include: {
+        category: { select: { id: true, name: true, type: true } },
+        property: { select: { id: true, name: true } },
+        reimbursementPayments: {
+          orderBy: [{ paidAt: 'asc' }, { createdAt: 'asc' }],
+          select: {
+            id: true,
+            amount: true,
+            paidAt: true,
+            notes: true,
+            createdAt: true,
+          },
+        },
+      },
     });
+
+    return transactions
+      .map((transaction) => {
+        const reimbursedAmount = transaction.reimbursementPayments.reduce(
+          (sum, payment) => sum + payment.amount,
+          0,
+        );
+        return {
+          ...transaction,
+          reimbursedAmount,
+          remainingAmount: Math.max(0, transaction.amount - reimbursedAmount),
+        };
+      })
+      .filter((transaction) => transaction.remainingAmount > 0);
+  }
+
+  async recordReimbursementPayment(
+    id: string,
+    dto: CreateReimbursementPaymentDto,
+    userId: string,
+  ) {
+    return this.recordReimbursement(
+      id,
+      dto.amount,
+      new Date(dto.paidAt),
+      dto.notes,
+      userId,
+    );
+  }
+
+  async markReimbursed(id: string, userId: string) {
+    return this.recordReimbursement(id, null, new Date(), undefined, userId);
+  }
+
+  private async recordReimbursement(
+    id: string,
+    requestedAmount: number | null,
+    paidAt: Date,
+    notes: string | undefined,
+    userId: string,
+  ) {
+    if (Number.isNaN(paidAt.getTime()))
+      throw new BadRequestException('Invalid payment date');
+
+    const result = await this.prisma.$transaction(
+      async (tx) => {
+        // Lock the expense while checking its balance so concurrent payments cannot overpay it.
+        const locked = await tx.$queryRaw<
+          Array<{ id: string }>
+        >`SELECT "id" FROM "Transaction" WHERE "id" = ${id} FOR UPDATE`;
+        if (locked.length === 0)
+          throw new NotFoundException('Expense not found');
+
+        const transaction = await tx.transaction.findUnique({
+          where: { id },
+          include: { reimbursementPayments: { select: { amount: true } } },
+        });
+        if (
+          !transaction ||
+          transaction.type !== TransactionType.EXPENSE ||
+          !transaction.requiresReimbursement ||
+          !transaction.paidBy
+        ) {
+          throw new BadRequestException(
+            'This expense is not awaiting reimbursement',
+          );
+        }
+        if (transaction.reimbursedAt)
+          throw new BadRequestException(
+            'This expense is already fully reimbursed',
+          );
+
+        const reimbursedAmount = transaction.reimbursementPayments.reduce(
+          (sum, payment) => sum + payment.amount,
+          0,
+        );
+        const remainingAmount = transaction.amount - reimbursedAmount;
+        const amount = requestedAmount ?? remainingAmount;
+        if (
+          !Number.isInteger(amount) ||
+          amount < 1 ||
+          amount > remainingAmount
+        ) {
+          throw new BadRequestException(
+            `Payment must be between 1 and ${remainingAmount} ${transaction.currency}`,
+          );
+        }
+
+        const payment = await tx.reimbursementPayment.create({
+          data: { transactionId: id, amount, paidAt, notes, createdBy: userId },
+        });
+        if (amount === remainingAmount) {
+          await tx.transaction.update({
+            where: { id },
+            data: { reimbursedAt: paidAt },
+          });
+        }
+        return {
+          payment,
+          reimbursedAmount: reimbursedAmount + amount,
+          remainingAmount: remainingAmount - amount,
+          currency: transaction.currency,
+        };
+      },
+      { timeout: 5000 },
+    );
 
     await this.audit.logAction({
-      action: 'UPDATE',
-      resourceType: 'Transaction',
-      resourceId: transaction.id,
+      action: 'CREATE',
+      resourceType: 'ReimbursementPayment',
+      resourceId: result.payment.id,
       userId,
-      details: { action: 'reimbursed' },
+      details: {
+        transactionId: id,
+        amount: result.payment.amount,
+        currency: result.currency,
+        remainingAmount: result.remainingAmount,
+      },
     });
 
-    return transaction;
+    return result;
   }
 
   async remove(id: string, userId: string) {
+    if (
+      await this.prisma.reimbursementPayment.count({
+        where: { transactionId: id },
+      })
+    ) {
+      throw new BadRequestException(
+        'This expense has reimbursement payments and cannot be deleted',
+      );
+    }
     const transaction = await this.prisma.transaction.delete({
       where: { id },
     });
@@ -221,7 +391,12 @@ export class TransactionsService {
     });
   }
 
-  private getDateRange(month?: string, year?: string, from?: string, to?: string) {
+  private getDateRange(
+    month?: string,
+    year?: string,
+    from?: string,
+    to?: string,
+  ) {
     if (from || to) {
       const gte = from ? new Date(from) : undefined;
       const lte = to ? new Date(to + 'T23:59:59.999Z') : undefined;
@@ -229,7 +404,9 @@ export class TransactionsService {
     }
 
     if (month) {
-      const [yearPart, monthPart] = month.split('-').map((value) => Number(value));
+      const [yearPart, monthPart] = month
+        .split('-')
+        .map((value) => Number(value));
       if (!yearPart || !monthPart || monthPart < 1 || monthPart > 12) {
         throw new BadRequestException('Invalid month format. Use YYYY-MM');
       }
@@ -251,4 +428,3 @@ export class TransactionsService {
     return undefined;
   }
 }
-

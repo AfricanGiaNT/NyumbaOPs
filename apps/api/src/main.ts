@@ -7,11 +7,12 @@ import { PrismaService } from './prisma/prisma.service';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: true });
   if (process.env.NODE_ENV === 'production') {
-    const required = ['JWT_SECRET', 'GMAIL_USER', 'GMAIL_APP_PASSWORD', 'DASHBOARD_URL'];
+    const required = ['JWT_SECRET', 'GMAIL_USER', 'GMAIL_APP_PASSWORD', 'DASHBOARD_URL', 'RESERVATIONS_ADMIN_EMAIL'];
     const missing = required.filter((name) => !process.env[name]);
     if (missing.length) throw new Error(`Missing production configuration: ${missing.join(', ')}`);
     if ((process.env.JWT_SECRET?.length ?? 0) < 32) throw new Error('JWT_SECRET must have at least 32 characters');
     if (new URL(process.env.DASHBOARD_URL!).protocol !== 'https:') throw new Error('DASHBOARD_URL must use HTTPS');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(process.env.RESERVATIONS_ADMIN_EMAIL!)) throw new Error('RESERVATIONS_ADMIN_EMAIL must be one email address');
     if (process.env.TELEGRAM_BOT_TOKEN && !process.env.TELEGRAM_WEBHOOK_SECRET) {
       throw new Error('TELEGRAM_WEBHOOK_SECRET is required when the bot is enabled');
     }
@@ -74,6 +75,6 @@ async function bootstrap() {
   const prismaService = app.get(PrismaService);
   await prismaService.enableShutdownHooks(app);
 
-  await app.listen(process.env.PORT ?? 3001);
+  await app.listen(process.env.PORT ?? 3001, process.env.HOST ?? '0.0.0.0');
 }
 bootstrap();
